@@ -1,0 +1,7 @@
+﻿services:
+  ogur.sentinel.worker:
+    image: ogur.sentinel.worker
+    build:
+      context: .
+      dockerfile: Ogur.Sentinel.Worker/Dockerfile
+
