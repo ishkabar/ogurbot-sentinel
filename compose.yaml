@@ -1,7 +1,53 @@
-﻿services:
-  ogur.sentinel.worker:
-    image: ogur.sentinel.worker
-    build:
-      context: .
-      dockerfile: Ogur.Sentinel.Worker/Dockerfile
+﻿version: "3.9"
 
+networks:
+  internal:
+    driver: bridge
+
+services:
+  bot-worker:
+    image: ghcr.io/ishkabar/ogurbot-sentinel-worker:latest
+    container_name: bot-worker
+    restart: unless-stopped
+    volumes:
+      # Worker czyta np. "Respawn:SettingsFile": "appsettings/respawn.settings.json"
+      - ./Worker/appsettings:/app/appsettings:ro
+    environment:
+      TZ: Europe/Warsaw
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - internal
+
+  bot-api:
+    image: ghcr.io/ishkabar/ogurbot-sentinel-api:latest
+    container_name: bot-api
+    restart: unless-stopped
+    depends_on:
+      - bot-worker
+    volumes:
+      - ./Api/appsettings/appsettings.Production.json:/app/appsettings.Production.json:ro
+    environment:
+      TZ: Europe/Warsaw
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - internal
+    ports:
+      - "8080:8080"
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    command: >
+      --label-enable
+      --cleanup
+      --interval 60
+      --include-restarting
+      --include-stopped
+      --rolling-restart
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - internal
