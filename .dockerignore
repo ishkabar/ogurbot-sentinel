@@ -23,3 +23,16 @@
 **/values.dev.yaml
 LICENSE
 README.md
+
+# Don't copy these to Docker image
+**/appsettings.Production.json
+**/appsettings.Development.json
+**/appsettings.*.json
+**/respawn.settings.json
+**/assets/*.wav
+**/assets/*.mp3
+.git
+.vs
+.vscode
+**/bin/
+**/obj/

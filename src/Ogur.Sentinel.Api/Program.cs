@@ -81,6 +81,15 @@ app.MapPost("/respawn/toggle", async (IHttpClientFactory cf, HttpContext ctx) =>
     return Results.Ok(result);
 });
 
+app.MapPost("/respawn/recalculate", async (IHttpClientFactory cf) =>
+{
+    var http = cf.CreateClient("worker");
+    var res = await http.PostAsync("/respawn/recalculate", null);
+    res.EnsureSuccessStatusCode();
+    var result = await res.Content.ReadFromJsonAsync<JsonElement>();
+    return Results.Ok(result);
+});
+
 app.MapGet("/channels/info", async (IHttpClientFactory cf) =>
 {
     var http = cf.CreateClient("worker");

@@ -87,162 +87,169 @@
 
 @section Scripts {
 <script>
-let currentChannels = [];
+    let currentChannels = [];
 
-async function loadSettings() {
-    document.getElementById('loading').classList.remove('d-none');
-    document.getElementById('error').classList.add('d-none');
-    document.getElementById('success').classList.add('d-none');
-    
-    try {
-        const response = await fetch('/settings');
-        const data = await response.json();
-        
-        document.getElementById('baseTime').value = data.base_hhmm;
-        document.getElementById('leadSeconds').value = data.lead_seconds;
-        document.getElementById('enabled10m').checked = data.enabled_10m;
-        document.getElementById('enabled2h').checked = data.enabled_2h;
+    async function loadSettings() {
+        document.getElementById('loading').classList.remove('d-none');
+        document.getElementById('error').classList.add('d-none');
+        document.getElementById('success').classList.add('d-none');
 
-        currentChannels = (data.channels || []).map(ch => Number(ch));  // ← Konwertuj przy load!
-
-        // Pobierz info o kanałach (nazwy)
         try {
-            const channelsResp = await fetch('/channels/info');
-            const channelsData = await channelsResp.json();
-            window.channelNames = {};
-            channelsData.forEach(ch => {
-                window.channelNames[ch.id] = { name: ch.name, guild: ch.guild };
-            });
-        } catch (e) {
-            console.warn('Failed to load channel names:', e);
-        }
-        
-        renderChannels();
-        
-        // Load next triggers
-        const nextResp = await fetch('/respawn/next');
-        const nextData = await nextResp.json();
-        document.getElementById('next10m').textContent = new Date(nextData.next10m).toLocaleString();
-        document.getElementById('next2h').textContent = new Date(nextData.next2h).toLocaleString();
-        
-        document.getElementById('loading').classList.add('d-none');
-        document.getElementById('settings-form').classList.remove('d-none');
-    } catch (error) {
-        document.getElementById('loading').classList.add('d-none');
-        document.getElementById('error').textContent = 'Failed to load settings: ' + error.message;
-        document.getElementById('error').classList.remove('d-none');
-    }
-}
-
-async function recalculate() {
-    try {
-        const response = await fetch('/respawn/recalculate', {
-            method: 'POST'
-        });
-
-        if (response.ok) {
+            const response = await fetch('/settings');
             const data = await response.json();
-            document.getElementById('next10m').textContent = new Date(data.next10m).toLocaleString();
-            document.getElementById('next2h').textContent = new Date(data.next2h).toLocaleString();
 
-            // Show brief success
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '✓ Done';
-            setTimeout(() => btn.innerHTML = originalText, 1500);
+            document.getElementById('baseTime').value = data.base_hhmm;
+            document.getElementById('leadSeconds').value = data.lead_seconds;
+            document.getElementById('enabled10m').checked = data.enabled_10m;
+            document.getElementById('enabled2h').checked = data.enabled_2h;
+
+            // WAŻNE: Zostaw jako STRING, żeby nie obciąć dużych liczb!
+            currentChannels = (data.channels || []).map(ch => String(ch));
+
+            // Pobierz info o kanałach (nazwy)
+            try {
+                const channelsResp = await fetch('/channels/info');
+                const channelsData = await channelsResp.json();
+                window.channelNames = {};
+                channelsData.forEach(ch => {
+                    // Konwertuj ID na string dla porównania
+                    window.channelNames[String(ch.id)] = { name: ch.name, guild: ch.guild };
+                });
+            } catch (e) {
+                console.warn('Failed to load channel names:', e);
+            }
+
+            renderChannels();
+
+            // Load next triggers
+            const nextResp = await fetch('/respawn/next');
+            const nextData = await nextResp.json();
+            document.getElementById('next10m').textContent = new Date(nextData.next10m).toLocaleString();
+            document.getElementById('next2h').textContent = new Date(nextData.next2h).toLocaleString();
+
+            document.getElementById('loading').classList.add('d-none');
+            document.getElementById('settings-form').classList.remove('d-none');
+        } catch (error) {
+            document.getElementById('loading').classList.add('d-none');
+            document.getElementById('error').textContent = 'Failed to load settings: ' + error.message;
+            document.getElementById('error').classList.remove('d-none');
         }
-    } catch (error) {
-        console.error('Recalculate failed:', error);
-    }
 }
 
-function renderChannels() {
-    const container = document.getElementById('channelsList');
-    container.innerHTML = '';
-    
-    if (currentChannels.length === 0) {
-        container.innerHTML = '<p class="text-muted">No channels configured</p>';
-        return;
-    }
-    
-    currentChannels.forEach((ch, idx) => {
-        const info = window.channelNames?.[ch];
-        const displayName = info ? `#${info.name}` : `Channel`;
-        const displayId = `<code style="color: var(--muted); font-size: 0.75em;">${ch}</code>`;
-        
-        const pill = document.createElement('span');
-        pill.className = 'pill me-2 mb-2 d-inline-flex align-items-center';
-        pill.innerHTML = `
+    async function recalculate() {
+        try {
+            const response = await fetch('/respawn/recalculate', {
+                method: 'POST'
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('next10m').textContent = new Date(data.next10m).toLocaleString();
+                document.getElementById('next2h').textContent = new Date(data.next2h).toLocaleString();
+
+                // Show brief success
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✓ Done';
+                setTimeout(() => btn.innerHTML = originalText, 1500);
+            }
+        } catch (error) {
+            console.error('Recalculate failed:', error);
+        }
+}
+
+    function renderChannels() {
+        const container = document.getElementById('channelsList');
+        container.innerHTML = '';
+
+        if (currentChannels.length === 0) {
+            container.innerHTML = '<p class="text-muted">No channels configured</p>';
+            return;
+        }
+
+        currentChannels.forEach((ch, idx) => {
+            const info = window.channelNames?.[ch];  // ch już jest string
+            const displayName = info ? `#${info.name}` : `Channel`;
+            const displayId = `<code style="color: var(--muted); font-size: 0.75em;">${ch}</code>`;
+
+            const pill = document.createElement('span');
+            pill.className = 'pill me-2 mb-2 d-inline-flex align-items-center';
+            pill.innerHTML = `
             <span style="color: var(--accent);">${displayName}</span>
             <span class="ms-2">${displayId}</span>
             <button class="btn-close btn-close-white ms-2" type="button" onclick="removeChannel(${idx})" 
                     style="font-size: 0.7em; opacity: 0.7;" 
                     aria-label="Remove"></button>
         `;
-        container.appendChild(pill);
-    });
-}
-
-function addChannel() {
-    const channelId = prompt('Enter Discord Channel ID:');
-    if (channelId && !isNaN(channelId)) {
-        if (currentChannels.length < 3) {
-            currentChannels.push(Number(channelId));  // ← Konwertuj na number!
-            renderChannels();
-        } else {
-            alert('Maximum 3 channels allowed');
-        }
-    }
-}
-
-function removeChannel(idx) {
-    currentChannels.splice(idx, 1);
-    renderChannels();
-}
-
-document.getElementById('respawnForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const payload = {
-        base_hhmm: document.getElementById('baseTime').value,
-        lead_seconds: parseInt(document.getElementById('leadSeconds').value),
-        channels: currentChannels,
-        roles_allowed: []
-    };
-
-    console.log('Sending payload:', payload);  // ← Debug
-
-    try {
-        const response = await fetch('/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            container.appendChild(pill);
         });
-        
-        if (response.ok) {
-            // Update toggles separately
-            await fetch('/respawn/toggle', {
+    }
+
+    function addChannel() {
+        const channelId = prompt('Enter Discord Channel ID:');
+        // Sprawdź czy to są tylko cyfry
+        if (channelId && /^\d+$/.test(channelId)) {
+            if (currentChannels.length < 3) {
+                // Zostaw jako STRING!
+                currentChannels.push(channelId);
+                renderChannels();
+            } else {
+                alert('Maximum 3 channels allowed');
+            }
+        } else if (channelId) {
+            alert('Invalid channel ID - must be numbers only');
+        }
+}
+
+    function removeChannel(idx) {
+        currentChannels.splice(idx, 1);
+        renderChannels();
+    }
+
+    document.getElementById('respawnForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const payload = {
+            base_hhmm: document.getElementById('baseTime').value,
+            lead_seconds: parseInt(document.getElementById('leadSeconds').value),
+            channels: currentChannels,  // String array - Worker obsłuży to
+            roles_allowed: []
+        };
+
+        console.log('Sending payload:', payload);
+
+        try {
+            const response = await fetch('/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    enable10m: document.getElementById('enabled10m').checked,
-                    enable2h: document.getElementById('enabled2h').checked
-                })
+                body: JSON.stringify(payload)
             });
-            
-            document.getElementById('success').classList.remove('d-none');
-            setTimeout(() => document.getElementById('success').classList.add('d-none'), 3000);
-            loadSettings(); // Reload to show updated next triggers
-        } else {
-            throw new Error('Save failed');
+
+            if (response.ok) {
+                // Update toggles separately
+                await fetch('/respawn/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        enable10m: document.getElementById('enabled10m').checked,
+                        enable2h: document.getElementById('enabled2h').checked
+                    })
+                });
+
+                document.getElementById('success').classList.remove('d-none');
+                setTimeout(() => document.getElementById('success').classList.add('d-none'), 3000);
+                loadSettings(); // Reload to show updated next triggers
+            } else {
+                throw new Error('Save failed');
+            }
+        } catch (error) {
+            document.getElementById('error').textContent = 'Failed to save: ' + error.message;
+            document.getElementById('error').classList.remove('d-none');
         }
-    } catch (error) {
-        document.getElementById('error').textContent = 'Failed to save: ' + error.message;
-        document.getElementById('error').classList.remove('d-none');
-    }
 });
 
-// Load on page load
-loadSettings();
+    // Load on page load
+    loadSettings();
+
 </script>
 }

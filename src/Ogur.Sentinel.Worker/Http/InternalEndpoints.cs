@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json;
 using Discord;
 using Discord.WebSocket;
 using Microsoft.AspNetCore.Builder;
@@ -58,9 +59,28 @@ public sealed class InternalEndpoints
             enabled_2h = _state.Enabled2h
         }));
 
-        webapp.MapPost("/settings", async (PersistedSettings s) =>
+        webapp.MapPost("/settings", async (HttpContext ctx) =>
         {
-            _state.ApplyPersisted(s);
+            using var reader = new StreamReader(ctx.Request.Body);
+            var json = await reader.ReadToEndAsync();
+            var doc = JsonDocument.Parse(json);
+            
+            // Parse channels - obsłuż zarówno string jak i number
+            var channels = doc.RootElement.GetProperty("channels").EnumerateArray()
+                .Select(x => x.ValueKind == JsonValueKind.String 
+                    ? ulong.Parse(x.GetString()!) 
+                    : (ulong)x.GetUInt64())
+                .ToList();
+            
+            var settings = new PersistedSettings
+            {
+                Channels = channels,
+                BaseHhmm = doc.RootElement.GetProperty("base_hhmm").GetString()!,
+                LeadSeconds = doc.RootElement.GetProperty("lead_seconds").GetInt32(),
+                RolesAllowed = new List<ulong>()
+            };
+            
+            _state.ApplyPersisted(settings);
             await _store.SaveAsync(_state.ToPersisted());
             return Results.Ok();
         });
@@ -93,8 +113,6 @@ public sealed class InternalEndpoints
         
         webapp.MapGet("/channels/info", () =>
         {
-            // Sprawdź czy bot jest ready
-            //if (_discord.ConnectionState != ConnectionState.Connected)
             if (_discord.LoginState != LoginState.LoggedIn || _discord.CurrentUser is null)
             {
                 return Results.Ok(new[] 
