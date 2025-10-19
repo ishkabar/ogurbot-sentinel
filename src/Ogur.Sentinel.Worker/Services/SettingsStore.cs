@@ -1,13 +1,10 @@
 ﻿using System.Text.Json;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Ogur.Sentinel.Abstractions.Options;
 using Ogur.Sentinel.Abstractions.Respawn;
 
-
 namespace Ogur.Sentinel.Worker.Services;
-
 
 public sealed class SettingsStore
 {

@@ -1,226 +1,245 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Reflection;
-using Discord;
-using Discord.Audio;
-using Discord.WebSocket;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
+using DSharpPlus;
+using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
+using DSharpPlus.VoiceNext;
 using Microsoft.Extensions.Logging;
-using Ogur.Sentinel.Worker.Discord;
 
 namespace Ogur.Sentinel.Worker.Services;
 
 public sealed class VoiceService
 {
-    private readonly DiscordSocketClient _client;
-    private readonly DiscordReadyService _ready;
+    private readonly DiscordClient _client;
     private readonly ILogger<VoiceService> _logger;
 
-    private static readonly ConcurrentDictionary<ulong, SemaphoreSlim> GuildLocks = new();
-    private static readonly ConcurrentDictionary<ulong, IAudioClient> AudioClients = new();
-    private static readonly ConcurrentDictionary<ulong, DateTimeOffset> LastAttemptUtc = new();
-
-    public VoiceService(DiscordSocketClient client, DiscordReadyService ready, ILogger<VoiceService> logger)
+    public VoiceService(DiscordClient client, ILogger<VoiceService> logger)
     {
         _client = client;
-        _ready = ready;
         _logger = logger;
     }
 
-    public async Task JoinAndPlayAsync(ulong channelId, string wavPath, CancellationToken ct = default)
+    public async Task PlayOnceAsync(ulong channelId, string wavPath, CancellationToken ct)
     {
-        await _ready.WaitForStableAsync(ct);
+        VoiceNextConnection? conn = null;
 
-        if (_client.ConnectionState != ConnectionState.Connected || _client.CurrentUser is null)
-        {
-            _logger.LogWarning("Discord not connected (state={State}).", _client.ConnectionState);
-            return;
-        }
-
-        if (_client.GetChannel(channelId) is not SocketVoiceChannel targetVc)
-        {
-            _logger.LogWarning("Channel {ChannelId} not found or not a voice channel.", channelId);
-            return;
-        }
-
-        if (!File.Exists(wavPath))
-        {
-            _logger.LogWarning("Audio file not found: {Path}", wavPath);
-            return;
-        }
-
-        var now = DateTimeOffset.UtcNow;
-        var last = LastAttemptUtc.GetOrAdd(targetVc.Guild.Id, DateTimeOffset.MinValue);
-        if (now - last < TimeSpan.FromSeconds(5))
-        {
-            _logger.LogWarning("Join throttled for guild {GuildId}.", targetVc.Guild.Id);
-            return;
-        }
-        LastAttemptUtc[targetVc.Guild.Id] = now;
-
-        var gate = GuildLocks.GetOrAdd(targetVc.Guild.Id, _ => new SemaphoreSlim(1, 1));
-        await gate.WaitAsync(ct);
         try
         {
-            if (AudioClients.TryGetValue(targetVc.Guild.Id, out var existing) &&
-                existing.ConnectionState == ConnectionState.Connected &&
-                (targetVc.Guild.CurrentUser as SocketGuildUser)?.VoiceChannel?.Id == targetVc.Id)
+            _logger.LogInformation("[Voice] Start PlayOnceAsync channel={ChannelId} path={Path}", channelId, wavPath);
+
+            if (!File.Exists(wavPath))
             {
-                _logger.LogInformation("[VOICE] Reusing audio in #{Channel}.", targetVc.Name);
-                await PlayOnceAsync(existing, targetVc, wavPath, ct);
+                _logger.LogWarning("[Voice] File not found: {Path}", wavPath);
                 return;
             }
 
-            var me = targetVc.Guild.CurrentUser as SocketGuildUser;
-            var currentVc = me?.VoiceChannel;
-            if (currentVc is not null && currentVc.Id != targetVc.Id)
+            await WaitReadyAsync(ct);
+            _logger.LogInformation("[Voice] Client ready. Guilds={Count}", _client.Guilds.Count);
+
+            if (!EnsureCodecsAvailable())
             {
-                try { await currentVc.DisconnectAsync(); } catch { /* ignore */ }
-                await Task.Delay(200, ct);
+                _logger.LogError("[Voice] Opus/Sodium missing");
+                return;
             }
 
-            IAudioClient? audio = null;
-            const int maxAttempts = 5;
-
-            for (var attempt = 1; attempt <= maxAttempts && audio is null; attempt++)
+            var channel = await _client.GetChannelAsync(channelId);
+            if (channel is null || channel.Type != DiscordChannelType.Voice)
             {
-                ct.ThrowIfCancellationRequested();
-                try
+                _logger.LogWarning("[Voice] Invalid channel {ChannelId}", channelId);
+                return;
+            }
+
+            var guild = channel.Guild ?? _client.Guilds.Values.FirstOrDefault(g => g.Channels.ContainsKey(channel.Id));
+            if (guild is null)
+            {
+                _logger.LogWarning("[Voice] Cannot resolve guild for channel {ChannelId}", channelId);
+                return;
+            }
+
+            var vnext = _client.GetVoiceNext();
+            if (vnext is null)
+            {
+                _logger.LogError("[Voice] VoiceNext not enabled");
+                return;
+            }
+
+            try { vnext.GetConnection(guild)?.Disconnect(); } catch { }
+            await Task.Delay(300, ct);
+
+            _logger.LogInformation("[Voice] Connecting to voice channel {ChannelId}", channelId);
+
+            try
+            {
+                _logger.LogInformation("[Voice] Calling ConnectAsync with 30s patience...");
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                var connectTask = channel.ConnectAsync();
+
+                var completedTask = await Task.WhenAny(connectTask, Task.Delay(TimeSpan.FromSeconds(30), cts.Token));
+
+                if (completedTask == connectTask)
                 {
-                    _logger.LogInformation("[VOICE] Connecting to #{Channel} (attempt {Attempt}/{Max})...",
-                        targetVc.Name, attempt, maxAttempts);
-
-                    // TWARDY FIX: wymuś disconnect:true przy zestawianiu sesji
-                    audio = await ConnectWithForcedDisconnectAsync(targetVc, selfDeaf: true, selfMute: false, ct);
-
-                    if (audio.ConnectionState == ConnectionState.Connected)
+                    conn = await connectTask;
+                    if (conn != null)
                     {
-                        _logger.LogInformation("[VOICE] Connected to #{Channel}.", targetVc.Name);
-                        break;
+                        _logger.LogInformation("[Voice] ConnectAsync completed successfully!");
                     }
+                    else
+                    {
+                        _logger.LogError("[Voice] ConnectAsync returned null");
+                        return;
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("[Voice] ConnectAsync timeout, trying GetConnection...");
+                    conn = vnext.GetConnection(guild);
 
-                    throw new TimeoutException("Voice connect returned not-Connected.");
-                }
-                catch (Exception ex) when (IsSessionInvalid4006(ex))
-                {
-                    _logger.LogWarning(ex, "[VOICE] 4006 on connect (attempt {Attempt}/{Max}). Hard teardown & backoff.",
-                        attempt, maxAttempts);
-                    await HardTeardownAsync(targetVc, audio);
-                    audio = null;
-                    await Task.Delay(TimeSpan.FromSeconds(2 + attempt), ct);
-                }
-                catch (TimeoutException tex)
-                {
-                    _logger.LogWarning(tex, "[VOICE] Start timeout (attempt {Attempt}/{Max}).", attempt, maxAttempts);
-                    await HardTeardownAsync(targetVc, audio);
-                    audio = null;
-                    await Task.Delay(TimeSpan.FromSeconds(1 + attempt), ct);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "[VOICE] Start failed (attempt {Attempt}/{Max}).", attempt, maxAttempts);
-                    await HardTeardownAsync(targetVc, audio);
-                    audio = null;
-                    await Task.Delay(TimeSpan.FromSeconds(1 + attempt / 2.0), ct);
+                    if (conn is null)
+                    {
+                        _logger.LogError("[Voice] GetConnection also returned null");
+                        return;
+                    }
+                    _logger.LogWarning("[Voice] Got connection via GetConnection fallback");
                 }
             }
-
-            if (audio is null || audio.ConnectionState != ConnectionState.Connected)
+            catch (Exception ex)
             {
-                _logger.LogError("[VOICE] Giving up after {Max} attempts. Channel=#{Channel}", maxAttempts, targetVc.Name);
+                _logger.LogError(ex, "[Voice] Connect failed");
                 return;
             }
 
-            AudioClients[targetVc.Guild.Id] = audio;
+            _logger.LogInformation("[Voice] Connection ready. TargetChannel={Target}", conn.TargetChannel?.Id ?? 0);
 
-            await PlayOnceAsync(audio, targetVc, wavPath, ct);
+            await Task.Delay(500, ct);
 
-            try { await targetVc.DisconnectAsync(); } catch { /* ignore */ }
-            AudioClients.TryRemove(targetVc.Guild.Id, out _);
+            var transmit = conn.GetTransmitSink();
+
+            using var ff = StartFfmpeg(wavPath);
+            if (ff is null || ff.HasExited)
+            {
+                _logger.LogError("[Voice] ffmpeg failed to start");
+                return;
+            }
+
+            try { await conn.SendSpeakingAsync(true); } catch { }
+
+            await using var pcmStream = ff.StandardOutput.BaseStream;
+
+            _logger.LogInformation("[Voice] Streaming audio: {Path}", Path.GetFileName(wavPath));
+
+            var buffer = new byte[3840];
+            int bytesRead;
+            while ((bytesRead = await pcmStream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+            {
+                await transmit.WriteAsync(buffer, 0, bytesRead, ct);
+            }
+
+            await transmit.FlushAsync(ct);
+
+            _logger.LogInformation("[Voice] Streaming finished: {Path}", Path.GetFileName(wavPath));
+
+            try { await conn.SendSpeakingAsync(false); } catch { }
+
+            await Task.Delay(200, ct);
+            conn.Disconnect();
         }
-        finally
+        catch (OperationCanceledException)
         {
-            gate.Release();
+            _logger.LogWarning("[Voice] Streaming canceled");
+            try { conn?.Disconnect(); } catch { }
+        }
+        catch (DllNotFoundException ex)
+        {
+            _logger.LogError(ex, "[Voice] Native codecs missing");
+            try { conn?.Disconnect(); } catch { }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[Voice] Unhandled exception");
+            try { conn?.Disconnect(); } catch { }
         }
     }
 
-    private static async Task HardTeardownAsync(SocketVoiceChannel targetVc, IAudioClient? audio)
+    private async Task WaitReadyAsync(CancellationToken ct)
     {
-        try { await targetVc.DisconnectAsync(); } catch { /* ignore */ }
-        if (audio != null)
-        {
-            try { await audio.StopAsync(); } catch { /* ignore */ }
-            try { (audio as IDisposable)?.Dispose(); } catch { /* ignore */ }
-        }
-        await Task.Delay(200);
-    }
-
-    private async Task PlayOnceAsync(IAudioClient audio, SocketVoiceChannel vc, string wavPath, CancellationToken ct)
-    {
-        using var ffmpeg = StartFfmpeg(wavPath);
-        if (ffmpeg is null || ffmpeg.HasExited)
-        {
-            _logger.LogError("ffmpeg failed to start. Check installation and PATH.");
+        if (_client.Guilds.Count > 0)
             return;
+
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Task Handler(DiscordClient _, SessionCreatedEventArgs __)
+        {
+            tcs.TrySetResult(true);
+            return Task.CompletedTask;
         }
 
-        await using var pcm = audio.CreatePCMStream(AudioApplication.Mixed);
+        _client.SessionCreated += Handler;
+
         try
         {
-            await ffmpeg.StandardOutput.BaseStream.CopyToAsync(pcm, ct);
-            await pcm.FlushAsync(ct);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(TimeSpan.FromSeconds(10));
+            await Task.WhenAny(tcs.Task, Task.Delay(Timeout.Infinite, cts.Token));
         }
         finally
         {
-            try { await pcm.DisposeAsync(); } catch { /* ignore */ }
+            _client.SessionCreated -= Handler;
         }
-
-        _logger.LogInformation("Played {File} on #{Channel} ({Guild}).",
-            Path.GetFileName(wavPath), vc.Name, vc.Guild.Name);
     }
 
-    private static bool IsSessionInvalid4006(Exception ex)
+    private static readonly string[] OpusCandidates =
+        OperatingSystem.IsWindows() ? new[] { "opus.dll" } :
+        OperatingSystem.IsMacOS() ? new[] { "libopus.0.dylib", "libopus.dylib" } :
+        new[] { "libopus.so.0", "libopus.so" };
+
+    private static readonly string[] SodiumCandidates =
+        OperatingSystem.IsWindows() ? new[] { "libsodium.dll", "sodium.dll" } :
+        OperatingSystem.IsMacOS() ? new[] { "libsodium.23.dylib", "libsodium.dylib" } :
+        new[] { "libsodium.so.23", "libsodium.so" };
+
+    private bool EnsureCodecsAvailable()
     {
-        var t = ex.GetType();
-        if (t.FullName != "Discord.Net.WebSocketClosedException") return false;
-        var prop = t.GetProperty("CloseCode");
-        var val = prop?.GetValue(ex);
-        return (val is int i && i == 4006) || (val is ushort u && u == 4006);
+        bool opusOk = TryLoadAny(OpusCandidates, out _);
+        bool sodiumOk = TryLoadAny(SodiumCandidates, out _);
+
+        if (opusOk && sodiumOk)
+            return true;
+
+        if (!opusOk)
+            _logger.LogError("[Voice] Opus not found");
+        if (!sodiumOk)
+            _logger.LogError("[Voice] Sodium not found");
+
+        return false;
     }
 
-    private static Process? StartFfmpeg(string path) =>
-        Process.Start(new ProcessStartInfo
+    private static bool TryLoadAny(string[] candidates, out string loadedName)
+    {
+        foreach (var name in candidates)
+        {
+            if (NativeLibrary.TryLoad(name, out var handle))
+            {
+                try { NativeLibrary.Free(handle); } catch { }
+                loadedName = name;
+                return true;
+            }
+        }
+        loadedName = string.Empty;
+        return false;
+    }
+
+    private static Process? StartFfmpeg(string wavPath)
+    {
+        var psi = new ProcessStartInfo
         {
             FileName = "ffmpeg",
-            Arguments = $"-hide_banner -loglevel error -i \"{path}\" -ac 2 -f s16le -ar 48000 pipe:1",
+            Arguments = $"-hide_banner -loglevel panic -i \"{wavPath}\" -ac 2 -f s16le -ar 48000 pipe:1",
             RedirectStandardOutput = true,
-            UseShellExecute = false
-        });
-    
-    private static readonly MethodInfo? ConnectAudioInternal =
-        typeof(SocketGuild).GetMethod("ConnectAudioAsync",
-            BindingFlags.Instance | BindingFlags.NonPublic,
-            binder: null,
-            types: new[] { typeof(ulong), typeof(bool), typeof(bool), typeof(bool), typeof(bool) },
-            modifiers: null);
-
-    private static async Task<IAudioClient> ConnectWithForcedDisconnectAsync(
-        SocketVoiceChannel vc, bool selfDeaf, bool selfMute, CancellationToken ct)
-    {
-        var guild = vc.Guild;
-
-        if (ConnectAudioInternal != null)
-        {
-            // external:false, disconnect:true
-            var task = (Task<IAudioClient>)ConnectAudioInternal.Invoke(guild, new object[]
-            {
-                vc.Id, selfDeaf, selfMute, /*external*/ false, /*disconnect*/ true
-            })!;
-
-            // .NET 8: cooperative cancellation
-            return await task.WaitAsync(ct).ConfigureAwait(false);
-        }
-
-        // Fallback: public API
-        return await vc.ConnectAsync(selfDeaf: selfDeaf, selfMute: selfMute).ConfigureAwait(false);
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+        return Process.Start(psi);
     }
 }

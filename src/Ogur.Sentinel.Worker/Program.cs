@@ -1,7 +1,10 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
-using Discord;
-using Discord.WebSocket;
+using DSharpPlus;
+using DSharpPlus.Commands;
+using DSharpPlus.VoiceNext;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -20,11 +23,9 @@ var builder = Host.CreateApplicationBuilder(args);
 var configPath = Path.Combine(AppContext.BaseDirectory, "appsettings", "appsettings.json");
 builder.Configuration.AddJsonFile(configPath, optional: false, reloadOnChange: true);
 
-// --- Logging ---
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 
-// SettingsOptions – zostaw jak masz:
 builder.Services.AddOptions<SettingsOptions>()
     .Bind(builder.Configuration.GetSection("Settings"))
     .Validate(o => !string.IsNullOrWhiteSpace(o.DiscordToken), "DiscordToken is required")
@@ -33,13 +34,12 @@ builder.Services.AddOptions<SettingsOptions>()
     .Validate(o => o.LeaveChannelId != 0, "LeaveChannelId is required")
     .ValidateOnStart();
 
-// RespawnOptions – bind + normalizacja ścieżek + walidacja:
 builder.Services.AddOptions<RespawnOptions>()
     .Bind(builder.Configuration.GetSection("Respawn"))
     .PostConfigure(o =>
     {
         o.Sound10m = NormalizePath(o.Sound10m ?? "assets/respawn_10m.wav");
-        o.Sound2h  = NormalizePath(o.Sound2h  ?? "assets/respawn_2h.wav");
+        o.Sound2h = NormalizePath(o.Sound2h ?? "assets/respawn_2h.wav");
         o.SettingsFile ??= "appsettings/respawn.settings.json";
     })
     .Validate(o => !string.IsNullOrWhiteSpace(o.SettingsFile), "Respawn.SettingsFile is required")
@@ -47,71 +47,85 @@ builder.Services.AddOptions<RespawnOptions>()
     .Validate(o => !string.IsNullOrWhiteSpace(o.Sound2h), "Respawn.Sound2h is required")
     .ValidateOnStart();
 
-// --- helper ---
 static string NormalizePath(string path)
 {
     if (string.IsNullOrWhiteSpace(path))
         return Path.Combine(AppContext.BaseDirectory, "assets");
-
-    // usuń ewentualne wiodące separatory, żeby nie był traktowany jako absolutny
     var clean = path.TrimStart('/', '\\');
-
-    // jeśli już był absolutny (np. w Dockerze), zostaw go
     if (Path.IsPathRooted(path) && !path.StartsWith("/assets") && !path.StartsWith("\\assets"))
         return path;
-
     return Path.Combine(AppContext.BaseDirectory, clean);
 }
 
+// DSharpPlus 5.0 - nowy builder pattern
+var discordBuilder = DiscordClientBuilder.CreateDefault(
+    builder.Configuration.GetSection("Settings:DiscordToken").Value!,
+    DiscordIntents.Guilds | DiscordIntents.GuildVoiceStates
+);
 
-// --- Discord client ---
-var discordCfg = new DiscordSocketConfig
+discordBuilder.ConfigureEventHandlers(b => b
+    .HandleSessionReady((client, args) =>
+    {
+        var logger = builder.Services.BuildServiceProvider().GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("[Discord] Ready as {User}", args.User.Username);
+        return Task.CompletedTask;
+    })
+);
+
+// VoiceNext
+discordBuilder.UseVoiceNext(new VoiceNextConfiguration
 {
-    GatewayIntents =
-        GatewayIntents.Guilds |
-        GatewayIntents.GuildMessages |
-        GatewayIntents.GuildVoiceStates,
-    LogLevel = LogSeverity.Info,
-    AlwaysDownloadUsers = false,
-};
-builder.Services.AddSingleton(new DiscordSocketClient(discordCfg));
-builder.Services.AddSingleton<DiscordReadyService>();    // <— NOWE
+    EnableIncoming = false
+});
 
-// --- Core state ---
+// Commands (nowy system zamiast SlashCommands)
+discordBuilder.UseCommands((_, extension) =>
+{
+    var sp = builder.Services.BuildServiceProvider();
+    
+    // Zarejestruj command module
+    extension.AddCommands(typeof(RespawnModule));
+    
+    // Event handlers
+    extension.CommandExecuted += (_, e) =>
+    {
+        var logger = sp.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("[Commands] {Command} executed by {User}", 
+            e.Context.Command?.Name ?? "unknown", e.Context.User.Username);
+        return Task.CompletedTask;
+    };
+
+    extension.CommandErrored += (_, e) =>
+    {
+        var logger = sp.GetRequiredService<ILogger<Program>>();
+        logger.LogError(e.Exception, "[Commands] Error in {Command}", 
+            e.Context.Command?.Name ?? "unknown");
+        return Task.CompletedTask;
+    };
+});
+
+builder.Services.AddSingleton(sp => discordBuilder.Build());
+
+// Core state / services
 builder.Services.AddSingleton<RespawnState>();
-
-// --- Infra/services ---
 builder.Services.AddSingleton<SettingsStore>();
 builder.Services.AddSingleton<LeaveService>();
 builder.Services.AddSingleton<RespawnSchedulerService>();
-
-// --- Slash modules (for CommandRegistrationService) ---
-builder.Services.AddSingleton<RespawnModule>();
-builder.Services.AddSingleton<LeaveModule>();
-builder.Services.AddSingleton<AdminBreakModule>();
-
-// --- Hosted services ---
-builder.Services.AddHostedService<DiscordBotHostedService>();
-builder.Services.AddHostedService<CommandRegistrationService>();
-
-// --- Minimal internal HTTP (in-proc Kestrel) ---
-builder.Services.AddSingleton<InternalEndpoints>();
-
 builder.Services.AddSingleton<VoiceService>();
-builder.Services.AddSingleton<RespawnSchedulerService>();
+
+// Hosted services
+builder.Services.AddHostedService<DiscordBotHostedService>();
 builder.Services.AddHostedService<RespawnWorker>();
+
+builder.Services.AddSingleton<InternalEndpoints>();
 
 var app = builder.Build();
 
-// Initialize persisted settings → state
 var store = app.Services.GetRequiredService<SettingsStore>();
 var state = app.Services.GetRequiredService<RespawnState>();
-var opts  = app.Services.GetRequiredService<IOptions<SettingsOptions>>().Value;
 var persisted = await store.LoadAsync();
 state.ApplyPersisted(persisted);
 
-// Map internal endpoints (intentionally no auth; expose only on private network in compose)
 app.Services.GetRequiredService<InternalEndpoints>().Map(app);
 
-// Run
 await app.RunAsync();

@@ -28,7 +28,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="Discord.Net" Version="3.18.0" />
+      <PackageReference Include="DSharpPlus" Version="5.0.0-nightly-02405" />
+      <PackageReference Include="DSharpPlus.Commands" Version="5.0.0-nightly-02405" />
+      <PackageReference Include="DSharpPlus.VoiceNext" Version="5.0.0-nightly-02405" />
       <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />

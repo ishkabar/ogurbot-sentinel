@@ -54,7 +54,7 @@ public sealed class RespawnSchedulerService
         {
             try
             {
-                await _voice.JoinAndPlayAsync(ch, sound, ct);
+                await _voice.PlayOnceAsync(ch, sound, ct);
             }
             catch (Exception ex)
             {
