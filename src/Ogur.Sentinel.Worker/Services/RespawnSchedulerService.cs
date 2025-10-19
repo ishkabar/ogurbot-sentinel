@@ -11,14 +11,14 @@ namespace Ogur.Sentinel.Worker.Services;
 public sealed class RespawnSchedulerService
 {
     private readonly RespawnState _state;
-    private readonly VoiceService _voice;
+    private readonly VoiceService2 _voice;
     private readonly ILogger<RespawnSchedulerService> _logger;
     private readonly string _sound10m;
     private readonly string _sound2h;
 
     public RespawnSchedulerService(
         RespawnState state,
-        VoiceService voice,
+        VoiceService2 voice,
         IOptions<RespawnOptions> opts,
         ILogger<RespawnSchedulerService> logger)
     {

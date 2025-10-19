@@ -16,11 +16,11 @@ public sealed class RespawnModule
     private readonly RespawnState _state;
     private readonly SettingsStore _store;
     private readonly RespawnSchedulerService _scheduler;
-    private readonly VoiceService _voice;
+    private readonly VoiceService2 _voice;
     private readonly RespawnOptions _respawn; 
     private readonly ILogger<RespawnModule> _logger;
 
-    public RespawnModule(RespawnState state, SettingsStore store, RespawnSchedulerService scheduler, VoiceService voice, IOptions<RespawnOptions> opts,
+    public RespawnModule(RespawnState state, SettingsStore store, RespawnSchedulerService scheduler, VoiceService2 voice, IOptions<RespawnOptions> opts,
         ILogger<RespawnModule> logger)
     {
         _state = state;
@@ -49,8 +49,8 @@ public sealed class RespawnModule
 
         b.AddOption(new SlashCommandOptionBuilder()
             .WithName("set-base")
-            .WithDescription("Set base HH:MM[:SS]")
-            .AddOption("time", ApplicationCommandOptionType.String, "Base time", isRequired: true)
+            .WithDescription("Set base time (format HH:MM:SS)")
+            .AddOption("time", ApplicationCommandOptionType.String, "Base time e.g. 01:10:30", isRequired: true)  // <-- przykład
             .WithType(ApplicationCommandOptionType.SubCommand));
 
         b.AddOption(new SlashCommandOptionBuilder()

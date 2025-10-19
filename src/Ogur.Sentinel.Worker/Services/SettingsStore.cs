@@ -5,9 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Ogur.Sentinel.Abstractions.Options;
 using Ogur.Sentinel.Abstractions.Respawn;
 
-
 namespace Ogur.Sentinel.Worker.Services;
-
 
 public sealed class SettingsStore
 {
@@ -16,8 +14,15 @@ public sealed class SettingsStore
 
     public SettingsStore(IConfiguration cfg, ILogger<SettingsStore> logger)
     {
-        _filePath = cfg["Respawn:SettingsFile"] ?? "appsettings/respawn.settings.json";
-        _logger = logger;
+        _logger = logger; // NAJPIERW przypisz logger!
+        
+        var relativePath = cfg["Respawn:SettingsFile"] ?? "appsettings/respawn.settings.json";
+
+        _filePath = Path.IsPathRooted(relativePath) 
+            ? relativePath 
+            : Path.Combine(AppContext.BaseDirectory, relativePath);
+
+        _logger.LogInformation("[SettingsStore] Using file: {Path}", _filePath);
     }
 
     public async Task<PersistedSettings> LoadAsync(CancellationToken ct = default)
@@ -25,8 +30,12 @@ public sealed class SettingsStore
         try
         {
             if (!File.Exists(_filePath))
+            {
+                _logger.LogWarning("[SettingsStore] File not found, using defaults: {Path}", _filePath);
                 return PersistedSettings.Default();
+            }
 
+            _logger.LogDebug("[SettingsStore] Loading from {Path}", _filePath);
             await using var fs = File.OpenRead(_filePath);
             var doc = await JsonSerializer.DeserializeAsync<JsonElement>(fs, cancellationToken: ct);
             if (doc.ValueKind == JsonValueKind.Undefined || doc.ValueKind == JsonValueKind.Null)
@@ -51,6 +60,9 @@ public sealed class SettingsStore
                     : 0
             };
 
+            _logger.LogInformation("[SettingsStore] Loaded: Channels={ChCount}, Base={Base}, Lead={Lead}s", 
+                ps.Channels.Count, ps.BaseHhmm, ps.LeadSeconds);
+
             return ps;
         }
         catch (Exception ex)
@@ -66,7 +78,10 @@ public sealed class SettingsStore
         {
             var dir = Path.GetDirectoryName(_filePath);
             if (!string.IsNullOrEmpty(dir))
+            {
                 Directory.CreateDirectory(dir);
+                _logger.LogDebug("[SettingsStore] Created directory: {Dir}", dir);
+            }
 
             var payload = new
             {
@@ -78,6 +93,9 @@ public sealed class SettingsStore
 
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(_filePath, json, ct);
+            
+            _logger.LogInformation("[SettingsStore] ✓ Saved to {Path}: Channels={ChCount}, Base={Base}, Lead={Lead}s", 
+                _filePath, settings.Channels.Count, settings.BaseHhmm, settings.LeadSeconds);
         }
         catch (Exception ex)
         {

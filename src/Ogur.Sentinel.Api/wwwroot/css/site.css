@@ -1,9 +1,5 @@
-/* Ogur Sentinel — site.css (neon glass)
-   - bez JS, bez zewnętrznych bibliotek
-   - działa z domyślnym _Layout.cshtml i Bootstrapem
-*/
+/* Ogur Sentinel — site.css (neon glass) */
 
-/* === Zmienne i bazowe === */
 :root{
     --bg:#0f1220;
     --bg2:#0a0d18;
@@ -16,22 +12,24 @@
     --card-bg2: rgba(255,255,255,.03);
     --border: rgba(255,255,255,.10);
     --glass: rgba(255,255,255,.08);
+    --footer-height: 60px;
 }
 
 *{ box-sizing:border-box; }
-html{ height:100%; }
+html{ height:100%; font-size:16px; }
 html, body{ scroll-behavior:smooth; }
+
 body{
-    min-height:100%;
+    min-height:100vh;
     margin:0;
+    padding-bottom: var(--footer-height);
+    position: relative;
     color:var(--fg);
-    background:
-            radial-gradient(1200px 800px at 20% 10%, #18203a 0%, var(--bg) 55%, var(--bg2) 100%);
+    background: radial-gradient(1200px 800px at 20% 10%, #18203a 0%, var(--bg) 55%, var(--bg2) 100%) fixed;
     font:16px/1.6 system-ui, Segoe UI, Roboto, Arial, sans-serif;
     overflow-x:hidden;
 }
 
-/* delikatna siatka tła */
 body::before{
     content:"";
     position:fixed; inset:0; pointer-events:none;
@@ -42,7 +40,6 @@ body::before{
     z-index:-1;
 }
 
-/* Typografia */
 h1,h2,h3,h4{ margin-top:.2rem; margin-bottom:.6rem; line-height:1.2; }
 h1{
     font-size:clamp(28px,4vw,48px);
@@ -59,7 +56,7 @@ p, .text-muted{ color:var(--muted) }
 a{ color:var(--accent); text-decoration:none; }
 a:hover{ text-decoration:underline; }
 
-/* === Navbar & footer (domyślny layout) === */
+/* === Navbar === */
 .navbar{
     --bs-navbar-color: var(--fg);
     --bs-navbar-hover-color: var(--accent);
@@ -73,9 +70,6 @@ a:hover{ text-decoration:underline; }
     border-bottom:1px solid var(--border);
     backdrop-filter: blur(8px);
     box-shadow:0 10px 30px rgba(0,0,0,.25);
-}
-/* Make nav links readable on dark glass navbar */
-.glass-nav{
     --bs-navbar-color: rgba(231,233,238,.92);
     --bs-navbar-hover-color: var(--accent);
     --bs-navbar-active-color: #fff;
@@ -91,7 +85,6 @@ a:hover{ text-decoration:underline; }
     color: var(--accent) !important;
 }
 
-/* Active page highlight */
 .glass-nav .navbar-nav .nav-link.active,
 .glass-nav .navbar-nav .nav-link[aria-current="page"]{
     color:#fff !important;
@@ -105,7 +98,6 @@ a:hover{ text-decoration:underline; }
     opacity:.9;
 }
 
-/* Mobile dropdown readability */
 @media (max-width: 576px){
     .glass-nav .navbar-collapse{
         background: rgba(255,255,255,.06);
@@ -120,14 +112,32 @@ a:hover{ text-decoration:underline; }
     background:linear-gradient(90deg, var(--accent), var(--accent2));
     -webkit-background-clip:text; background-clip:text; color:transparent;
 }
+
+/* === Footer - FIXED NA DOLE === */
 footer{
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: var(--footer-height);
     border-top:1px solid var(--border)!important;
     color:var(--muted);
-    background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02));
+    background:linear-gradient(180deg, rgba(15,18,32,.95), rgba(10,13,24,.98));
+    backdrop-filter: blur(12px);
+    z-index: 999;
+    display: flex;
+    align-items: center;
 }
 
-/* === Karty, sekcje, kontenery === */
-.container, .container-fluid{ padding-top:18px; padding-bottom:24px; }
+footer .container {
+    padding: 0;
+}
+
+/* === Container === */
+.container, .container-fluid{
+    padding-top:18px;
+    padding-bottom:24px;
+}
 
 .card, .panel, .glass{
     background:linear-gradient(180deg, var(--card-bg1), var(--card-bg2));
@@ -139,15 +149,15 @@ footer{
 .card{ overflow:hidden; }
 .card-header{ background:rgba(255,255,255,.04); border-bottom:1px solid var(--border); }
 
-/* Przyjemny „block” na treść główną gdy nie używasz .card */
 .main-block{
-    width:min(980px, 92vw);
-    margin:24px auto;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto 2rem;
     padding:24px;
 }
-@media (max-width:820px){ .main-block{ padding:18px } }
+@media (max-width:820px){ .main-block{ padding:18px; } }
 
-/* === Przyciski (działa z Bootstrap .btn) === */
+/* === Buttons === */
 .btn{
     border:1px solid rgba(255,255,255,.18) !important;
     background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05)) !important;
@@ -169,13 +179,12 @@ footer{
 }
 .btn-link{ color:var(--accent) !important; }
 
-/* Focus (dostępność) */
 .btn:focus, .form-control:focus, .form-check-input:focus{
     box-shadow:0 0 0 0.15rem rgba(255,255,255,.9), 0 0 0 0.35rem var(--accent) !important;
     outline:0;
 }
 
-/* === Formularze === */
+/* === Forms === */
 .form-control, .form-select{
     background:rgba(255,255,255,.06);
     border:1px solid var(--border);
@@ -184,7 +193,7 @@ footer{
 }
 .form-control::placeholder{ color:rgba(230,232,238,.6); }
 
-/* === Drobne utility === */
+/* === Utility === */
 .pill{
     display:inline-flex; align-items:center; gap:.5rem;
     padding:.45rem .8rem; border-radius:999px;
@@ -198,7 +207,7 @@ footer{
     -webkit-background-clip:text; background-clip:text; color:transparent;
 }
 
-/* === Tabela (lekki glass) === */
+/* === Table === */
 .table{
     --tbl-border: rgba(255,255,255,.12);
     color:var(--fg);
@@ -214,10 +223,6 @@ footer{
 }
 .table tbody tr:hover{ background:rgba(255,255,255,.05); }
 
-/* === Margines na dół strony (jak w oryginalnym template) === */
-body{ margin-bottom:60px; }
-
-/* Responsywne dopasowanie bazowego rozmiaru fontu */
 @media (min-width:768px){
     html{ font-size:16px; }
 }

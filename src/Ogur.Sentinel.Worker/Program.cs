@@ -97,7 +97,7 @@ builder.Services.AddHostedService<CommandRegistrationService>();
 // --- Minimal internal HTTP (in-proc Kestrel) ---
 builder.Services.AddSingleton<InternalEndpoints>();
 
-builder.Services.AddSingleton<VoiceService>();
+builder.Services.AddSingleton<VoiceService2>();
 builder.Services.AddSingleton<RespawnSchedulerService>();
 builder.Services.AddHostedService<RespawnWorker>();
 

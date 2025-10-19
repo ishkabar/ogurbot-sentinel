@@ -14,7 +14,7 @@ public sealed class RespawnState
     private readonly List<ulong> _channels = new();
 
     public IReadOnlyList<ulong> Channels => _channels;
-    public string BaseHhmm { get; set; } = "00:00";
+    public string BaseHhmm { get; set; } = "00:00:00";
     public int LeadSeconds { get; set; } = 0;
 
     // Runtime toggles (controlled by slash commands in Worker)

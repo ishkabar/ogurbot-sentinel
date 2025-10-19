@@ -1,0 +1,223 @@
+﻿@page
+@{
+    ViewData["Title"] = "Respawn Settings";
+}
+
+<div class="main-block card">
+    <h1>🔔 Respawn Settings</h1>
+    
+    <div id="loading" class="alert alert-info">Loading settings...</div>
+    <div id="error" class="alert alert-danger d-none"></div>
+    <div id="success" class="alert alert-success d-none">✓ Settings saved successfully!</div>
+
+    <div id="settings-form" class="d-none">
+        <form id="respawnForm">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4 class="title-gradient">⚙️ Timer Configuration</h4>
+                    
+                    <div class="mb-3">
+                        <label for="baseTime" class="form-label">Base Time (HH:MM:SS)</label>
+                        <input type="text" class="form-control" id="baseTime" placeholder="01:10:30" pattern="\d{2}:\d{2}:\d{2}" required>
+                        <small class="text-muted">Starting time for respawn alignment</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="leadSeconds" class="form-label">Lead Seconds</label>
+                        <input type="number" class="form-control" id="leadSeconds" min="0" max="300" required>
+                        <small class="text-muted">Play sound X seconds before actual respawn</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Voice Channels (max 3)</label>
+                        <div id="channelsList"></div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addChannel()">+ Add Channel</button>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h4 class="title-gradient">🔊 Status</h4>
+                    
+                    <div class="glass p-3 mb-3">
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enabled10m">
+                                <label class="form-check-label" for="enabled10m">
+                                    <strong class="ok">10-minute respawns</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-0">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enabled2h">
+                                <label class="form-check-label" for="enabled2h">
+                                    <strong class="ok">2-hour respawns</strong>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass p-3">
+                        <h5 class="muted">⏰ Next Triggers:</h5>
+                        <div class="mb-2">
+                            <span class="pill">
+                                <span>10m:</span>
+                                <strong id="next10m" class="ok">-</strong>
+                            </span>
+                        </div>
+                        <div>
+                            <span class="pill">
+                                <span>2h:</span>
+                                <strong id="next2h" class="ok">-</strong>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                <button type="button" class="btn" onclick="loadSettings()">🔄 Reload</button>
+                <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+let currentChannels = [];
+
+async function loadSettings() {
+    document.getElementById('loading').classList.remove('d-none');
+    document.getElementById('error').classList.add('d-none');
+    document.getElementById('success').classList.add('d-none');
+    
+    try {
+        const response = await fetch('/settings');
+        const data = await response.json();
+        
+        document.getElementById('baseTime').value = data.base_hhmm;
+        document.getElementById('leadSeconds').value = data.lead_seconds;
+        document.getElementById('enabled10m').checked = data.enabled_10m;
+        document.getElementById('enabled2h').checked = data.enabled_2h;
+        
+        currentChannels = data.channels || [];
+        
+        // Pobierz info o kanałach (nazwy)
+        try {
+            const channelsResp = await fetch('/channels/info');
+            const channelsData = await channelsResp.json();
+            window.channelNames = {};
+            channelsData.forEach(ch => {
+                window.channelNames[ch.id] = { name: ch.name, guild: ch.guild };
+            });
+        } catch (e) {
+            console.warn('Failed to load channel names:', e);
+        }
+        
+        renderChannels();
+        
+        // Load next triggers
+        const nextResp = await fetch('/respawn/next');
+        const nextData = await nextResp.json();
+        document.getElementById('next10m').textContent = new Date(nextData.next10m).toLocaleString();
+        document.getElementById('next2h').textContent = new Date(nextData.next2h).toLocaleString();
+        
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('settings-form').classList.remove('d-none');
+    } catch (error) {
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('error').textContent = 'Failed to load settings: ' + error.message;
+        document.getElementById('error').classList.remove('d-none');
+    }
+}
+
+function renderChannels() {
+    const container = document.getElementById('channelsList');
+    container.innerHTML = '';
+    
+    if (currentChannels.length === 0) {
+        container.innerHTML = '<p class="text-muted">No channels configured</p>';
+        return;
+    }
+    
+    currentChannels.forEach((ch, idx) => {
+        const info = window.channelNames?.[ch];
+        const displayName = info ? `#${info.name}` : `Channel`;
+        const displayId = `<code style="color: var(--muted); font-size: 0.75em;">${ch}</code>`;
+        
+        const pill = document.createElement('span');
+        pill.className = 'pill me-2 mb-2 d-inline-flex align-items-center';
+        pill.innerHTML = `
+            <span style="color: var(--accent);">${displayName}</span>
+            <span class="ms-2">${displayId}</span>
+            <button class="btn-close btn-close-white ms-2" type="button" onclick="removeChannel(${idx})" 
+                    style="font-size: 0.7em; opacity: 0.7;" 
+                    aria-label="Remove"></button>
+        `;
+        container.appendChild(pill);
+    });
+}
+
+function addChannel() {
+    const channelId = prompt('Enter Discord Channel ID:');
+    if (channelId && !isNaN(channelId)) {
+        if (currentChannels.length < 3) {
+            currentChannels.push(channelId);
+            renderChannels();
+        } else {
+            alert('Maximum 3 channels allowed');
+        }
+    }
+}
+
+function removeChannel(idx) {
+    currentChannels.splice(idx, 1);
+    renderChannels();
+}
+
+document.getElementById('respawnForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const payload = {
+        base_hhmm: document.getElementById('baseTime').value,
+        lead_seconds: parseInt(document.getElementById('leadSeconds').value),
+        channels: currentChannels,
+        roles_allowed: []
+    };
+    
+    try {
+        const response = await fetch('/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+            // Update toggles separately
+            await fetch('/respawn/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enable10m: document.getElementById('enabled10m').checked,
+                    enable2h: document.getElementById('enabled2h').checked
+                })
+            });
+            
+            document.getElementById('success').classList.remove('d-none');
+            setTimeout(() => document.getElementById('success').classList.add('d-none'), 3000);
+            loadSettings(); // Reload to show updated next triggers
+        } else {
+            throw new Error('Save failed');
+        }
+    } catch (error) {
+        document.getElementById('error').textContent = 'Failed to save: ' + error.message;
+        document.getElementById('error').classList.remove('d-none');
+    }
+});
+
+// Load on page load
+loadSettings();
+</script>
+}

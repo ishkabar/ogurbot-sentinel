@@ -16,7 +16,6 @@ public sealed class VoiceService
     private readonly ILogger<VoiceService> _logger;
 
     private static readonly ConcurrentDictionary<ulong, SemaphoreSlim> GuildLocks = new();
-    private static readonly ConcurrentDictionary<ulong, IAudioClient> AudioClients = new();
     private static readonly ConcurrentDictionary<ulong, DateTimeOffset> LastAttemptUtc = new();
 
     public VoiceService(DiscordSocketClient client, DiscordReadyService ready, ILogger<VoiceService> logger)
@@ -32,27 +31,27 @@ public sealed class VoiceService
 
         if (_client.ConnectionState != ConnectionState.Connected || _client.CurrentUser is null)
         {
-            _logger.LogWarning("Discord not connected (state={State}).", _client.ConnectionState);
+            _logger.LogWarning("[VOICE] Discord not connected (state={State}).", _client.ConnectionState);
             return;
         }
 
         if (_client.GetChannel(channelId) is not SocketVoiceChannel targetVc)
         {
-            _logger.LogWarning("Channel {ChannelId} not found or not a voice channel.", channelId);
+            _logger.LogWarning("[VOICE] Channel {ChannelId} not found or not a voice channel.", channelId);
             return;
         }
 
         if (!File.Exists(wavPath))
         {
-            _logger.LogWarning("Audio file not found: {Path}", wavPath);
+            _logger.LogWarning("[VOICE] Audio file not found: {Path}", wavPath);
             return;
         }
 
         var now = DateTimeOffset.UtcNow;
         var last = LastAttemptUtc.GetOrAdd(targetVc.Guild.Id, DateTimeOffset.MinValue);
-        if (now - last < TimeSpan.FromSeconds(5))
+        if (now - last < TimeSpan.FromSeconds(10)) // Zwiększone z 5s do 10s
         {
-            _logger.LogWarning("Join throttled for guild {GuildId}.", targetVc.Guild.Id);
+            _logger.LogWarning("[VOICE] Join throttled for guild {GuildId}.", targetVc.Guild.Id);
             return;
         }
         LastAttemptUtc[targetVc.Guild.Id] = now;
@@ -61,81 +60,89 @@ public sealed class VoiceService
         await gate.WaitAsync(ct);
         try
         {
-            if (AudioClients.TryGetValue(targetVc.Guild.Id, out var existing) &&
-                existing.ConnectionState == ConnectionState.Connected &&
-                (targetVc.Guild.CurrentUser as SocketGuildUser)?.VoiceChannel?.Id == targetVc.Id)
-            {
-                _logger.LogInformation("[VOICE] Reusing audio in #{Channel}.", targetVc.Name);
-                await PlayOnceAsync(existing, targetVc, wavPath, ct);
-                return;
-            }
-
-            var me = targetVc.Guild.CurrentUser as SocketGuildUser;
-            var currentVc = me?.VoiceChannel;
-            if (currentVc is not null && currentVc.Id != targetVc.Id)
-            {
-                try { await currentVc.DisconnectAsync(); } catch { /* ignore */ }
-                await Task.Delay(200, ct);
-            }
-
             IAudioClient? audio = null;
-            const int maxAttempts = 5;
+            const int maxAttempts = 3; // Zmniejszone do 3 ale z dłuższymi delay
 
             for (var attempt = 1; attempt <= maxAttempts && audio is null; attempt++)
             {
                 ct.ThrowIfCancellationRequested();
                 try
                 {
-                    _logger.LogInformation("[VOICE] Connecting to #{Channel} (attempt {Attempt}/{Max})...",
-                        targetVc.Name, attempt, maxAttempts);
+                    _logger.LogInformation("[VOICE] === ATTEMPT {Attempt}/{Max} to #{Channel} ===",
+                        attempt, maxAttempts, targetVc.Name);
 
-                    // TWARDY FIX: wymuś disconnect:true przy zestawianiu sesji
+                    // KROK 1: NUCLEAR CLEANUP - zniszcz wszystko
+                    _logger.LogDebug("[VOICE] Step 1: Nuclear cleanup...");
+                    await NuclearCleanupAsync(targetVc);
+
+                    // KROK 2: DŁUGI DELAY - daj Discordowi czas na zapomnienie sesji
+                    var delay = attempt == 1 ? 2000 : (3000 + (attempt * 1000));
+                    _logger.LogDebug("[VOICE] Step 2: Waiting {Ms}ms for Discord to clear session...", delay);
+                    await Task.Delay(delay, ct);
+
+                    // KROK 3: CONNECT z disconnect:true
+                    _logger.LogInformation("[VOICE] Step 3: Connecting with forced disconnect...");
                     audio = await ConnectWithForcedDisconnectAsync(targetVc, selfDeaf: true, selfMute: false, ct);
 
                     if (audio.ConnectionState == ConnectionState.Connected)
                     {
-                        _logger.LogInformation("[VOICE] Connected to #{Channel}.", targetVc.Name);
+                        _logger.LogInformation("[VOICE] ✓ Connected successfully to #{Channel}!", targetVc.Name);
                         break;
                     }
 
-                    throw new TimeoutException("Voice connect returned not-Connected.");
+                    _logger.LogWarning("[VOICE] Connection returned state: {State}", audio.ConnectionState);
+                    await DisposeAudioAsync(audio);
+                    audio = null;
                 }
                 catch (Exception ex) when (IsSessionInvalid4006(ex))
                 {
-                    _logger.LogWarning(ex, "[VOICE] 4006 on connect (attempt {Attempt}/{Max}). Hard teardown & backoff.",
+                    _logger.LogError("[VOICE] ✗ 4006 Session Invalid on attempt {Attempt}/{Max}",
                         attempt, maxAttempts);
-                    await HardTeardownAsync(targetVc, audio);
+
+                    if (audio != null)
+                        await DisposeAudioAsync(audio);
                     audio = null;
-                    await Task.Delay(TimeSpan.FromSeconds(2 + attempt), ct);
+
+                    // Po 4006 - MEGA DŁUGI backoff
+                    var backoff = TimeSpan.FromSeconds(5 + (attempt * 2));
+                    _logger.LogWarning("[VOICE] Waiting {Sec:F1}s after 4006 before retry...", backoff.TotalSeconds);
+                    await Task.Delay(backoff, ct);
+
+                    // Dodatkowy nuclear cleanup po 4006
+                    await NuclearCleanupAsync(targetVc);
                 }
                 catch (TimeoutException tex)
                 {
-                    _logger.LogWarning(tex, "[VOICE] Start timeout (attempt {Attempt}/{Max}).", attempt, maxAttempts);
-                    await HardTeardownAsync(targetVc, audio);
+                    _logger.LogWarning(tex, "[VOICE] Timeout on attempt {Attempt}/{Max}", attempt, maxAttempts);
+                    if (audio != null)
+                        await DisposeAudioAsync(audio);
                     audio = null;
-                    await Task.Delay(TimeSpan.FromSeconds(1 + attempt), ct);
+                    await Task.Delay(TimeSpan.FromSeconds(2 + attempt), ct);
                 }
-                catch (Exception ex)
+                catch (Exception ex) when (!ct.IsCancellationRequested)
                 {
-                    _logger.LogWarning(ex, "[VOICE] Start failed (attempt {Attempt}/{Max}).", attempt, maxAttempts);
-                    await HardTeardownAsync(targetVc, audio);
+                    _logger.LogWarning(ex, "[VOICE] Failed on attempt {Attempt}/{Max}", attempt, maxAttempts);
+                    if (audio != null)
+                        await DisposeAudioAsync(audio);
                     audio = null;
-                    await Task.Delay(TimeSpan.FromSeconds(1 + attempt / 2.0), ct);
+                    await Task.Delay(TimeSpan.FromSeconds(2), ct);
                 }
             }
 
             if (audio is null || audio.ConnectionState != ConnectionState.Connected)
             {
-                _logger.LogError("[VOICE] Giving up after {Max} attempts. Channel=#{Channel}", maxAttempts, targetVc.Name);
+                _logger.LogError("[VOICE] ✗✗✗ FAILED after {Max} attempts to #{Channel} ✗✗✗",
+                    maxAttempts, targetVc.Name);
                 return;
             }
 
-            AudioClients[targetVc.Guild.Id] = audio;
-
+            // Play audio
             await PlayOnceAsync(audio, targetVc, wavPath, ct);
 
-            try { await targetVc.DisconnectAsync(); } catch { /* ignore */ }
-            AudioClients.TryRemove(targetVc.Guild.Id, out _);
+            // Cleanup
+            await DisposeAudioAsync(audio);
+            try { await targetVc.DisconnectAsync(); } catch { }
+            await NuclearCleanupAsync(targetVc);
         }
         finally
         {
@@ -143,15 +150,102 @@ public sealed class VoiceService
         }
     }
 
-    private static async Task HardTeardownAsync(SocketVoiceChannel targetVc, IAudioClient? audio)
+    /// <summary>
+    /// NUCLEAR OPTION - niszczy WSZYSTKO związane z audio dla tej gildii
+    /// </summary>
+    private async Task NuclearCleanupAsync(SocketVoiceChannel vc)
     {
-        try { await targetVc.DisconnectAsync(); } catch { /* ignore */ }
-        if (audio != null)
+        var guild = vc.Guild;
+        _logger.LogDebug("[VOICE] NuclearCleanup for guild {GuildId}", guild.Id);
+
+        // 1. Discord API disconnect
+        try
         {
-            try { await audio.StopAsync(); } catch { /* ignore */ }
-            try { (audio as IDisposable)?.Dispose(); } catch { /* ignore */ }
+            await vc.DisconnectAsync();
+            _logger.LogDebug("[VOICE] DisconnectAsync completed");
         }
-        await Task.Delay(200);
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "[VOICE] DisconnectAsync threw");
+        }
+
+        // 2. Czekaj aż bot FAKTYCZNIE opuści voice (polling CurrentUser.VoiceChannel)
+        for (int i = 0; i < 30; i++) // 3s max
+        {
+            var me = guild.CurrentUser as SocketGuildUser;
+            if (me?.VoiceChannel is null)
+            {
+                _logger.LogDebug("[VOICE] Bot confirmed left voice after {Ms}ms", i * 100);
+                break;
+            }
+            await Task.Delay(100);
+        }
+
+        // 3. REFLECTION: Zniszcz _audioClient w SocketGuild
+        try
+        {
+            var audioClientField = typeof(SocketGuild).GetField("_audioClient",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+            if (audioClientField != null)
+            {
+                var existingClient = audioClientField.GetValue(guild) as IAudioClient;
+                if (existingClient != null)
+                {
+                    _logger.LogDebug("[VOICE] Found _audioClient, destroying...");
+
+                    try { await existingClient.StopAsync(); } catch { }
+                    try { (existingClient as IDisposable)?.Dispose(); } catch { }
+
+                    // WYZERUJ pole - wymusza nowy IAudioClient
+                    audioClientField.SetValue(guild, null);
+                    _logger.LogDebug("[VOICE] _audioClient nuked");
+                }
+            }
+
+            // 4. Reset _audioLock semaphore
+            var audioLockField = typeof(SocketGuild).GetField("_audioLock",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+            if (audioLockField != null)
+            {
+                var lockObj = audioLockField.GetValue(guild);
+                if (lockObj != null)
+                {
+                    try { (lockObj as IDisposable)?.Dispose(); } catch { }
+                    audioLockField.SetValue(guild, new SemaphoreSlim(1, 1));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "[VOICE] Reflection cleanup failed (continuing)");
+        }
+
+        // 5. DŁUGI oddech - Discord backend musi zapomnieć o sesji
+        await Task.Delay(800);
+        _logger.LogDebug("[VOICE] NuclearCleanup complete");
+    }
+
+    private async Task DisposeAudioAsync(IAudioClient audio)
+    {
+        try
+        {
+            if (audio.ConnectionState != ConnectionState.Disconnected)
+            {
+                await audio.StopAsync();
+                // Czekaj na disconnect
+                for (int i = 0; i < 20; i++) // 2s max
+                {
+                    if (audio.ConnectionState == ConnectionState.Disconnected)
+                        break;
+                    await Task.Delay(100);
+                }
+            }
+        }
+        catch { }
+
+        try { (audio as IDisposable)?.Dispose(); } catch { }
     }
 
     private async Task PlayOnceAsync(IAudioClient audio, SocketVoiceChannel vc, string wavPath, CancellationToken ct)
@@ -159,7 +253,7 @@ public sealed class VoiceService
         using var ffmpeg = StartFfmpeg(wavPath);
         if (ffmpeg is null || ffmpeg.HasExited)
         {
-            _logger.LogError("ffmpeg failed to start. Check installation and PATH.");
+            _logger.LogError("[VOICE] ffmpeg failed to start");
             return;
         }
 
@@ -171,20 +265,27 @@ public sealed class VoiceService
         }
         finally
         {
-            try { await pcm.DisposeAsync(); } catch { /* ignore */ }
+            try { await pcm.DisposeAsync(); } catch { }
         }
 
-        _logger.LogInformation("Played {File} on #{Channel} ({Guild}).",
+        _logger.LogInformation("[VOICE] ✓ Played {File} on #{Channel} ({Guild})",
             Path.GetFileName(wavPath), vc.Name, vc.Guild.Name);
     }
 
     private static bool IsSessionInvalid4006(Exception ex)
     {
-        var t = ex.GetType();
-        if (t.FullName != "Discord.Net.WebSocketClosedException") return false;
-        var prop = t.GetProperty("CloseCode");
-        var val = prop?.GetValue(ex);
-        return (val is int i && i == 4006) || (val is ushort u && u == 4006);
+        for (var cur = ex; cur != null; cur = cur.InnerException!)
+        {
+            var t = cur.GetType();
+            if (t.FullName == "Discord.Net.WebSocketClosedException")
+            {
+                var prop = t.GetProperty("CloseCode");
+                var val = prop?.GetValue(cur);
+                if ((val is int i && i == 4006) || (val is ushort u && u == 4006))
+                    return true;
+            }
+        }
+        return false;
     }
 
     private static Process? StartFfmpeg(string path) =>
@@ -195,13 +296,10 @@ public sealed class VoiceService
             RedirectStandardOutput = true,
             UseShellExecute = false
         });
-    
+
     private static readonly MethodInfo? ConnectAudioInternal =
         typeof(SocketGuild).GetMethod("ConnectAudioAsync",
-            BindingFlags.Instance | BindingFlags.NonPublic,
-            binder: null,
-            types: new[] { typeof(ulong), typeof(bool), typeof(bool), typeof(bool), typeof(bool) },
-            modifiers: null);
+            BindingFlags.Instance | BindingFlags.NonPublic);
 
     private static async Task<IAudioClient> ConnectWithForcedDisconnectAsync(
         SocketVoiceChannel vc, bool selfDeaf, bool selfMute, CancellationToken ct)
@@ -210,17 +308,22 @@ public sealed class VoiceService
 
         if (ConnectAudioInternal != null)
         {
-            // external:false, disconnect:true
             var task = (Task<IAudioClient>)ConnectAudioInternal.Invoke(guild, new object[]
             {
-                vc.Id, selfDeaf, selfMute, /*external*/ false, /*disconnect*/ true
+                vc.Id,
+                selfDeaf,
+                selfMute,
+                false, // external
+                true   // disconnect - WYMUSZA nowy session_id
             })!;
 
-            // .NET 8: cooperative cancellation
-            return await task.WaitAsync(ct).ConfigureAwait(false);
+            return await task.WaitAsync(TimeSpan.FromSeconds(20), ct);
         }
 
-        // Fallback: public API
-        return await vc.ConnectAsync(selfDeaf: selfDeaf, selfMute: selfMute).ConfigureAwait(false);
+        // Fallback
+        try { await vc.DisconnectAsync(); } catch { }
+        await Task.Delay(1000, ct);
+        return await vc.ConnectAsync(selfDeaf: selfDeaf, selfMute: selfMute)
+            .WaitAsync(TimeSpan.FromSeconds(20), ct);
     }
 }

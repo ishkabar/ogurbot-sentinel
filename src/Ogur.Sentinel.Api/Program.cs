@@ -29,12 +29,14 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();       // <-- konieczne do CSS i JS
+app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapHealthChecks("/health");
+
+// === Proxy endpoints to Worker ===
 
 app.MapGet("/settings", async (IHttpClientFactory cf) =>
 {
@@ -50,6 +52,30 @@ app.MapPost("/settings", async (IHttpClientFactory cf, HttpContext ctx) =>
     var res = await http.PostAsJsonAsync("/settings", payload);
     res.EnsureSuccessStatusCode();
     return Results.Ok();
+});
+
+app.MapGet("/respawn/next", async (IHttpClientFactory cf) =>
+{
+    var http = cf.CreateClient("worker");
+    var res = await http.GetFromJsonAsync<object>("/respawn/next");
+    return Results.Ok(res);
+});
+
+app.MapPost("/respawn/toggle", async (IHttpClientFactory cf, HttpContext ctx) =>
+{
+    var http = cf.CreateClient("worker");
+    var payload = await ctx.Request.ReadFromJsonAsync<object>();
+    var res = await http.PostAsJsonAsync("/respawn/toggle", payload);
+    res.EnsureSuccessStatusCode();
+    var result = await res.Content.ReadFromJsonAsync<object>();
+    return Results.Ok(result);
+});
+
+app.MapGet("/channels/info", async (IHttpClientFactory cf) =>
+{
+    var http = cf.CreateClient("worker");
+    var res = await http.GetFromJsonAsync<object>("/channels/info");
+    return Results.Ok(res);
 });
 
 app.Run();
