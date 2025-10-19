@@ -1,33 +1,55 @@
-namespace Ogur.Sentinel.Api;
+using System.Net.Http.Json;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
-public class Program
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddEnvironmentVariables();
+
+builder.Services.AddRazorPages();
+builder.Services.AddHealthChecks();
+
+builder.Services.AddHttpClient("worker", (sp, http) =>
 {
-    public static void Main(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
+    var cfg = sp.GetRequiredService<IConfiguration>();
+    http.BaseAddress = new Uri(cfg["Worker:BaseUrl"] ?? "http://localhost:9090");
+});
 
-        // Add services to the container.
-        builder.Services.AddRazorPages();
+var app = builder.Build();
 
-        var app = builder.Build();
-
-        // Configure the HTTP request pipeline.
-        if (!app.Environment.IsDevelopment())
-        {
-            app.UseExceptionHandler("/Error");
-            // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-            app.UseHsts();
-        }
-
-        app.UseHttpsRedirection();
-        app.UseStaticFiles();
-
-        app.UseRouting();
-
-        app.UseAuthorization();
-
-        app.MapRazorPages();
-
-        app.Run();
-    }
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
 }
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();       // <-- konieczne do CSS i JS
+app.UseRouting();
+app.UseAuthorization();
+
+app.MapRazorPages();
+app.MapHealthChecks("/health");
+
+app.MapGet("/settings", async (IHttpClientFactory cf) =>
+{
+    var http = cf.CreateClient("worker");
+    var res = await http.GetFromJsonAsync<object>("/settings");
+    return Results.Ok(res);
+});
+
+app.MapPost("/settings", async (IHttpClientFactory cf, HttpContext ctx) =>
+{
+    var http = cf.CreateClient("worker");
+    var payload = await ctx.Request.ReadFromJsonAsync<object>();
+    var res = await http.PostAsJsonAsync("/settings", payload);
+    res.EnsureSuccessStatusCode();
+    return Results.Ok();
+});
+
+app.Run();

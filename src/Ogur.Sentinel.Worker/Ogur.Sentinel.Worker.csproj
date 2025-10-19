@@ -15,4 +15,41 @@
       </Content>
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="assets\**\*.*">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+
+    <ItemGroup>
+      <ProjectReference Include="..\Ogur.Sentinel.Core\Ogur.Sentinel.Core.csproj" />
+      <ProjectReference Include="..\Ogur.Sentinel.Abstractions\Ogur.Sentinel.Abstractions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Discord.Net" Version="3.18.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="8.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="appsettings\appsettings.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="appsettings\respawn.settings.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="assets\respawn_2h.wav">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="assets\respawn_10m.wav">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
