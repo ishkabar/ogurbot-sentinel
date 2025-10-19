@@ -78,6 +78,7 @@
 
             <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                 <button type="button" class="btn" onclick="loadSettings()">🔄 Reload</button>
+                <button type="button" class="btn btn-secondary" onclick="recalculate()">🔄 Recalculate Next</button>
                 <button type="submit" class="btn btn-primary">💾 Save Settings</button>
             </div>
         </form>
@@ -101,9 +102,9 @@ async function loadSettings() {
         document.getElementById('leadSeconds').value = data.lead_seconds;
         document.getElementById('enabled10m').checked = data.enabled_10m;
         document.getElementById('enabled2h').checked = data.enabled_2h;
-        
-        currentChannels = data.channels || [];
-        
+
+        currentChannels = (data.channels || []).map(ch => Number(ch));  // ← Konwertuj przy load!
+
         // Pobierz info o kanałach (nazwy)
         try {
             const channelsResp = await fetch('/channels/info');
@@ -130,6 +131,28 @@ async function loadSettings() {
         document.getElementById('loading').classList.add('d-none');
         document.getElementById('error').textContent = 'Failed to load settings: ' + error.message;
         document.getElementById('error').classList.remove('d-none');
+    }
+}
+
+async function recalculate() {
+    try {
+        const response = await fetch('/respawn/recalculate', {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('next10m').textContent = new Date(data.next10m).toLocaleString();
+            document.getElementById('next2h').textContent = new Date(data.next2h).toLocaleString();
+
+            // Show brief success
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✓ Done';
+            setTimeout(() => btn.innerHTML = originalText, 1500);
+        }
+    } catch (error) {
+        console.error('Recalculate failed:', error);
     }
 }
 
@@ -164,7 +187,7 @@ function addChannel() {
     const channelId = prompt('Enter Discord Channel ID:');
     if (channelId && !isNaN(channelId)) {
         if (currentChannels.length < 3) {
-            currentChannels.push(channelId);
+            currentChannels.push(Number(channelId));  // ← Konwertuj na number!
             renderChannels();
         } else {
             alert('Maximum 3 channels allowed');
@@ -186,7 +209,9 @@ document.getElementById('respawnForm').addEventListener('submit', async (e) => {
         channels: currentChannels,
         roles_allowed: []
     };
-    
+
+    console.log('Sending payload:', payload);  // ← Debug
+
     try {
         const response = await fetch('/settings', {
             method: 'POST',

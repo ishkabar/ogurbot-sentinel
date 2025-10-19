@@ -62,4 +62,11 @@ public sealed class RespawnSchedulerService
             }
         }
     }
+    
+    public void RecalculateNext()
+    {
+        // Ta metoda nie robi nic - RespawnWorker i tak liczy next w każdej iteracji
+        // Ale możemy zresetować cached state jeśli byłby
+        _logger.LogInformation("[Respawn] Recalculate requested - next iteration will use new settings");
+    }
 }

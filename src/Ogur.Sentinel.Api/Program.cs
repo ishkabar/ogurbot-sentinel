@@ -46,12 +46,21 @@ app.MapGet("/settings", async (IHttpClientFactory cf) =>
     return Results.Ok(res);
 });
 
-app.MapPost("/settings", async (IHttpClientFactory cf, HttpContext ctx) =>
+app.MapPost("/settings", async (IHttpClientFactory cf, JsonElement settings) =>
 {
     var http = cf.CreateClient("worker");
-    var payload = await ctx.Request.ReadFromJsonAsync<JsonElement>();
-    var res = await http.PostAsJsonAsync("/settings", payload);
+    
+    // Zapisz settings
+    var res = await http.PostAsJsonAsync("/settings", settings);
     res.EnsureSuccessStatusCode();
+    
+    // Wymuś rekalkulację
+    try
+    {
+        await http.PostAsync("/respawn/recalculate", null);
+    }
+    catch { /* ignore */ }
+    
     return Results.Ok();
 });
 

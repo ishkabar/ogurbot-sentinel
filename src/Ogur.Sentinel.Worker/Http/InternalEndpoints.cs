@@ -64,6 +64,18 @@ public sealed class InternalEndpoints
             await _store.SaveAsync(_state.ToPersisted());
             return Results.Ok();
         });
+        
+        webapp.MapPost("/respawn/recalculate", () =>
+        {
+            _scheduler.RecalculateNext();
+            var nowLocal = DateTimeOffset.Now;
+            var (n10, n2h) = _scheduler.ComputeNext(nowLocal);
+            return Results.Ok(new { 
+                message = "Recalculated",
+                next10m = n10, 
+                next2h = n2h 
+            });
+        });
 
         webapp.MapGet("/respawn/next", () =>
         {
