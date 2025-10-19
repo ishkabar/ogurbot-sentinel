@@ -1,13 +1,22 @@
-﻿# Build
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY ./src ./
-RUN dotnet publish ./Ogur.Sentinel.Api/Ogur.Sentinel.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
-
-# Runtime
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
-COPY --from=build /app/publish ./
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "Ogur.Sentinel.Api.dll"]
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY ./Ogur.Sentinel.Api/*.csproj ./Ogur.Sentinel.Api/
+COPY ./Ogur.Sentinel.Abstractions/*.csproj ./Ogur.Sentinel.Abstractions/
+COPY ./Ogur.Sentinel.Core/*.csproj ./Ogur.Sentinel.Core/
+RUN dotnet restore ./Ogur.Sentinel.Api/Ogur.Sentinel.Api.csproj
+
+COPY . .
+RUN dotnet publish ./Ogur.Sentinel.Api/Ogur.Sentinel.Api.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore
+
+FROM base AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet","Ogur.Sentinel.Api.dll"]
