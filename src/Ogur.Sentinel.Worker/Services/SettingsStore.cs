@@ -48,7 +48,11 @@ public sealed class SettingsStore
                     : new List<ulong>(),
 
                 Channels = doc.TryGetProperty("channels", out var ch) && ch.ValueKind == JsonValueKind.Array
-                    ? ch.EnumerateArray().Select(x => (ulong)x.GetUInt64()).ToList()
+                    ? ch.EnumerateArray().Select(x => 
+                        x.ValueKind == JsonValueKind.String 
+                            ? ulong.Parse(x.GetString()!) 
+                            : (ulong)x.GetUInt64()
+                    ).ToList()
                     : new List<ulong>(),
 
                 BaseHhmm = doc.TryGetProperty("base_hhmm", out var bh) && bh.ValueKind is JsonValueKind.String
@@ -85,15 +89,15 @@ public sealed class SettingsStore
 
             var payload = new
             {
-                roles_allowed = settings.RolesAllowed,
-                channels = settings.Channels,
+                roles_allowed = settings.RolesAllowed.Select(r => r.ToString()).ToArray(),
+                channels = settings.Channels.Select(c => c.ToString()).ToArray(),  // ← STRING!
                 base_hhmm = settings.BaseHhmm,
                 lead_seconds = settings.LeadSeconds
             };
 
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(_filePath, json, ct);
-            
+        
             _logger.LogInformation("[SettingsStore] ✓ Saved to {Path}: Channels={ChCount}, Base={Base}, Lead={Lead}s", 
                 _filePath, settings.Channels.Count, settings.BaseHhmm, settings.LeadSeconds);
         }
