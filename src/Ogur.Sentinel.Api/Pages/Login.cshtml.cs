@@ -16,7 +16,6 @@ public class LoginModel : PageModel
 
     public IActionResult OnGet()
     {
-        // Jeśli już zalogowany, redirect do respawn
         if (HttpContext.Session.GetString("IsAuthenticated") == "true")
         {
             return RedirectToPage("/Respawn");
@@ -25,7 +24,7 @@ public class LoginModel : PageModel
         return Page();
     }
 
-    public IActionResult OnPost(string username, string password)
+    public async Task<IActionResult> OnPost(string username, string password)
     {
         var validUser = _config["Auth:RespawnUser"] ?? "admin";
         var validPass = _config["Auth:RespawnPassword"] ?? "changeme";
@@ -33,6 +32,7 @@ public class LoginModel : PageModel
         if (username == validUser && password == validPass)
         {
             HttpContext.Session.SetString("IsAuthenticated", "true");
+            await HttpContext.Session.CommitAsync(); // ✅ Wymuszaj zapis
             return RedirectToPage("/Respawn");
         }
 

@@ -18,5 +18,7 @@ RUN dotnet publish ./Ogur.Sentinel.Api/Ogur.Sentinel.Api.csproj \
 
 FROM base AS final
 WORKDIR /app
+
+RUN mkdir -p /app/keys && chmod 777 /app/keys
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet","Ogur.Sentinel.Api.dll"]

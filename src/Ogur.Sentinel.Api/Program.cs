@@ -15,14 +15,20 @@ builder.Configuration
 builder.Services.AddRazorPages();
 builder.Services.AddHealthChecks();
 
-// ✅ Dodaj Session support
+// ✅ Persystentne Data Protection keys
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/app/keys"))
+    .SetApplicationName("Ogur.Sentinel.Api");
+
+// ✅ Session support
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(8); // 8h session
+    options.IdleTimeout = TimeSpan.FromHours(8);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.Name = ".Sentinel.Session";
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 builder.Services.AddHttpClient("worker", (sp, http) =>
@@ -43,15 +49,14 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// ✅ Dodaj Session middleware
+// ✅ Session middleware
 app.UseSession();
 
 app.UseAuthorization();
 
-// ✅ Session-based Auth middleware (zamiast Basic Auth)
+// ✅ Session-based Auth middleware
 app.Use(async (context, next) =>
 {
-    // Sprawdź czy to /respawn (ale nie /respawn/*)
     if (context.Request.Path.StartsWithSegments("/respawn", StringComparison.OrdinalIgnoreCase))
     {
         var isAuthenticated = context.Session.GetString("IsAuthenticated");
@@ -82,7 +87,6 @@ app.MapPost("/settings", async (IHttpClientFactory cf, HttpContext ctx) =>
 {
     var http = cf.CreateClient("worker");
     
-    // Przekaż surowy JSON bez przeserializowania
     using var reader = new StreamReader(ctx.Request.Body);
     var jsonContent = await reader.ReadToEndAsync();
     
@@ -90,7 +94,6 @@ app.MapPost("/settings", async (IHttpClientFactory cf, HttpContext ctx) =>
     var res = await http.PostAsync("/settings", content);
     res.EnsureSuccessStatusCode();
     
-    // Wymuś rekalkulację
     try
     {
         await http.PostAsync("/respawn/recalculate", null);
@@ -131,12 +134,6 @@ app.MapGet("/channels/info", async (IHttpClientFactory cf) =>
     var http = cf.CreateClient("worker");
     var res = await http.GetFromJsonAsync<JsonElement>("/channels/info");
     return Results.Ok(res);
-});
-
-app.MapPost("/logout-handler", (HttpContext ctx) =>
-{
-    ctx.Session.Clear();
-    return Results.Ok();
 });
 
 app.Run();
