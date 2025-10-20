@@ -42,6 +42,8 @@ public sealed class RespawnState
         SetChannels(p.Channels);
         BaseHhmm = p.BaseHhmm;
         LeadSeconds = p.LeadSeconds;
+        Enabled10m = p.Enabled10m;
+        Enabled2h = p.Enabled2h;
         RolesAllowed.Clear();
         foreach (var r in p.RolesAllowed) RolesAllowed.Add((ulong)r);
     }
@@ -51,6 +53,8 @@ public sealed class RespawnState
         Channels = _channels.Select(x => (ulong)x).ToList(),
         BaseHhmm = BaseHhmm,
         LeadSeconds = LeadSeconds,
+        Enabled10m = Enabled10m,
+        Enabled2h = Enabled2h,
         RolesAllowed = RolesAllowed.Select(x => (ulong)x).ToList()
     };
 }

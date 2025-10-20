@@ -29,6 +29,17 @@
                         <a class="nav-link" asp-area="" asp-page="/Privacy">Privacy</a>
                     </li>
                 </ul>
+                
+                @* ✅ Logout tylko gdy zalogowany *@
+                @if (Context.Session.GetString("IsAuthenticated") == "true")
+                {
+                    <form method="post" action="/Logout" class="d-flex">
+                        <button type="submit" class="btn btn-sm btn-outline-light">
+                            🚪 Logout
+                        </button>
+                    </form>
+                }
+                
             </div>
         </div>
     </nav>

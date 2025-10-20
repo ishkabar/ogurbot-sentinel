@@ -61,7 +61,11 @@ public sealed class SettingsStore
 
                 LeadSeconds = doc.TryGetProperty("lead_seconds", out var ls) && ls.ValueKind is JsonValueKind.Number
                     ? ls.GetInt32()
-                    : 0
+                    : 0,
+                
+                Enabled10m = doc.TryGetProperty("enabled_10m", out var e10) && e10.ValueKind is JsonValueKind.True,
+                
+                Enabled2h = doc.TryGetProperty("enabled_2h", out var e2h) && e2h.ValueKind is JsonValueKind.True
             };
 
             _logger.LogInformation("[SettingsStore] Loaded: Channels={ChCount}, Base={Base}, Lead={Lead}s", 
@@ -92,7 +96,9 @@ public sealed class SettingsStore
                 roles_allowed = settings.RolesAllowed.Select(r => r.ToString()).ToArray(),
                 channels = settings.Channels.Select(c => c.ToString()).ToArray(),  // ← STRING!
                 base_hhmm = settings.BaseHhmm,
-                lead_seconds = settings.LeadSeconds
+                lead_seconds = settings.LeadSeconds,
+                enabled_10m = settings.Enabled10m,
+                enabled_2h = settings.Enabled2h
             };
 
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });

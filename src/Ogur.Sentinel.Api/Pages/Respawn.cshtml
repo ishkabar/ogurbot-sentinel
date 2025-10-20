@@ -77,9 +77,9 @@
             </div>
 
             <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                <button type="button" class="btn" onclick="loadSettings()">🔄 Reload</button>
-                <button type="button" class="btn btn-secondary" onclick="recalculate()">🔄 Recalculate Next</button>
-                <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+                <button type="button" id="reloadBtn" class="btn" onclick="reloadWithFeedback(event)">🔄 Reload</button>
+                <button type="button" id="recalculateBtn" class="btn btn-secondary" onclick="recalculateWithFeedback(event)">🔄 Recalculate Next</button>
+                <button type="submit" id="saveBtn" class="btn btn-primary">💾 Save Settings</button>
             </div>
         </form>
     </div>
@@ -88,6 +88,20 @@
 @section Scripts {
 <script>
     let currentChannels = [];
+
+    // Helper function for button feedback
+    function showButtonFeedback(button, successText, duration = 2000) {
+        const originalText = button.innerHTML;
+        const originalDisabled = button.disabled;
+        
+        button.disabled = true;
+        button.innerHTML = successText;
+        
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.disabled = originalDisabled;
+        }, duration);
+    }
 
     async function loadSettings() {
         document.getElementById('loading').classList.remove('d-none');
@@ -102,17 +116,14 @@
             document.getElementById('leadSeconds').value = data.lead_seconds;
             document.getElementById('enabled10m').checked = data.enabled_10m;
             document.getElementById('enabled2h').checked = data.enabled_2h;
-
-            // WAŻNE: Zostaw jako STRING, żeby nie obciąć dużych liczb!
+            
             currentChannels = (data.channels || []).map(ch => String(ch));
-
-            // Pobierz info o kanałach (nazwy)
+            
             try {
                 const channelsResp = await fetch('/channels/info');
                 const channelsData = await channelsResp.json();
                 window.channelNames = {};
                 channelsData.forEach(ch => {
-                    // Konwertuj ID na string dla porównania
                     window.channelNames[String(ch.id)] = { name: ch.name, guild: ch.guild };
                 });
             } catch (e) {
@@ -134,9 +145,17 @@
             document.getElementById('error').textContent = 'Failed to load settings: ' + error.message;
             document.getElementById('error').classList.remove('d-none');
         }
-}
+    }
 
-    async function recalculate() {
+    async function reloadWithFeedback(event) {
+        const btn = event.target;
+        await loadSettings();
+        showButtonFeedback(btn, '✓ Reloaded!', 2000);
+    }
+
+    async function recalculateWithFeedback(event) {
+        const btn = event.target;
+        
         try {
             const response = await fetch('/respawn/recalculate', {
                 method: 'POST'
@@ -146,17 +165,16 @@
                 const data = await response.json();
                 document.getElementById('next10m').textContent = new Date(data.next10m).toLocaleString();
                 document.getElementById('next2h').textContent = new Date(data.next2h).toLocaleString();
-
-                // Show brief success
-                const btn = event.target;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✓ Done';
-                setTimeout(() => btn.innerHTML = originalText, 1500);
+                
+                showButtonFeedback(btn, '✓ Recalculated!', 2000);
+            } else {
+                throw new Error('Recalculation failed');
             }
         } catch (error) {
             console.error('Recalculate failed:', error);
+            showButtonFeedback(btn, '✗ Failed', 2000);
         }
-}
+    }
 
     function renderChannels() {
         const container = document.getElementById('channelsList');
@@ -168,38 +186,48 @@
         }
 
         currentChannels.forEach((ch, idx) => {
-            const info = window.channelNames?.[ch];  // ch już jest string
+            const info = window.channelNames?.[ch];
             const displayName = info ? `#${info.name}` : `Channel`;
             const displayId = `<code style="color: var(--muted); font-size: 0.75em;">${ch}</code>`;
 
             const pill = document.createElement('span');
             pill.className = 'pill me-2 mb-2 d-inline-flex align-items-center';
             pill.innerHTML = `
-            <span style="color: var(--accent);">${displayName}</span>
-            <span class="ms-2">${displayId}</span>
-            <button class="btn-close btn-close-white ms-2" type="button" onclick="removeChannel(${idx})" 
-                    style="font-size: 0.7em; opacity: 0.7;" 
-                    aria-label="Remove"></button>
-        `;
+                <span style="color: var(--accent);">${displayName}</span>
+                <span class="ms-2">${displayId}</span>
+                <button class="btn-close btn-close-white ms-2" type="button" onclick="removeChannel(${idx})" 
+                        style="font-size: 0.7em; opacity: 0.7;" 
+                        aria-label="Remove"></button>
+            `;
             container.appendChild(pill);
         });
     }
 
     function addChannel() {
-        const channelId = prompt('Enter Discord Channel ID:');
-        // Sprawdź czy to są tylko cyfry
-        if (channelId && /^\d+$/.test(channelId)) {
-            if (currentChannels.length < 3) {
-                // Zostaw jako STRING!
-                currentChannels.push(channelId);
-                renderChannels();
-            } else {
-                alert('Maximum 3 channels allowed');
-            }
-        } else if (channelId) {
-            alert('Invalid channel ID - must be numbers only');
+        const input = prompt('Enter Discord Channel ID(s):\n(separate multiple IDs with commas, spaces, or new lines)');
+        if (!input) return;
+        
+        const ids = input
+            .split(/[\s,\n]+/) 
+            .map(id => id.trim())
+            .filter(id => id.length > 0)
+            .filter(id => /^\d+$/.test(id));
+
+        if (ids.length === 0) {
+            alert('No valid channel IDs found');
+            return;
         }
-}
+        
+        const available = 3 - currentChannels.length;
+        const toAdd = ids.slice(0, available);
+
+        if (toAdd.length < ids.length) {
+            alert(`Added ${toAdd.length} channels (max 3 total). ${ids.length - toAdd.length} ignored.`);
+        }
+
+        currentChannels.push(...toAdd);
+        renderChannels();
+    }
 
     function removeChannel(idx) {
         currentChannels.splice(idx, 1);
@@ -209,10 +237,17 @@
     document.getElementById('respawnForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        const saveBtn = document.getElementById('saveBtn');
+        const originalText = saveBtn.innerHTML;
+
+        // Show saving state
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '💾 Saving...';
+
         const payload = {
             base_hhmm: document.getElementById('baseTime').value,
             lead_seconds: parseInt(document.getElementById('leadSeconds').value),
-            channels: currentChannels,  // String array - Worker obsłuży to
+            channels: currentChannels,
             roles_allowed: []
         };
 
@@ -226,27 +261,88 @@
             });
 
             if (response.ok) {
-                // Update toggles separately
-                await fetch('/respawn/toggle', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        enable10m: document.getElementById('enabled10m').checked,
-                        enable2h: document.getElementById('enabled2h').checked
-                    })
-                });
-
+                // Success feedback
+                saveBtn.innerHTML = '✓ Saved!';
                 document.getElementById('success').classList.remove('d-none');
                 setTimeout(() => document.getElementById('success').classList.add('d-none'), 3000);
-                loadSettings(); // Reload to show updated next triggers
+
+                // Restore button after 2 seconds
+                setTimeout(() => {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                }, 2000);
+
+                // Reload in background
+                setTimeout(() => loadSettings(), 500);
             } else {
                 throw new Error('Save failed');
             }
         } catch (error) {
+            // Restore on error
+            saveBtn.innerHTML = originalText;
+            saveBtn.disabled = false;
+
             document.getElementById('error').textContent = 'Failed to save: ' + error.message;
             document.getElementById('error').classList.remove('d-none');
         }
 });
+
+    // Toggle handlers - działają od razu bez zapisywania!
+    document.getElementById('enabled10m').addEventListener('change', async (e) => {
+        const checkbox = e.target;
+        const originalState = checkbox.checked;
+
+        try {
+            const response = await fetch('/respawn/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enable10m: checkbox.checked,
+                    enable2h: null  
+                })
+            });
+
+            if (!response.ok) throw new Error('Toggle failed');
+            
+            const label = checkbox.nextElementSibling;
+            const originalText = label.innerHTML;
+            label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
+            setTimeout(() => label.innerHTML = originalText, 2000);
+
+        } catch (error) {
+            console.error('Toggle 10m failed:', error);
+            checkbox.checked = !originalState;
+            alert('Failed to toggle 10m respawns');
+        }
+    });
+
+    document.getElementById('enabled2h').addEventListener('change', async (e) => {
+        const checkbox = e.target;
+        const originalState = checkbox.checked;
+
+        try {
+            const response = await fetch('/respawn/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    enable10m: null,  
+                    enable2h: checkbox.checked
+                })
+            });
+
+            if (!response.ok) throw new Error('Toggle failed');
+            
+            const label = checkbox.nextElementSibling;
+            const originalText = label.innerHTML;
+            label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
+            setTimeout(() => label.innerHTML = originalText, 2000);
+
+        } catch (error) {
+            console.error('Toggle 2h failed:', error);
+            checkbox.checked = !originalState; 
+            alert('Failed to toggle 2h respawns');
+        }
+    });
 
     // Load on page load
     loadSettings();

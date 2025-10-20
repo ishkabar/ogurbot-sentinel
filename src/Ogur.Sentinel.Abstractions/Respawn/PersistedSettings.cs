@@ -12,12 +12,16 @@ public sealed class PersistedSettings
     public string BaseHhmm { get; init; } = "00:00:00";
     /// <summary>Seconds to trigger before the aligned tick.</summary>
     public int LeadSeconds { get; init; }
+    public bool Enabled10m { get; init; }
+    public bool Enabled2h { get; init; }
 
     public static PersistedSettings Default() => new()
     {
         RolesAllowed = new(),
         Channels = new(),
         BaseHhmm = "00:00:00",
-        LeadSeconds = 0
+        LeadSeconds = 0,
+        Enabled10m = false,
+        Enabled2h = false
     };
 }

@@ -15,6 +15,16 @@ builder.Configuration
 builder.Services.AddRazorPages();
 builder.Services.AddHealthChecks();
 
+// ✅ Dodaj Session support
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8); // 8h session
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.Name = ".Sentinel.Session";
+});
+
 builder.Services.AddHttpClient("worker", (sp, http) =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
@@ -32,7 +42,29 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+// ✅ Dodaj Session middleware
+app.UseSession();
+
 app.UseAuthorization();
+
+// ✅ Session-based Auth middleware (zamiast Basic Auth)
+app.Use(async (context, next) =>
+{
+    // Sprawdź czy to /respawn (ale nie /respawn/*)
+    if (context.Request.Path.StartsWithSegments("/respawn", StringComparison.OrdinalIgnoreCase))
+    {
+        var isAuthenticated = context.Session.GetString("IsAuthenticated");
+        
+        if (isAuthenticated != "true")
+        {
+            context.Response.Redirect("/Login");
+            return;
+        }
+    }
+    
+    await next();
+});
 
 app.MapRazorPages();
 app.MapHealthChecks("/health");
@@ -46,12 +78,16 @@ app.MapGet("/settings", async (IHttpClientFactory cf) =>
     return Results.Ok(res);
 });
 
-app.MapPost("/settings", async (IHttpClientFactory cf, JsonElement settings) =>
+app.MapPost("/settings", async (IHttpClientFactory cf, HttpContext ctx) =>
 {
     var http = cf.CreateClient("worker");
     
-    // Zapisz settings
-    var res = await http.PostAsJsonAsync("/settings", settings);
+    // Przekaż surowy JSON bez przeserializowania
+    using var reader = new StreamReader(ctx.Request.Body);
+    var jsonContent = await reader.ReadToEndAsync();
+    
+    var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+    var res = await http.PostAsync("/settings", content);
     res.EnsureSuccessStatusCode();
     
     // Wymuś rekalkulację

@@ -54,7 +54,7 @@ public sealed class InternalEndpoints
         {
             base_hhmm = _state.BaseHhmm,
             lead_seconds = _state.LeadSeconds,
-            channels = _state.Channels,
+            channels = _state.Channels.Select(c => c.ToString()).ToArray(),
             enabled_10m = _state.Enabled10m,
             enabled_2h = _state.Enabled2h
         }));
@@ -77,7 +77,9 @@ public sealed class InternalEndpoints
                 Channels = channels,
                 BaseHhmm = doc.RootElement.GetProperty("base_hhmm").GetString()!,
                 LeadSeconds = doc.RootElement.GetProperty("lead_seconds").GetInt32(),
-                RolesAllowed = new List<ulong>()
+                RolesAllowed = new List<ulong>(),
+                Enabled10m = _state.Enabled10m,
+                Enabled2h = _state.Enabled2h
             };
             
             _state.ApplyPersisted(settings);
@@ -104,10 +106,20 @@ public sealed class InternalEndpoints
             return Results.Ok(new { next10m = n10, next2h = n2h });
         });
 
-        webapp.MapPost("/respawn/toggle", (bool? enable10m, bool? enable2h) =>
+        webapp.MapPost("/respawn/toggle", async (HttpContext ctx) =>
         {
-            if (enable10m is not null) _state.Enabled10m = enable10m.Value;
-            if (enable2h is not null) _state.Enabled2h = enable2h.Value;
+            using var reader = new StreamReader(ctx.Request.Body);
+            var json = await reader.ReadToEndAsync();
+            var doc = JsonDocument.Parse(json);
+    
+            if (doc.RootElement.TryGetProperty("enable10m", out var e10) && e10.ValueKind != JsonValueKind.Null)
+                _state.Enabled10m = e10.GetBoolean();
+        
+            if (doc.RootElement.TryGetProperty("enable2h", out var e2h) && e2h.ValueKind != JsonValueKind.Null)
+                _state.Enabled2h = e2h.GetBoolean();
+            
+            await _store.SaveAsync(_state.ToPersisted());
+    
             return Results.Ok(new { _state.Enabled10m, _state.Enabled2h });
         });
         
@@ -136,7 +148,7 @@ public sealed class InternalEndpoints
         
                 return new 
                 {
-                    id = chId,
+                    id = chId.ToString(),
                     name = channel?.Name ?? "Unknown Channel",
                     guild = channel?.Guild?.Name ?? "Unknown Guild"
                 };

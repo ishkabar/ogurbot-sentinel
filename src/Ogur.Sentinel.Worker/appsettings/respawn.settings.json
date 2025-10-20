@@ -2,5 +2,7 @@
   "roles_allowed": [],
   "channels": [],
   "base_hhmm": "01:10:00",
-  "lead_seconds": 20
+  "lead_seconds": 20,
+  "enabled_10m": false,
+  "enabled_2h": false
 }
