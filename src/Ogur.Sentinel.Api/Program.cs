@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,12 +16,10 @@ builder.Configuration
 builder.Services.AddRazorPages();
 builder.Services.AddHealthChecks();
 
-// ✅ Persystentne Data Protection keys
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("/app/keys"))
     .SetApplicationName("Ogur.Sentinel.Api");
 
-// ✅ Session support
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
