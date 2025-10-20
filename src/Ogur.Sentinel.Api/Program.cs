@@ -133,4 +133,10 @@ app.MapGet("/channels/info", async (IHttpClientFactory cf) =>
     return Results.Ok(res);
 });
 
+app.MapPost("/logout-handler", (HttpContext ctx) =>
+{
+    ctx.Session.Clear();
+    return Results.Ok();
+});
+
 app.Run();
