@@ -41,7 +41,7 @@ public static class SchedulingMath
         var steps = (int)Math.Floor(elapsed / period) + 1;
         var nextTick = baseFloor + TimeSpan.FromTicks(period.Ticks * steps);
 
-        var candidate = nextTick + lead;
+        var candidate = nextTick - lead;
         if (candidate <= nowLocal)
             candidate = candidate + period;
 
