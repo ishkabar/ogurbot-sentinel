@@ -14,6 +14,7 @@ namespace Ogur.Sentinel.Core.Respawn;
 public sealed class RespawnState
 {
     private readonly List<ulong> _channels = new();
+    public event Action? OnSettingsChanged;
 
     public IReadOnlyList<ulong> Channels => _channels;
     public string BaseHhmm { get; set; } = "00:00:00";
@@ -35,6 +36,11 @@ public sealed class RespawnState
         _channels.AddRange(ids.Take(MaxChannels));
     }
 
+    public void NotifySettingsChanged() 
+    {
+        OnSettingsChanged?.Invoke();
+    }
+    
     public bool RemoveChannel(ulong id)
     {
         var removed = _channels.Remove(id);

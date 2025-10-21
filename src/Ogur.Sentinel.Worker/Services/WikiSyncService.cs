@@ -54,7 +54,6 @@ public sealed class WikiSyncService
 
             var time = match.Groups[1].Value;
             
-            // Waliduj format
             SchedulingMath.ParseHhmm(time);
             
             _state.SyncedBaseTime = time;

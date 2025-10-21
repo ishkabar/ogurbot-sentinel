@@ -41,7 +41,7 @@ jobs:
         run: |
           cd src
           dotnet tool install --global minver-cli
-          VERSION=$(minver -t v -m 1.0 -d preview)
+          VERSION=$(minver -t v -m 1.0 -d preview | cut -d'-' -f1)
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "✅ Using version: $VERSION"  # ← lepszy output
           echo "📋 Git tags:"  # ← DODAJ debug

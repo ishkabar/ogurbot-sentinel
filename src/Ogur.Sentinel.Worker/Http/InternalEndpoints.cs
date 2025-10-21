@@ -103,6 +103,7 @@ public sealed class InternalEndpoints
     
             _state.ApplyPersisted(settings);
             await _store.SaveAsync(_state.ToPersisted());
+            _state.NotifySettingsChanged();
             return Results.Ok();
         });
         
