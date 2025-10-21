@@ -56,10 +56,22 @@ public sealed class WikiSyncService
             
             SchedulingMath.ParseHhmm(time);
             
+            var oldTime = _state.SyncedBaseTime;
+            
             _state.SyncedBaseTime = time;
             _state.LastSyncAt = DateTimeOffset.Now;
             
             await _store.SaveAsync(_state.ToPersisted());
+            
+            if (oldTime != time)
+            {
+                _state.NotifySettingsChanged();
+                _logger.LogInformation("[WikiSync] ✓ Base time CHANGED from {Old} to {New} - triggers reset", oldTime ?? "null", time);
+            }
+            else
+            {
+                _logger.LogInformation("[WikiSync] ✓ Synced base time: {Time} (unchanged)", time);
+            }
             
             _logger.LogInformation("[WikiSync] ✓ Synced base time: {Time}", time);
             return true;
