@@ -3,11 +3,9 @@ on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
-
 permissions:
   contents: read
   packages: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -17,39 +15,68 @@ jobs:
       IMAGE_WORKER: ghcr.io/${{ github.repository_owner }}/ogurbot-sentinel-worker
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
+      - name: Fetch all tags
+        run: |
+          git fetch --tags --force
+          git tag --list
+          
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+          
       - uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
+          
       - uses: docker/setup-buildx-action@v3
-
+      
+      - name: Get version
+        id: version
+        run: |
+          cd src
+          dotnet tool install --global minver-cli
+          VERSION=$(minver -t v -m 1.0 -d preview)
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Using version: $VERSION"  # ← lepszy output
+          echo "📋 Git tags:"  # ← DODAJ debug
+          git tag --list
+          
       - name: Meta
         id: meta
         run: |
           echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "DATE_TAG=$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
-
+          
       - name: Build & push API
         uses: docker/build-push-action@v6
         with:
           context: ./src
           file: src/Ogur.Sentinel.Api/Dockerfile
           push: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.VERSION }}
           tags: |
             ${{ env.IMAGE_API }}:latest
+            ${{ env.IMAGE_API }}:${{ steps.version.outputs.VERSION }}
             ${{ env.IMAGE_API }}:${{ steps.meta.outputs.SHA_SHORT }}
             ${{ env.IMAGE_API }}:${{ steps.meta.outputs.DATE_TAG }}
-
+            
       - name: Build & push Worker
         uses: docker/build-push-action@v6
         with:
           context: ./src
           file: src/Ogur.Sentinel.Worker/Dockerfile
           push: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.VERSION }}
           tags: |
             ${{ env.IMAGE_WORKER }}:latest
+            ${{ env.IMAGE_WORKER }}:${{ steps.version.outputs.VERSION }}
             ${{ env.IMAGE_WORKER }}:${{ steps.meta.outputs.SHA_SHORT }}
             ${{ env.IMAGE_WORKER }}:${{ steps.meta.outputs.DATE_TAG }}

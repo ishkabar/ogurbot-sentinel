@@ -1,4 +1,20 @@
-/* Ogur Sentinel — site.css (neon glass) */
+html {
+    color-scheme: dark;
+}
+
+html[data-bs-theme="dark"],
+html[data-bs-theme="dark"] body {
+    --bs-body-bg: var(--bg);
+    --bs-body-color: var(--fg);
+    --bs-emphasis-color: var(--fg);
+    --bs-secondary-color: var(--muted);
+}
+
+.form-control,
+.form-select,
+.btn {
+    color-scheme: dark;
+}
 
 :root{
     --bg:#0f1220;
@@ -223,6 +239,21 @@ footer .container {
 }
 .table tbody tr:hover{ background:rgba(255,255,255,.05); }
 
-@media (min-width:768px){
-    html{ font-size:16px; }
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    /* Mobile dark mode enforcement */
+    body, html, .navbar, .card, .form-control,
+    input, select, textarea {
+        background-color: var(--bg) !important;
+        color: var(--fg) !important;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--muted) !important;
+    }
+}
+
+@media (min-width: 768px) {
+    html { font-size: 16px; }
 }
