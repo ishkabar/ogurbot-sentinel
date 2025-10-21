@@ -26,13 +26,25 @@ public class LoginModel : PageModel
 
     public async Task<IActionResult> OnPost(string username, string password)
     {
-        var validUser = _config["Auth:RespawnUser"] ?? "admin";
-        var validPass = _config["Auth:RespawnPassword"] ?? "changeme";
+        var adminUser = _config["Auth:AdminUser"] ?? _config["Auth:RespawnUser"] ?? "admin";
+        var adminPass = _config["Auth:AdminPassword"] ?? _config["Auth:RespawnPassword"] ?? "changeme";
+        var viewerUser = _config["Auth:ViewerUser"];
+        var viewerPass = _config["Auth:ViewerPassword"];
 
-        if (username == validUser && password == validPass)
+        if (username == adminUser && password == adminPass)
         {
             HttpContext.Session.SetString("IsAuthenticated", "true");
-            await HttpContext.Session.CommitAsync(); // ✅ Wymuszaj zapis
+            HttpContext.Session.SetString("Role", "Admin");
+            HttpContext.Session.SetString("Username", username);
+            await HttpContext.Session.CommitAsync();
+            return RedirectToPage("/Respawn");
+        }
+        else if (!string.IsNullOrEmpty(viewerUser) && username == viewerUser && password == viewerPass)
+        {
+            HttpContext.Session.SetString("IsAuthenticated", "true");
+            HttpContext.Session.SetString("Role", "Viewer");
+            HttpContext.Session.SetString("Username", username);
+            await HttpContext.Session.CommitAsync();
             return RedirectToPage("/Respawn");
         }
 

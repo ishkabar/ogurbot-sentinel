@@ -14,6 +14,8 @@ using Ogur.Sentinel.Worker.Discord;
 using Ogur.Sentinel.Worker.Discord.Modules;
 using Ogur.Sentinel.Worker.Http;
 using Ogur.Sentinel.Worker.Services;
+using Ogur.Sentinel.Abstractions;
+using Ogur.Sentinel.Core;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -78,12 +80,24 @@ builder.Services.AddSingleton(new DiscordSocketClient(discordCfg));
 builder.Services.AddSingleton<DiscordReadyService>();    // <— NOWE
 
 // --- Core state ---
-builder.Services.AddSingleton<RespawnState>();
+builder.Services.AddSingleton<RespawnState>(sp => 
+{
+    var opts = sp.GetRequiredService<IOptions<RespawnOptions>>();
+    return new RespawnState 
+    { 
+        MaxChannels = opts.Value.MaxChannels 
+    };
+});
 
 // --- Infra/services ---
+builder.Services.AddHttpClient();
 builder.Services.AddSingleton<SettingsStore>();
 builder.Services.AddSingleton<LeaveService>();
 builder.Services.AddSingleton<RespawnSchedulerService>();
+builder.Services.AddSingleton<WikiSyncService>();
+builder.Services.AddSingleton<WikiSyncService>();
+builder.Services.AddSingleton<IVersionHelper, VersionHelper>();
+
 
 // --- Slash modules (for CommandRegistrationService) ---
 builder.Services.AddSingleton<RespawnModule>();

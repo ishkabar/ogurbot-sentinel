@@ -14,6 +14,9 @@ public sealed class PersistedSettings
     public int LeadSeconds { get; init; }
     public bool Enabled10m { get; init; }
     public bool Enabled2h { get; init; }
+    public bool UseSyncedTime { get; set; }
+    public string? SyncedBaseTime { get; set; }
+    public DateTimeOffset? LastSyncAt { get; set; }
 
     public static PersistedSettings Default() => new()
     {
@@ -22,6 +25,9 @@ public sealed class PersistedSettings
         BaseHhmm = "00:00:00",
         LeadSeconds = 0,
         Enabled10m = false,
-        Enabled2h = false
+        Enabled2h = false,
+        UseSyncedTime = false,
+        SyncedBaseTime = null,
+        LastSyncAt = null
     };
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Text.Json;
 using Discord;
 using Discord.WebSocket;
@@ -13,6 +14,7 @@ using Ogur.Sentinel.Abstractions.Options;
 using Ogur.Sentinel.Abstractions.Respawn;
 using Ogur.Sentinel.Core.Respawn;
 using Ogur.Sentinel.Worker.Services;
+using Ogur.Sentinel.Abstractions;
 
 namespace Ogur.Sentinel.Worker.Http;
 
@@ -23,19 +25,29 @@ public sealed class InternalEndpoints
     private readonly SettingsStore _store;
     private readonly SettingsOptions _opts;
     private readonly DiscordSocketClient _discord;
+    private readonly RespawnOptions _respawnOpts;
+    private readonly WikiSyncService _wikiSync;
+	private readonly IVersionHelper _versionHelper;
+
 
     public InternalEndpoints(
         RespawnState state, 
         RespawnSchedulerService scheduler, 
         SettingsStore store, 
         IOptions<SettingsOptions> opts,
-        DiscordSocketClient discord)
+        DiscordSocketClient discord,
+        IOptions<RespawnOptions> respawnOpts,
+        WikiSyncService wikiSync,
+    IVersionHelper versionHelper)
     {
         _state = state;
         _scheduler = scheduler;
         _store = store;
         _opts = opts.Value;
         _discord = discord;
+        _respawnOpts = respawnOpts.Value;
+        _wikiSync = wikiSync;
+    _versionHelper = versionHelper;
     }
 
     public void Map(IHost app)
@@ -56,7 +68,10 @@ public sealed class InternalEndpoints
             lead_seconds = _state.LeadSeconds,
             channels = _state.Channels.Select(c => c.ToString()).ToArray(),
             enabled_10m = _state.Enabled10m,
-            enabled_2h = _state.Enabled2h
+            enabled_2h = _state.Enabled2h,
+            use_synced_time = _state.UseSyncedTime,
+            synced_base_time = _state.SyncedBaseTime,
+            last_sync_at = _state.LastSyncAt
         }));
 
         webapp.MapPost("/settings", async (HttpContext ctx) =>
@@ -64,14 +79,13 @@ public sealed class InternalEndpoints
             using var reader = new StreamReader(ctx.Request.Body);
             var json = await reader.ReadToEndAsync();
             var doc = JsonDocument.Parse(json);
-            
-            // Parse channels - obsłuż zarówno string jak i number
+    
             var channels = doc.RootElement.GetProperty("channels").EnumerateArray()
                 .Select(x => x.ValueKind == JsonValueKind.String 
                     ? ulong.Parse(x.GetString()!) 
                     : (ulong)x.GetUInt64())
                 .ToList();
-            
+    
             var settings = new PersistedSettings
             {
                 Channels = channels,
@@ -79,9 +93,14 @@ public sealed class InternalEndpoints
                 LeadSeconds = doc.RootElement.GetProperty("lead_seconds").GetInt32(),
                 RolesAllowed = new List<ulong>(),
                 Enabled10m = _state.Enabled10m,
-                Enabled2h = _state.Enabled2h
+                Enabled2h = _state.Enabled2h,
+                UseSyncedTime = doc.RootElement.TryGetProperty("use_synced_time", out var useSynced) 
+                    ? useSynced.GetBoolean() 
+                    : _state.UseSyncedTime,
+                SyncedBaseTime = _state.SyncedBaseTime,
+                LastSyncAt = _state.LastSyncAt
             };
-            
+    
             _state.ApplyPersisted(settings);
             await _store.SaveAsync(_state.ToPersisted());
             return Results.Ok();
@@ -105,6 +124,17 @@ public sealed class InternalEndpoints
             var (n10, n2h) = _scheduler.ComputeNext(nowLocal);
             return Results.Ok(new { next10m = n10, next2h = n2h });
         });
+        
+        webapp.MapPost("/respawn/sync", async () =>
+        {
+            var success = await _wikiSync.SyncAsync();
+            return Results.Ok(new 
+            { 
+                success,
+                synced_time = _state.SyncedBaseTime,
+                last_sync = _state.LastSyncAt
+            });
+        });
 
         webapp.MapPost("/respawn/toggle", async (HttpContext ctx) =>
         {
@@ -122,6 +152,11 @@ public sealed class InternalEndpoints
     
             return Results.Ok(new { _state.Enabled10m, _state.Enabled2h });
         });
+        
+        webapp.MapGet("/settings/limits", () => Results.Ok(new
+        {
+            max_channels = _respawnOpts.MaxChannels
+        }));
         
         webapp.MapGet("/channels/info", () =>
         {
@@ -156,6 +191,16 @@ public sealed class InternalEndpoints
 
             return Results.Ok(infos);
         });
+        
+        webapp.MapGet("/version", () =>
+{
+    var assembly = typeof(InternalEndpoints).Assembly;
+    return Results.Ok(new 
+    { 
+        version = _versionHelper.GetShortVersion(assembly),
+        build_time = _versionHelper.GetBuildTime(assembly)
+    });
+});
 
         _ = webapp.RunAsync();
     }

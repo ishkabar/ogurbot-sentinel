@@ -39,10 +39,15 @@ public sealed class RespawnSchedulerService
 
     public (DateTimeOffset next10m, DateTimeOffset next2h) ComputeNext(DateTimeOffset nowLocal)
     {
-        var baseTime = SchedulingMath.ParseHhmm(_state.BaseHhmm);
+        var baseTimeStr = _state.UseSyncedTime && !string.IsNullOrWhiteSpace(_state.SyncedBaseTime)
+            ? _state.SyncedBaseTime
+            : _state.BaseHhmm;
+        
+        var baseTime = SchedulingMath.ParseHhmm(baseTimeStr);
         var lead = TimeSpan.FromSeconds(Math.Max(0, _state.LeadSeconds));
         var next10 = SchedulingMath.NextAligned(nowLocal, baseTime, TimeSpan.FromMinutes(10), lead);
         var next2h = SchedulingMath.NextAligned(nowLocal, baseTime, TimeSpan.FromHours(2), lead);
+    
         return (next10, next2h);
     }
 

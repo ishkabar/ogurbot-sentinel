@@ -1,11 +1,19 @@
 ﻿@page
+@model Ogur.Sentinel.Api.Pages.RespawnModel
 @{
     ViewData["Title"] = "Respawn Settings";
 }
 
+@if (Model.IsViewer)
+{
+    <div class="alert alert-info">
+        👁️ You are viewing in <strong>read-only mode</strong>. Contact admin to make changes.
+    </div>
+}
+
 <div class="main-block card">
     <h1>🔔 Respawn Settings</h1>
-    
+
     <div id="loading" class="alert alert-info">Loading settings...</div>
     <div id="error" class="alert alert-danger d-none"></div>
     <div id="success" class="alert alert-success d-none">✓ Settings saved successfully!</div>
@@ -15,11 +23,30 @@
             <div class="row">
                 <div class="col-md-6">
                     <h4 class="title-gradient">⚙️ Timer Configuration</h4>
-                    
+
                     <div class="mb-3">
                         <label for="baseTime" class="form-label">Base Time (HH:MM:SS)</label>
-                        <input type="text" class="form-control" id="baseTime" placeholder="01:10:30" pattern="\d{2}:\d{2}:\d{2}" required>
+                        <input type="text" class="form-control" id="baseTime" placeholder="01:10:30"
+                               pattern="\d{2}:\d{2}:\d{2}" required>
                         <small class="text-muted">Starting time for respawn alignment</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="glass p-3">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="useSyncedTime">
+                                <label class="form-check-label" for="useSyncedTime">
+                                    <strong>🌐 Use time from wiki (Akademia)</strong>
+                                </label>
+                            </div>
+                            <div id="syncedTimeInfo" class="mt-2 d-none">
+                                <small class="text-muted">Synced time: <code id="syncedTime" class="ok">-</code></small><br>
+                                <small class="text-muted">Last sync: <span id="lastSync">-</span></small>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="manualSync()">
+                                🔄 Sync now
+                            </button>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -29,15 +56,17 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Voice Channels (max 3)</label>
+                        <label class="form-label">Voice Channels</label>
                         <div id="channelsList"></div>
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addChannel()">+ Add Channel</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addChannel()">+ Add
+                            Channel
+                        </button>
                     </div>
                 </div>
 
                 <div class="col-md-6">
                     <h4 class="title-gradient">🔊 Status</h4>
-                    
+
                     <div class="glass p-3 mb-3">
                         <div class="mb-3">
                             <div class="form-check form-switch">
@@ -78,7 +107,9 @@
 
             <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                 <button type="button" id="reloadBtn" class="btn" onclick="reloadWithFeedback(event)">🔄 Reload</button>
-                <button type="button" id="recalculateBtn" class="btn btn-secondary" onclick="recalculateWithFeedback(event)">🔄 Recalculate Next</button>
+                <button type="button" id="recalculateBtn" class="btn btn-secondary"
+                        onclick="recalculateWithFeedback(event)">🔄 Recalculate Next
+                </button>
                 <button type="submit" id="saveBtn" class="btn btn-primary">💾 Save Settings</button>
             </div>
         </form>
@@ -87,20 +118,29 @@
 
 @section Scripts {
 <script>
+    const IS_VIEWER = @(Model.IsViewer ? "true" : "false");
     let currentChannels = [];
+    let maxChannels = 3;
 
     // Helper function for button feedback
     function showButtonFeedback(button, successText, duration = 2000) {
         const originalText = button.innerHTML;
         const originalDisabled = button.disabled;
-        
+
         button.disabled = true;
         button.innerHTML = successText;
-        
+
         setTimeout(() => {
             button.innerHTML = originalText;
             button.disabled = originalDisabled;
         }, duration);
+    }
+
+    function disableIfViewer(elementId) {
+        if (IS_VIEWER) {
+            const el = document.getElementById(elementId);
+            if (el) el.disabled = true;
+        }
     }
 
     async function loadSettings() {
@@ -116,15 +156,25 @@
             document.getElementById('leadSeconds').value = data.lead_seconds;
             document.getElementById('enabled10m').checked = data.enabled_10m;
             document.getElementById('enabled2h').checked = data.enabled_2h;
-            
+
+            // Wiki sync settings
+            document.getElementById('useSyncedTime').checked = data.use_synced_time || false;
+            if (data.synced_base_time) {
+                document.getElementById('syncedTime').textContent = data.synced_base_time;
+                document.getElementById('lastSync').textContent = data.last_sync_at
+                    ? new Date(data.last_sync_at).toLocaleString()
+                    : 'Never';
+                document.getElementById('syncedTimeInfo').classList.remove('d-none');
+            }
+
             currentChannels = (data.channels || []).map(ch => String(ch));
-            
+
             try {
                 const channelsResp = await fetch('/channels/info');
                 const channelsData = await channelsResp.json();
                 window.channelNames = {};
                 channelsData.forEach(ch => {
-                    window.channelNames[String(ch.id)] = { name: ch.name, guild: ch.guild };
+                    window.channelNames[String(ch.id)] = {name: ch.name, guild: ch.guild};
                 });
             } catch (e) {
                 console.warn('Failed to load channel names:', e);
@@ -135,11 +185,47 @@
             // Load next triggers
             const nextResp = await fetch('/respawn/next');
             const nextData = await nextResp.json();
+
+            // Load limits
+            try {
+                const limitsResp = await fetch('/settings/limits');
+                const limitsData = await limitsResp.json();
+                maxChannels = limitsData.max_channels;
+
+                const label = document.querySelector('label[for="channelsList"]')
+                    || document.querySelector('.form-label');
+                if (label && label.textContent.includes('Voice Channels')) {
+                    label.textContent = `Voice Channels (max ${maxChannels})`;
+                }
+            } catch (e) {
+                console.warn('Failed to load limits, using default:', e);
+            }
+
             document.getElementById('next10m').textContent = new Date(nextData.next10m).toLocaleString();
             document.getElementById('next2h').textContent = new Date(nextData.next2h).toLocaleString();
 
             document.getElementById('loading').classList.add('d-none');
             document.getElementById('settings-form').classList.remove('d-none');
+
+            // Disable kontrolki dla viewer
+            if (IS_VIEWER) {
+                disableIfViewer('baseTime');
+                disableIfViewer('leadSeconds');
+                disableIfViewer('useSyncedTime');
+                disableIfViewer('enabled10m');
+                disableIfViewer('enabled2h');
+                disableIfViewer('saveBtn');
+                disableIfViewer('recalculateBtn');
+
+                // Ukryj przyciski akcji
+                document.querySelectorAll('button[onclick*="addChannel"], button[onclick*="manualSync"]').forEach(btn => {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                });
+
+                // Ukryj przyciski usuwania kanałów
+                document.querySelectorAll('.btn-close').forEach(btn => btn.style.display = 'none');
+            }
         } catch (error) {
             document.getElementById('loading').classList.add('d-none');
             document.getElementById('error').textContent = 'Failed to load settings: ' + error.message;
@@ -148,14 +234,16 @@
     }
 
     async function reloadWithFeedback(event) {
+        if (IS_VIEWER) return;
         const btn = event.target;
         await loadSettings();
         showButtonFeedback(btn, '✓ Reloaded!', 2000);
     }
 
     async function recalculateWithFeedback(event) {
+        if (IS_VIEWER) return;
         const btn = event.target;
-        
+
         try {
             const response = await fetch('/respawn/recalculate', {
                 method: 'POST'
@@ -165,7 +253,7 @@
                 const data = await response.json();
                 document.getElementById('next10m').textContent = new Date(data.next10m).toLocaleString();
                 document.getElementById('next2h').textContent = new Date(data.next2h).toLocaleString();
-                
+
                 showButtonFeedback(btn, '✓ Recalculated!', 2000);
             } else {
                 throw new Error('Recalculation failed');
@@ -173,6 +261,40 @@
         } catch (error) {
             console.error('Recalculate failed:', error);
             showButtonFeedback(btn, '✗ Failed', 2000);
+        }
+    }
+
+    async function manualSync() {
+        if (IS_VIEWER) return;
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '🔄 Syncing...';
+
+        try {
+            const response = await fetch('/respawn/sync', { method: 'POST' });
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('syncedTime').textContent = data.synced_time;
+                document.getElementById('lastSync').textContent = new Date(data.last_sync).toLocaleString();
+                document.getElementById('syncedTimeInfo').classList.remove('d-none');
+
+                btn.innerHTML = '✓ Synced!';
+
+                await recalculateWithFeedback({ target: document.getElementById('recalculateBtn') });
+            } else {
+                btn.innerHTML = '✗ Failed';
+            }
+        } catch (error) {
+            console.error('Manual sync failed:', error);
+            btn.innerHTML = '✗ Error';
+        } finally {
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = IS_VIEWER;
+            }, 2000);
         }
     }
 
@@ -192,23 +314,30 @@
 
             const pill = document.createElement('span');
             pill.className = 'pill me-2 mb-2 d-inline-flex align-items-center';
-            pill.innerHTML = `
-                <span style="color: var(--accent);">${displayName}</span>
-                <span class="ms-2">${displayId}</span>
+
+            const closeBtn = IS_VIEWER ? '' : `
                 <button class="btn-close btn-close-white ms-2" type="button" onclick="removeChannel(${idx})" 
                         style="font-size: 0.7em; opacity: 0.7;" 
                         aria-label="Remove"></button>
+            `;
+
+            pill.innerHTML = `
+                <span style="color: var(--accent);">${displayName}</span>
+                <span class="ms-2">${displayId}</span>
+                ${closeBtn}
             `;
             container.appendChild(pill);
         });
     }
 
     function addChannel() {
+        if (IS_VIEWER) return;
+
         const input = prompt('Enter Discord Channel ID(s):\n(separate multiple IDs with commas, spaces, or new lines)');
         if (!input) return;
-        
+
         const ids = input
-            .split(/[\s,\n]+/) 
+            .split(/[\s,\n]+/)
             .map(id => id.trim())
             .filter(id => id.length > 0)
             .filter(id => /^\d+$/.test(id));
@@ -217,12 +346,12 @@
             alert('No valid channel IDs found');
             return;
         }
-        
-        const available = 3 - currentChannels.length;
+
+        const available = maxChannels - currentChannels.length;
         const toAdd = ids.slice(0, available);
 
         if (toAdd.length < ids.length) {
-            alert(`Added ${toAdd.length} channels (max 3 total). ${ids.length - toAdd.length} ignored.`);
+            alert(`Added ${toAdd.length} channels (max ${maxChannels} total). ${ids.length - toAdd.length} ignored.`);
         }
 
         currentChannels.push(...toAdd);
@@ -230,6 +359,7 @@
     }
 
     function removeChannel(idx) {
+        if (IS_VIEWER) return;
         currentChannels.splice(idx, 1);
         renderChannels();
     }
@@ -237,10 +367,14 @@
     document.getElementById('respawnForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        if (IS_VIEWER) {
+            alert('You have read-only access. Contact admin to make changes.');
+            return;
+        }
+
         const saveBtn = document.getElementById('saveBtn');
         const originalText = saveBtn.innerHTML;
 
-        // Show saving state
         saveBtn.disabled = true;
         saveBtn.innerHTML = '💾 Saving...';
 
@@ -248,7 +382,8 @@
             base_hhmm: document.getElementById('baseTime').value,
             lead_seconds: parseInt(document.getElementById('leadSeconds').value),
             channels: currentChannels,
-            roles_allowed: []
+            roles_allowed: [],
+            use_synced_time: document.getElementById('useSyncedTime').checked
         };
 
         console.log('Sending payload:', payload);
@@ -261,34 +396,36 @@
             });
 
             if (response.ok) {
-                // Success feedback
                 saveBtn.innerHTML = '✓ Saved!';
                 document.getElementById('success').classList.remove('d-none');
                 setTimeout(() => document.getElementById('success').classList.add('d-none'), 3000);
 
-                // Restore button after 2 seconds
                 setTimeout(() => {
                     saveBtn.innerHTML = originalText;
                     saveBtn.disabled = false;
                 }, 2000);
 
-                // Reload in background
                 setTimeout(() => loadSettings(), 500);
             } else {
                 throw new Error('Save failed');
             }
         } catch (error) {
-            // Restore on error
             saveBtn.innerHTML = originalText;
             saveBtn.disabled = false;
 
             document.getElementById('error').textContent = 'Failed to save: ' + error.message;
             document.getElementById('error').classList.remove('d-none');
         }
-});
+    });
 
-    // Toggle handlers - działają od razu bez zapisywania!
+    // Toggle handlers
     document.getElementById('enabled10m').addEventListener('change', async (e) => {
+        if (IS_VIEWER) {
+            e.target.checked = !e.target.checked;
+            alert('You have read-only access');
+            return;
+        }
+
         const checkbox = e.target;
         const originalState = checkbox.checked;
 
@@ -298,12 +435,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     enable10m: checkbox.checked,
-                    enable2h: null  
+                    enable2h: null
                 })
             });
 
             if (!response.ok) throw new Error('Toggle failed');
-            
+
             const label = checkbox.nextElementSibling;
             const originalText = label.innerHTML;
             label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
@@ -317,6 +454,12 @@
     });
 
     document.getElementById('enabled2h').addEventListener('change', async (e) => {
+        if (IS_VIEWER) {
+            e.target.checked = !e.target.checked;
+            alert('You have read-only access');
+            return;
+        }
+
         const checkbox = e.target;
         const originalState = checkbox.checked;
 
@@ -325,13 +468,13 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    enable10m: null,  
+                    enable10m: null,
                     enable2h: checkbox.checked
                 })
             });
 
             if (!response.ok) throw new Error('Toggle failed');
-            
+
             const label = checkbox.nextElementSibling;
             const originalText = label.innerHTML;
             label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
@@ -339,13 +482,51 @@
 
         } catch (error) {
             console.error('Toggle 2h failed:', error);
-            checkbox.checked = !originalState; 
+            checkbox.checked = !originalState;
             alert('Failed to toggle 2h respawns');
         }
     });
 
-    // Load on page load
-    loadSettings();
+    document.getElementById('useSyncedTime').addEventListener('change', async (e) => {
+        if (IS_VIEWER) {
+            e.target.checked = !e.target.checked;
+            alert('You have read-only access');
+            return;
+        }
 
+        const checkbox = e.target;
+        const originalState = checkbox.checked;
+
+        const payload = {
+            base_hhmm: document.getElementById('baseTime').value,
+            lead_seconds: parseInt(document.getElementById('leadSeconds').value),
+            channels: currentChannels,
+            roles_allowed: [],
+            use_synced_time: checkbox.checked
+        };
+
+        try {
+            const response = await fetch('/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error('Toggle sync failed');
+
+            const label = checkbox.nextElementSibling;
+            const originalText = label.innerHTML;
+            label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
+            setTimeout(() => label.innerHTML = originalText, 2000);
+
+            await recalculateWithFeedback({ target: document.getElementById('recalculateBtn') });
+        } catch (error) {
+            console.error('Toggle sync failed:', error);
+            checkbox.checked = originalState;
+            alert('Failed to toggle wiki sync');
+        }
+    });
+
+    loadSettings();
 </script>
 }

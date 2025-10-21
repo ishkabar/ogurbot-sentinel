@@ -31,7 +31,7 @@ public static class SchedulingMath
     {
         var baseToday = new DateTimeOffset(
             nowLocal.Year, nowLocal.Month, nowLocal.Day,
-            baseLocal.Hour, baseLocal.Minute, 0,
+            baseLocal.Hour, baseLocal.Minute, baseLocal.Second,
             nowLocal.Offset);
 
         // If base today is in the future, go back one day to guarantee floor

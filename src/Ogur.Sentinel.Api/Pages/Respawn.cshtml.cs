@@ -2,10 +2,12 @@
 
 namespace Ogur.Sentinel.Api.Pages;
 
-public class Respawn : PageModel
+public class RespawnModel : PageModel
 {
+    public bool IsViewer { get; set; }
+    
     public void OnGet()
     {
-        
+        IsViewer = HttpContext.Session.GetString("Role") == "Viewer";
     }
 }

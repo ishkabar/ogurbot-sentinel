@@ -1,4 +1,6 @@
 ﻿using Ogur.Sentinel.Abstractions.Respawn;
+using Microsoft.Extensions.Options;
+using Ogur.Sentinel.Abstractions.Options;
 
 namespace Ogur.Sentinel.Core.Respawn;
 
@@ -20,13 +22,17 @@ public sealed class RespawnState
     // Runtime toggles (controlled by slash commands in Worker)
     public bool Enabled10m { get; set; } = false;
     public bool Enabled2h { get; set; } = false;
-
+    public int MaxChannels { get; set; } = 3;
+    public bool UseSyncedTime { get; set; } = false;
+    public string? SyncedBaseTime { get; set; }
+    public DateTimeOffset? LastSyncAt { get; set; }
+    
     public HashSet<ulong> RolesAllowed { get; } = new();
 
     public void SetChannels(IEnumerable<ulong> ids)
     {
         _channels.Clear();
-        _channels.AddRange(ids.Take(3));
+        _channels.AddRange(ids.Take(MaxChannels));
     }
 
     public bool RemoveChannel(ulong id)
@@ -44,6 +50,9 @@ public sealed class RespawnState
         LeadSeconds = p.LeadSeconds;
         Enabled10m = p.Enabled10m;
         Enabled2h = p.Enabled2h;
+        UseSyncedTime = p.UseSyncedTime;
+        SyncedBaseTime = p.SyncedBaseTime;
+        LastSyncAt = p.LastSyncAt;
         RolesAllowed.Clear();
         foreach (var r in p.RolesAllowed) RolesAllowed.Add((ulong)r);
     }
@@ -55,6 +64,9 @@ public sealed class RespawnState
         LeadSeconds = LeadSeconds,
         Enabled10m = Enabled10m,
         Enabled2h = Enabled2h,
+        UseSyncedTime = UseSyncedTime,
+        SyncedBaseTime = SyncedBaseTime,
+        LastSyncAt = LastSyncAt,
         RolesAllowed = RolesAllowed.Select(x => (ulong)x).ToList()
     };
 }

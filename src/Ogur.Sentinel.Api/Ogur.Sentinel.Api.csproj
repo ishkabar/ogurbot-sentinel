@@ -1,12 +1,31 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+        <MinVerMinimumMajorMinor>1.0</MinVerMinimumMajorMinor>
+        <MinVerTagPrefix>v</MinVerTagPrefix>
+        
+        <InformationalVersion>$(Version)+$(Configuration)</InformationalVersion>
+        <!--<Version>1.0.0</Version>-->
+        <InformationalVersion>$(Version)+$(Configuration)</InformationalVersion>
     </PropertyGroup>
+    
+    <ItemGroup>
+      <PackageReference Include="MinVer" Version="5.0.0">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
 
+    <ItemGroup>
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>BuildTime</_Parameter1>
+        <_Parameter2>$([System.DateTime]::UtcNow.ToString("yyyyMMdd-HHmmss"))</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+    
     <ItemGroup>
       <Content Include="..\..\.dockerignore">
         <Link>.dockerignore</Link>
@@ -15,7 +34,10 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>
     </ItemGroup>
-
+    <ItemGroup>
+      <ProjectReference Include="..\Ogur.Sentinel.Core\Ogur.Sentinel.Core.csproj" />
+      <ProjectReference Include="..\Ogur.Sentinel.Abstractions\Ogur.Sentinel.Abstractions.csproj" />
+    </ItemGroup>
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.Mvc.Razor.RuntimeCompilation" Version="8.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="8.0.0" />
@@ -24,7 +46,6 @@
       <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
       <PackageReference Include="Microsoft.NET.Build.Containers" Version="8.0.100" />
       <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
-      <PackageReference Include="System.Text.Json" Version="8.0.0" />
+      <PackageReference Include="System.Text.Json" Version="8.0.5" />
     </ItemGroup>
-
 </Project>
