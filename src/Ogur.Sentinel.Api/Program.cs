@@ -18,9 +18,17 @@ var keysPath = builder.Environment.IsDevelopment()
     : "/app/keys"; 
 Directory.CreateDirectory(keysPath);
 
+var appsettingsPath = builder.Environment.IsDevelopment()
+    ? "appsettings.json"
+    : "/app/appsettings/appsettings.json";
+
 builder.Configuration
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddJsonFile(appsettingsPath, optional: true, reloadOnChange: true)
     .AddEnvironmentVariables();
+
+Console.WriteLine($"🔍 Auth:AdminUser = {builder.Configuration["Auth:AdminUser"]}");
+Console.WriteLine($"🔍 Auth:AdminPassword length = {builder.Configuration["Auth:AdminPassword"]?.Length ?? 0}");
 
 builder.Services.AddRazorPages();
 builder.Services.AddHealthChecks();
