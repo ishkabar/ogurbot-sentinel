@@ -46,6 +46,17 @@ public sealed class DiscordBotHostedService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        _client.Log += msg =>
+        {
+            if (msg.Source?.Contains("Voice", StringComparison.OrdinalIgnoreCase) == true ||
+                msg.Message?.Contains("VOICE", StringComparison.OrdinalIgnoreCase) == true ||
+                msg.Message?.Contains("voice", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                _logger.LogWarning("[GATEWAY-RAW] {Source}: {Message}", msg.Source, msg.Message);
+            }
+            return Task.CompletedTask;
+        };
+
         try
         {
             // keep the service alive until cancellation
@@ -81,11 +92,20 @@ public sealed class DiscordBotHostedService : BackgroundService
         
         _client.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
         _client.VoiceServerUpdated += OnVoiceServerUpdated;
+        _client.LatencyUpdated += (old, newLatency) => Task.CompletedTask;
+        
+        (_client as DiscordSocketClient)!.Log += msg =>
+        {
+            if (msg.Message?.Contains("\"t\":\"VOICE_SERVER_UPDATE\"") == true)
+            {
+                _logger.LogCritical("[RAW-GATEWAY] VOICE_SERVER_UPDATE payload: {Msg}", msg.Message);
+            }
+            return Task.CompletedTask;
+        };
     }
 
     private Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
     {
-        // Interesuje nas tylko stan BOTA
         if (user.Id == _client.CurrentUser?.Id)
         {
             var bCh = before.VoiceChannel?.Id.ToString() ?? "-";
@@ -102,6 +122,7 @@ public sealed class DiscordBotHostedService : BackgroundService
         var tok = vsu.Token is null ? 0 : vsu.Token.Length;
         _logger.LogInformation("[VOICE] VoiceServerUpdated guild={GuildId} endpoint={Endpoint} tokenLen={TokenLen}",
             vsu.Guild.Id, ep, tok);
+        _logger.LogWarning("[VOICE] FULL TOKEN: '{Token}'", vsu.Token ?? "NULL");
         return Task.CompletedTask;
     }
 

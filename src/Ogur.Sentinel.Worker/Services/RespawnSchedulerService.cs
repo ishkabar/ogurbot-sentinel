@@ -55,11 +55,14 @@ public sealed class RespawnSchedulerService
     {
         var sound = is10m ? _sound10m : _sound2h;
 
+        var repeatPlays = _state.RepeatPlays > 0 ? _state.RepeatPlays : 1;  // default 1
+        var repeatGapMs = _state.RepeatGapMs;  // ← Bez fallbacku, użyj dokładnie tego co w settings
+
         foreach (var ch in _state.Channels)
         {
             try
             {
-                await _voice.JoinAndPlayAsync(ch, sound, ct);
+                await _voice.JoinAndPlayAsync(ch, sound, repeatPlays, repeatGapMs, ct);
             }
             catch (Exception ex)
             {

@@ -65,7 +65,15 @@ public sealed class SettingsStore
                 
                 Enabled10m = doc.TryGetProperty("enabled_10m", out var e10) && e10.ValueKind is JsonValueKind.True,
                 
-                Enabled2h = doc.TryGetProperty("enabled_2h", out var e2h) && e2h.ValueKind is JsonValueKind.True
+                Enabled2h = doc.TryGetProperty("enabled_2h", out var e2h) && e2h.ValueKind is JsonValueKind.True,
+
+                RepeatPlays = doc.TryGetProperty("repeat_plays", out var rp) && rp.ValueKind is JsonValueKind.Number
+                    ? rp.GetInt32()
+                    : 3,
+
+                RepeatGapMs = doc.TryGetProperty("repeat_gap_ms", out var rg) && rg.ValueKind is JsonValueKind.Number
+                    ? rg.GetInt32()
+                    : 1000
             };
 
             _logger.LogInformation("[SettingsStore] Loaded: Channels={ChCount}, Base={Base}, Lead={Lead}s", 
@@ -98,7 +106,9 @@ public sealed class SettingsStore
                 base_hhmm = settings.BaseHhmm,
                 lead_seconds = settings.LeadSeconds,
                 enabled_10m = settings.Enabled10m,
-                enabled_2h = settings.Enabled2h
+                enabled_2h = settings.Enabled2h,
+                repeat_plays = settings.RepeatPlays,  
+                repeat_gap_ms = settings.RepeatGapMs 
             };
 
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
