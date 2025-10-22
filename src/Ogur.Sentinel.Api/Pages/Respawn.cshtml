@@ -108,6 +108,26 @@
                         <h5 class="title-gradient">🔊 Custom Sounds</h5>
 
                         <div class="glass p-3 mb-3">
+                            <h6 class="muted mb-3">🔁 Repeat Settings</h6>
+                            <div class="d-flex gap-2 align-items-end">
+                                <div style="flex: 0 0 120px;">
+                                    <label for="repeat-plays" class="form-label small mb-1">Plays</label>
+                                    <input type="number" class="form-control form-control-sm"
+                                           id="repeat-plays" min="1" max="10" value="3">
+                                </div>
+                                <div style="flex: 0 0 140px;">
+                                    <label for="repeat-gap-ms" class="form-label small mb-1">Gap (ms)</label>
+                                    <input type="number" class="form-control form-control-sm"
+                                           id="repeat-gap-ms" min="0" max="5000" value="1000">
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary d-flex align-items-center"
+                                        onclick="saveRepeatSettings()" style="padding: 0.25rem 0.75rem;">
+                                    💾 Save
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="glass p-3 mb-3">
                             <h6 class="muted">10-minute Sound</h6>
                             <div class="d-flex gap-2 mb-2">
                                 <button type="button" class="btn btn-sm btn-outline-primary flex-fill"
@@ -227,6 +247,10 @@
                 document.getElementById('enabled10m').checked = data.enabled_10m;
                 document.getElementById('enabled2h').checked = data.enabled_2h;
 
+                document.getElementById('repeat-plays').value = data.repeat_plays || 3;
+                document.getElementById('repeat-gap-ms').value = data.repeat_gap_ms || 1000;
+
+
                 // Wiki sync settings
                 document.getElementById('useSyncedTime').checked = data.use_synced_time || false;
                 if (data.synced_base_time) {
@@ -284,6 +308,8 @@
                     disableIfViewer('useSyncedTime');
                     disableIfViewer('enabled10m');
                     disableIfViewer('enabled2h');
+                    disableIfViewer('repeat-plays');
+                    disableIfViewer('repeat-gap-ms');
                     disableIfViewer('saveBtn');
                     disableIfViewer('recalculateBtn');
 
@@ -295,6 +321,29 @@
 
                     // Ukryj przyciski usuwania kanałów
                     document.querySelectorAll('.btn-close').forEach(btn => btn.style.display = 'none');
+
+
+                    document.querySelectorAll('button[onclick*="playSound"]').forEach(btn => {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.5';
+                    });
+
+                    document.querySelectorAll('button[onclick*="saveRepeatSettings"]').forEach(btn => {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.5';
+                    });
+
+                    document.querySelectorAll('button[onclick*="uploadSound"]').forEach(btn => {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.5';
+                    });
+
+                    // Disable file inputs
+                    document.querySelectorAll('input[type="file"]').forEach(input => {
+                        input.disabled = true;
+                        input.style.opacity = '0.5';
+                    });
+                    
                 }
             } catch (error) {
                 document.getElementById('loading').classList.add('d-none');
@@ -373,7 +422,7 @@
             container.innerHTML = '';
 
             if (currentChannels.length === 0) {
-                container.innerHTML = '<p class="text-muted">No channels configured</p>';
+                container.innerHTML = '<p class="text-muted">No  channels configured</p>';
                 return;
             }
 
@@ -473,6 +522,27 @@
             });
 
             renderChannels();
+
+            const body = {
+                channels: currentChannels.map(ch => String(ch))
+            };
+
+            fetch('/settings', {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        showToast('✅ Channels saved!', 'success');
+                    } else {
+                        showToast('❌ Failed to save channels', 'danger');
+                    }
+                })
+                .catch(err => {
+                    showToast('❌ Error: ' + err.message, 'danger');
+                });
+
 
             // Close modal
             bootstrap.Modal.getInstance(document.getElementById('addChannelModal')).hide();
@@ -657,10 +727,42 @@
                     btn.disabled = IS_VIEWER;
                 }, 2000);
             }
-            
+
 
         }
 
+        async function saveRepeatSettings() {
+            const repeatPlays = parseInt(document.getElementById('repeat-plays').value);
+            const repeatGapMs = parseInt(document.getElementById('repeat-gap-ms').value);
+
+            const body = {
+                repeat_plays: repeatPlays,
+                repeat_gap_ms: repeatGapMs
+            };
+
+            try {
+                const response = await fetch('/settings', {
+                    method: 'PATCH',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+
+                if (response.ok) {
+                    document.getElementById('success').textContent = '✅ Repeat settings saved!';
+                    document.getElementById('success').classList.remove('d-none');
+                    document.getElementById('error').classList.add('d-none');
+                    await loadSettings();
+                } else {
+                    document.getElementById('error').textContent = '❌ Failed to save repeat settings';
+                    document.getElementById('error').classList.remove('d-none');
+                    document.getElementById('success').classList.add('d-none');
+                }
+            } catch (err) {
+                document.getElementById('error').textContent = '❌ Error: ' + err.message;
+                document.getElementById('error').classList.remove('d-none');
+                document.getElementById('success').classList.add('d-none');
+            }
+}
 
         async function uploadSound(soundType) {
             if (IS_VIEWER) return;
@@ -739,7 +841,9 @@
                 lead_seconds: parseInt(document.getElementById('leadSeconds').value),
                 channels: currentChannels,
                 roles_allowed: [],
-                use_synced_time: document.getElementById('useSyncedTime').checked
+                use_synced_time: document.getElementById('useSyncedTime').checked,
+                repeat_plays: parseInt(document.getElementById('repeat-plays').value), 
+                repeat_gap_ms: parseInt(document.getElementById('repeat-gap-ms').value)
             };
 
             console.log('Sending payload:', payload);

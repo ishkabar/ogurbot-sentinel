@@ -60,6 +60,8 @@ public sealed class RespawnState
         UseSyncedTime = p.UseSyncedTime;
         SyncedBaseTime = p.SyncedBaseTime;
         LastSyncAt = p.LastSyncAt;
+        RepeatPlays = p.RepeatPlays; 
+        RepeatGapMs = p.RepeatGapMs;
         RolesAllowed.Clear();
         foreach (var r in p.RolesAllowed) RolesAllowed.Add((ulong)r);
     }
@@ -74,6 +76,8 @@ public sealed class RespawnState
         UseSyncedTime = UseSyncedTime,
         SyncedBaseTime = SyncedBaseTime,
         LastSyncAt = LastSyncAt,
+        RepeatPlays = RepeatPlays,  
+        RepeatGapMs = RepeatGapMs,  
         RolesAllowed = RolesAllowed.Select(x => (ulong)x).ToList()
     };
 }

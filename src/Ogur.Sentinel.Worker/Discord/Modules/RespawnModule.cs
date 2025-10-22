@@ -183,10 +183,10 @@ public sealed class RespawnModule
                     return;
                 }
                 
-                var repeatPlays = _state.RepeatPlays > 0 ? _state.RepeatPlays : 3;
-                var repeatGapMs = _state.RepeatGapMs > 0 ? _state.RepeatGapMs : 250;
+                var repeatPlays = _state.RepeatPlays > 0 ? _state.RepeatPlays : 1;
+                var repeatGapMs = _state.RepeatGapMs;  // ← Bez fallbacku
 
-                await cmd.RespondAsync($"OK, próbuję wejść na kanał `{channelId}` i zagrać ({soundType}, {repeatPlays}x).", ephemeral: true);
+                await cmd.RespondAsync($"OK, próbuję wejść na kanał `{channelId}` i zagrać ({soundType}, {repeatPlays}x, gap={repeatGapMs}ms).", ephemeral: true);
                 _ = _voice.JoinAndPlayAsync(channelId, path, repeatPlays, repeatGapMs, CancellationToken.None);
                 break;
             }

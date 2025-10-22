@@ -17,6 +17,8 @@ public sealed class PersistedSettings
     public bool UseSyncedTime { get; set; }
     public string? SyncedBaseTime { get; set; }
     public DateTimeOffset? LastSyncAt { get; set; }
+    public int RepeatPlays { get; set; }
+    public int RepeatGapMs { get; set; }
 
     public static PersistedSettings Default() => new()
     {
@@ -28,6 +30,8 @@ public sealed class PersistedSettings
         Enabled2h = false,
         UseSyncedTime = false,
         SyncedBaseTime = null,
-        LastSyncAt = null
+        LastSyncAt = null,
+        RepeatPlays = 3,
+        RepeatGapMs = 1000 
     };
 }

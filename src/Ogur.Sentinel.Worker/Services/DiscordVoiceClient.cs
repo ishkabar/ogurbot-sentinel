@@ -40,6 +40,8 @@ public sealed class DiscordVoiceClient : IAsyncDisposable
     private const int FrameSize = 960; // 20ms at 48kHz
     private const int BitrateKbps = 128;
 
+ 
+
     public bool IsConnected => _ws?.State == WebSocketState.Open && _udp != null;
 
     public DiscordVoiceClient(ILogger<DiscordVoiceClient> logger)
@@ -47,132 +49,123 @@ public sealed class DiscordVoiceClient : IAsyncDisposable
         _logger = logger;
     }
 
-public async Task ConnectAsync(ulong guildId, ulong userId, ulong channelId,
-    string sessionId, string token, string endpoint, CancellationToken ct)
-{
-    _logger.LogInformation("[VOICE] 🔌 Opening WebSocket to wss://{Endpoint}/?v=4", endpoint);
-
-    _ws = new ClientWebSocket();
-
-    try
+    public async Task ConnectAsync(ulong guildId, ulong userId, ulong channelId,
+        string sessionId, string token, string endpoint, CancellationToken ct)
     {
-        await _ws.ConnectAsync(new Uri($"wss://{endpoint}/?v=4"), ct);
-        _logger.LogInformation("[VOICE] ✅ WebSocket connected, state: {State}", _ws.State);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "[VOICE] ❌ Failed to connect WebSocket");
-        throw;
-    }
+        _logger.LogInformation("[VOICE] 🔌 Opening WebSocket to wss://{Endpoint}/?v=4", endpoint);
 
-    _logger.LogInformation("[VOICE] ⏳ Waiting for HELLO...");
-    int heartbeatInterval = await WaitForHelloAsync(ct);
-    _logger.LogInformation("[VOICE] ✅ Got heartbeat interval: {Ms}ms", heartbeatInterval);
+        _ws = new ClientWebSocket();
 
-    _heartbeatMs = heartbeatInterval;
-
-    // ✨ KONWERSJA TOKENU: hex → base64
-    _logger.LogCritical("[VOICE] 🔬 Token analysis:");
-    _logger.LogCritical("[VOICE]   Original token: {Token}", token);
-    _logger.LogCritical("[VOICE]   Is hex?: {IsHex}", System.Text.RegularExpressions.Regex.IsMatch(token, "^[0-9a-fA-F]+$"));
-
-    string tokenToSend = token;
-    if (token.Length == 16 && System.Text.RegularExpressions.Regex.IsMatch(token, "^[0-9a-fA-F]+$"))
-    {
-        // Discord wysyła token jako hex, ale Voice WebSocket oczekuje base64
-        var bytes = Convert.FromHexString(token);
-        tokenToSend = Convert.ToBase64String(bytes);
-        _logger.LogCritical("[VOICE]   ✅ Converted hex to base64: {Base64}", tokenToSend);
-    }
-    else
-    {
-        _logger.LogCritical("[VOICE]   Using token as-is (not hex format)");
-    }
-
-    var identify = new
-    {
-        op = 0,
-        d = new
+        try
         {
-            server_id = guildId.ToString(),
-            user_id = userId.ToString(),
-            session_id = sessionId,
-            token = tokenToSend  // ← Użyj base64 zamiast hex!
+            await _ws.ConnectAsync(new Uri($"wss://{endpoint}/?v=4"), ct);
+            _logger.LogInformation("[VOICE] ✅ WebSocket connected, state: {State}", _ws.State);
         }
-    };
-
-    var identifyJson = JsonSerializer.Serialize(identify);
-
-    _logger.LogWarning("[VOICE] 🔍 IDENTIFY Debug:");
-    _logger.LogWarning("[VOICE]   server_id: {ServerId}", guildId);
-    _logger.LogWarning("[VOICE]   user_id: {UserId}", userId);
-    _logger.LogWarning("[VOICE]   session_id: {SessionId}", sessionId);
-    _logger.LogWarning("[VOICE]   token (to send): {Token}", tokenToSend);
-    _logger.LogInformation("[VOICE] 📤 Sending IDENTIFY");
-    _logger.LogDebug("[VOICE] IDENTIFY payload: {Json}", identifyJson);
-
-    await _ws.SendAsync(
-        Encoding.UTF8.GetBytes(identifyJson),
-        WebSocketMessageType.Text,
-        true,
-        ct);
-
-    _logger.LogInformation("[VOICE] ⏳ Waiting for READY...");
-
-    // Wait for READY (op=2)
-    var (ssrc, ip, port) = await WaitForReadyAsync(ct);
-
-    _logger.LogInformation("[VOICE] ✅ READY received - SSRC: {Ssrc}, IP: {Ip}, Port: {Port}", ssrc, ip, port);
-
-    _ssrc = ssrc;
-
-    // UDP setup
-    _logger.LogDebug("[VOICE] 🔌 Setting up UDP to {Ip}:{Port}...", ip, port);
-    _udp = new UdpClient();
-    _udp.Connect(ip, port);
-
-    // IP Discovery
-    _logger.LogDebug("[VOICE] 🔍 Starting IP discovery...");
-    var discoveredIp = await DiscoverIpAsync(ct);
-    _logger.LogInformation("[VOICE] ✅ Discovered local IP: {Ip}:{Port}", discoveredIp.ip, discoveredIp.port);
-
-    // Send SELECT_PROTOCOL
-    var selectProtocol = new
-    {
-        op = 1,
-        d = new
+        catch (Exception ex)
         {
-            protocol = "udp",
-            data = new
+            _logger.LogError(ex, "[VOICE] ❌ Failed to connect WebSocket");
+            throw;
+        }
+
+        // ✅ Send IDENTIFY immediately (like old working version)
+        var identify = new
+        {
+            op = 0,
+            d = new
             {
-                address = discoveredIp.ip,
-                port = discoveredIp.port,
-                mode = "xsalsa20_poly1305"
+                server_id = guildId.ToString(),
+                user_id = userId.ToString(),
+                session_id = sessionId,
+                token = token // ✅ Use token directly without conversion
             }
-        }
-    };
+        };
 
-    var selectJson = JsonSerializer.Serialize(selectProtocol);
-    _logger.LogDebug("[VOICE] 📤 Sending SELECT_PROTOCOL");
+        var identifyJson = JsonSerializer.Serialize(identify);
 
-    await _ws.SendAsync(
-        Encoding.UTF8.GetBytes(selectJson),
-        WebSocketMessageType.Text,
-        true,
-        ct);
+        _logger.LogWarning("[VOICE] 🔍 IDENTIFY Debug:");
+        _logger.LogWarning("[VOICE]   server_id: {ServerId}", guildId);
+        _logger.LogWarning("[VOICE]   user_id: {UserId}", userId);
+        _logger.LogWarning("[VOICE]   session_id: {SessionId}", sessionId);
+        _logger.LogWarning("[VOICE]   token: {Token}", token);
+        _logger.LogInformation("[VOICE] 📤 Sending IDENTIFY (immediately after connect)");
 
-    // Wait for SESSION_DESCRIPTION (op=4)
-    _logger.LogDebug("[VOICE] ⏳ Waiting for SESSION_DESCRIPTION...");
-    var (mode, secretKey) = await WaitForSessionDescriptionAsync(ct);
-    _secretKey = secretKey;
-    _logger.LogInformation("[VOICE] ✅ Got secret key, length: {Length}, mode: {Mode}", secretKey.Length, mode);
+        await _ws.SendAsync(
+            Encoding.UTF8.GetBytes(identifyJson),
+            WebSocketMessageType.Text,
+            true,
+            ct);
 
-    // Start heartbeat loop
-    _logger.LogDebug("[VOICE] ❤️ Starting heartbeat loop ({Ms}ms)...", _heartbeatMs);
-    _ = HeartbeatLoopAsync(_heartbeatMs, ct);
+        _logger.LogInformation("[VOICE] ⏳ Waiting for READY...");
 
-    _logger.LogInformation("[VOICE] ✅ Voice connection fully established!");
-}
+        // Wait for READY (will skip HELLO in the loop)
+        var (ssrc, ip, port, heartbeatInterval, encryptionMode) = await WaitForReadyAsync(ct);
+        _ssrc = ssrc;
+        _heartbeatMs = heartbeatInterval;
+
+        _logger.LogInformation("[VOICE] ✅ READY received - SSRC: {Ssrc}, IP: {Ip}, Port: {Port}, HB: {Hb}ms",
+            ssrc, ip, port, heartbeatInterval);
+
+        // UDP setup
+        _logger.LogDebug("[VOICE] 🔌 Setting up UDP to {Ip}:{Port}...", ip, port);
+        _udp = new UdpClient();
+        _udp.Connect(ip, port);
+
+        // IP Discovery
+        _logger.LogDebug("[VOICE] 🔍 Starting IP discovery...");
+        var discoveredIp = await DiscoverIpAsync(ct);
+        _logger.LogInformation("[VOICE] ✅ Discovered local IP: {Ip}:{Port}", discoveredIp.ip, discoveredIp.port);
+
+        // Send SELECT_PROTOCOL with EXTENSIVE LOGGING
+        var selectProtocol = new
+        {
+            op = 1,
+            d = new
+            {
+                protocol = "udp",
+                data = new
+                {
+                    address = discoveredIp.ip,
+                    port = (int)discoveredIp.port, // Cast ushort to int explicitly
+                    mode = encryptionMode
+                }
+            }
+        };
+
+        var selectJson = JsonSerializer.Serialize(selectProtocol);
+        _logger.LogCritical("[VOICE] 🔬 SELECT_PROTOCOL Full JSON: {Json}", selectJson);
+        _logger.LogWarning("[VOICE] 📤 Sending SELECT_PROTOCOL...");
+        _logger.LogWarning("[VOICE]   address: {Address}", discoveredIp.ip);
+        _logger.LogWarning("[VOICE]   port: {Port} (type: {Type})", discoveredIp.port,
+            discoveredIp.port.GetType().Name);
+        _logger.LogWarning("[VOICE]   mode: xsalsa20_poly1305");
+
+        await _ws.SendAsync(
+            Encoding.UTF8.GetBytes(selectJson),
+            WebSocketMessageType.Text,
+            true,
+            ct);
+
+        // Wait for SESSION_DESCRIPTION (op=4) with DEBUG
+        _logger.LogWarning("[VOICE] ⏳ Waiting for SESSION_DESCRIPTION (op=4)...");
+        var (mode, secretKey) = await WaitForSessionDescriptionAsync(ct);
+        _secretKey = secretKey;
+        _logger.LogInformation("[VOICE] ✅ Got secret key, length: {Length}, mode: {Mode}", secretKey.Length, mode);
+
+        // ✅ Initialize Opus encoder (was missing!)
+        _logger.LogDebug("[VOICE] 🎵 Initializing Opus encoder...");
+        _encoder = new OpusEncoder(SampleRate, Channels, Concentus.Enums.OpusApplication.OPUS_APPLICATION_AUDIO);
+        _encoder.Bitrate = BitrateKbps * 1024;
+
+        // Start heartbeat loop
+        _logger.LogDebug("[VOICE] ❤️ Starting heartbeat loop ({Ms}ms)...", _heartbeatMs);
+        _heartbeatCts = new CancellationTokenSource();
+        _heartbeatTask = HeartbeatLoopAsync(_heartbeatMs, _heartbeatCts.Token);
+
+        // ✅ Send SPEAKING indicator (was missing!)
+        await SendSpeakingAsync(true, ct);
+
+        _logger.LogInformation("[VOICE] ✅ Voice connection fully established!");
+    }
 
     /// <summary>
     /// Send PCM audio data (16-bit stereo 48kHz)
@@ -262,24 +255,6 @@ public async Task ConnectAsync(ulong guildId, ulong userId, ulong channelId,
         await _udp!.SendAsync(packet, ct);
     }
 
-    private async Task SendIdentifyAsync(CancellationToken ct)
-    {
-        var identify = new
-        {
-            op = 0,
-            d = new
-            {
-                server_id = _guildId.ToString(),
-                user_id = _userId.ToString(),
-                session_id = _sessionId,
-                token = _token
-            }
-        };
-
-        await SendJsonAsync(identify, ct);
-        _logger.LogDebug("[VOICE] Sent IDENTIFY");
-    }
-
     private async Task SendSpeakingAsync(bool speaking, CancellationToken ct)
     {
         var payload = new
@@ -296,59 +271,100 @@ public async Task ConnectAsync(ulong guildId, ulong userId, ulong channelId,
         await SendJsonAsync(payload, ct);
         _logger.LogDebug("[VOICE] Sent SPEAKING: {Speaking}", speaking);
     }
-    
-    private async Task<(uint ssrc, string ip, int port)> WaitForReadyAsync(CancellationToken ct)
+
+    private async Task<(uint ssrc, string ip, int port, int heartbeatInterval, string encryptionMode)> WaitForReadyAsync(CancellationToken ct)
     {
         while (true)
         {
             var msg = await ReceiveJsonAsync(ct);
-        
-            if (msg.ValueKind == JsonValueKind.Undefined)
-            {
-                _logger.LogWarning("[VOICE] ⚠️ Received undefined message, skipping");
-                continue;
-            }
-        
-            _logger.LogDebug("[VOICE] 📨 Message: {Json}", msg.GetRawText());
-        
+
             if (!msg.TryGetProperty("op", out var opProp))
             {
-                _logger.LogWarning("[VOICE] ⚠️ Message has no 'op' field!");
+                _logger.LogWarning("[VOICE] Message has no 'op' field!");
                 continue;
             }
-            
-            var op = opProp.ValueKind == JsonValueKind.String 
-                ? int.Parse(opProp.GetString()!) 
+
+            var op = opProp.ValueKind == JsonValueKind.String
+                ? int.Parse(opProp.GetString()!)
                 : opProp.GetInt32();
-        
-            _logger.LogDebug("[VOICE] 📋 Opcode: {Op}", op);
-        
+
+            if (op == 8) // HELLO
+            {
+                _logger.LogInformation("[VOICE] 👋 HELLO received, continuing...");
+                continue; // Skip HELLO, wait for READY
+            }
+
             if (op == 2) // READY
             {
-                _logger.LogInformation("[VOICE] ✅ READY received!");
+                _logger.LogInformation("[VOICE] 🎯 Got READY (op=2)");
                 var d = msg.GetProperty("d");
+
+                // ✅ LOG FULL READY PAYLOAD
+                _logger.LogCritical("[VOICE] 🔬 READY Full payload: {Json}", d.GetRawText());
+
+                // ✅ Extract and log available encryption modes
+                string encryptionMode = "xsalsa20_poly1305"; // default fallback
+
+                if (d.TryGetProperty("modes", out var modesArray) && modesArray.GetArrayLength() > 0)
+                {
+                    _logger.LogCritical("[VOICE] 🔐 Available encryption modes:");
+        
+                    // ✅ Szukaj xsalsa20_poly1305 w liście
+                    bool foundMode = false;
+                    for (int i = 0; i < modesArray.GetArrayLength(); i++)
+                    {
+                        var mode = modesArray[i].GetString();
+                        _logger.LogCritical("[VOICE]   [{Index}] {Mode}", i, mode);
             
+                        // ✅ Wybierz xsalsa20_poly1305 jeśli jest dostępny
+                        if (mode == "xsalsa20_poly1305" && !foundMode)
+                        {
+                            encryptionMode = mode;
+                            foundMode = true;
+                        }
+                    }
+        
+                    _logger.LogCritical("[VOICE] ✅ Selected encryption mode: {Mode}", encryptionMode);
+                }
+                else
+                {
+                    _logger.LogWarning("[VOICE] ⚠️ No 'modes' field in READY! Using default: {Mode}", encryptionMode);
+                }
+
                 var ssrcProp = d.GetProperty("ssrc");
                 var ssrc = ssrcProp.ValueKind == JsonValueKind.String
                     ? uint.Parse(ssrcProp.GetString()!)
                     : ssrcProp.GetUInt32();
-                
+
                 var ip = d.GetProperty("ip").GetString()!;
-            
+
                 var portProp = d.GetProperty("port");
                 var port = portProp.ValueKind == JsonValueKind.String
                     ? int.Parse(portProp.GetString()!)
                     : portProp.GetInt32();
-            
-                _logger.LogInformation("[VOICE] 🎯 SSRC: {Ssrc}, IP: {Ip}, Port: {Port}", ssrc, ip, port);
-            
-                return (ssrc, ip, port);
+
+                // Get heartbeat_interval from READY
+                int heartbeatInterval = 41250; // default
+                if (d.TryGetProperty("heartbeat_interval", out var hbProp))
+                {
+                    heartbeatInterval = hbProp.ValueKind switch
+                    {
+                        JsonValueKind.Number => (int)hbProp.GetDouble(),
+                        JsonValueKind.String => int.Parse(hbProp.GetString()!),
+                        _ => 41250
+                    };
+                }
+
+                _logger.LogInformation("[VOICE] 🎯 SSRC: {Ssrc}, IP: {Ip}, Port: {Port}, HB: {Hb}ms, Mode: {Mode}",
+                    ssrc, ip, port, heartbeatInterval, encryptionMode);
+
+                return (ssrc, ip, port, heartbeatInterval, encryptionMode);
             }
-        
+
             _logger.LogDebug("[VOICE] ⏭️ Skipping opcode {Op}", op);
         }
     }
-    
+
     private async Task<(string ip, ushort port)> DiscoverIpAsync(CancellationToken ct)
     {
         // IP Discovery packet: 74 bytes
@@ -372,35 +388,27 @@ public async Task ConnectAsync(ulong guildId, ulong userId, ulong channelId,
         return (ip, port);
     }
 
-    private async Task SendSelectProtocolAsync(string ip, ushort port, CancellationToken ct)
-    {
-        var select = new
-        {
-            op = 1,
-            d = new
-            {
-                protocol = "udp",
-                data = new
-                {
-                    address = ip,
-                    port = port,
-                    mode = "xsalsa20_poly1305"
-                }
-            }
-        };
-
-        await SendJsonAsync(select, ct);
-        _logger.LogDebug("[VOICE] Sent SELECT_PROTOCOL");
-    }
-
     private async Task<(string mode, byte[] secret_key)> WaitForSessionDescriptionAsync(CancellationToken ct)
     {
         while (true)
         {
+            _logger.LogDebug("[VOICE] 🔍 Waiting for next WebSocket message...");
             var msg = await ReceiveJsonAsync(ct);
-            var op = msg.GetProperty("op").GetInt32();
+
+            _logger.LogCritical("[VOICE] 📨 Received message: {Json}", msg.GetRawText());
+
+            if (!msg.TryGetProperty("op", out var opProp))
+            {
+                _logger.LogWarning("[VOICE] Message has no 'op' field!");
+                continue;
+            }
+
+            var op = opProp.GetInt32();
+            _logger.LogWarning("[VOICE] Opcode: {Op}", op);
+
             if (op == 4) // SESSION_DESCRIPTION
             {
+                _logger.LogInformation("[VOICE] ✅ Got SESSION_DESCRIPTION (op=4)");
                 var d = msg.GetProperty("d");
                 var mode = d.GetProperty("mode").GetString()!;
                 var keyArray = d.GetProperty("secret_key");
@@ -409,6 +417,8 @@ public async Task ConnectAsync(ulong guildId, ulong userId, ulong channelId,
                     key[i] = keyArray[i].GetByte();
                 return (mode, key);
             }
+
+            _logger.LogDebug("[VOICE] ⏭️ Skipping opcode {Op}, continuing...", op);
         }
     }
 
@@ -488,62 +498,6 @@ public async Task ConnectAsync(ulong guildId, ulong userId, ulong channelId,
                 json.Length > 200 ? json.Substring(0, 200) : json);
             throw;
         }
-    }
-
-    private async Task<int> WaitForHelloAsync(CancellationToken ct)
-    {
-        var msg = await ReceiveJsonAsync(ct);
-
-        if (msg.ValueKind == JsonValueKind.Undefined)
-        {
-            throw new InvalidOperationException("Received undefined message when expecting HELLO");
-        }
-
-        if (!msg.TryGetProperty("op", out var opProp))
-        {
-            throw new InvalidOperationException("Message has no 'op' field");
-        }
-
-        var op = opProp.ValueKind == JsonValueKind.String
-            ? int.Parse(opProp.GetString()!)
-            : opProp.GetInt32();
-
-        if (op != 8)
-        {
-            throw new InvalidOperationException($"Expected HELLO (op=8), got op={op}");
-        }
-
-        _logger.LogInformation("[VOICE] 👋 HELLO received");
-
-        // Wyciągnij heartbeat_interval
-        int heartbeatInterval = 41250; // default
-        if (msg.TryGetProperty("d", out var d) &&
-            d.TryGetProperty("heartbeat_interval", out var hbProp))
-        {
-            heartbeatInterval = hbProp.ValueKind switch
-            {
-                JsonValueKind.Number => (int)hbProp.GetDouble(),
-                JsonValueKind.String => int.Parse(hbProp.GetString()!),
-                _ => 41250
-            };
-
-            _logger.LogInformation("[VOICE] ❤️ Heartbeat interval: {Ms}ms", heartbeatInterval);
-        }
-
-        // Wyślij natychmiastowy heartbeat
-        _logger.LogDebug("[VOICE] 📤 Sending initial heartbeat...");
-        var heartbeat = new { op = 3, d = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() };
-        var hbJson = JsonSerializer.Serialize(heartbeat);
-
-        await _ws!.SendAsync(
-            Encoding.UTF8.GetBytes(hbJson),
-            WebSocketMessageType.Text,
-            true,
-            ct);
-
-        _logger.LogInformation("[VOICE] ✅ Initial heartbeat sent");
-
-        return heartbeatInterval;
     }
 
     public async ValueTask DisposeAsync()

@@ -4,5 +4,7 @@
   "base_hhmm": "01:10:00",
   "lead_seconds": 20,
   "enabled_10m": false,
-  "enabled_2h": false
+  "enabled_2h": false,
+  "repeat_plays": 3,
+  "repeat_gap_ms": 1000
 }

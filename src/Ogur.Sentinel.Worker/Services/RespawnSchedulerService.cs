@@ -54,16 +54,14 @@ public sealed class RespawnSchedulerService
     public async Task PlayAsync(bool is10m, CancellationToken ct)
     {
         var sound = is10m ? _sound10m : _sound2h;
-    
-        // Pobierz wartości z settings (z domyślnymi wartościami)
-        var repeatPlays = _state.RepeatPlays > 0 ? _state.RepeatPlays : 3;
-        var repeatGapMs = _state.RepeatGapMs > 0 ? _state.RepeatGapMs : 250;
+
+        var repeatPlays = _state.RepeatPlays > 0 ? _state.RepeatPlays : 1;  // default 1
+        var repeatGapMs = _state.RepeatGapMs;  // ← Bez fallbacku, użyj dokładnie tego co w settings
 
         foreach (var ch in _state.Channels)
         {
             try
             {
-                // Wywołaj raz - bot dołączy, zagra N razy, wyjdzie
                 await _voice.JoinAndPlayAsync(ch, sound, repeatPlays, repeatGapMs, ct);
             }
             catch (Exception ex)

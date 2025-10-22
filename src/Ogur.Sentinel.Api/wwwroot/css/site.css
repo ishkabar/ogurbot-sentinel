@@ -365,6 +365,47 @@ footer .container {
     background-color: rgba(0, 0, 0, 0.85);
 }
 
+/* === Form Control - lepsze dla disabled === */
+.form-control:disabled,
+.form-select:disabled {
+    background: rgba(255,255,255,.03) !important;
+    border-color: rgba(255,255,255,.08) !important;
+    color: rgba(231,233,238,.7) !important;
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+/* File input - ciemniejszy */
+input[type="file"].form-control {
+    background: rgba(255,255,255,.04) !important;
+    border: 1px solid var(--border);
+    color: var(--fg);
+}
+
+input[type="file"].form-control::file-selector-button {
+    background: rgba(255,255,255,.08);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--fg);
+    padding: 0.375rem 0.75rem;
+    margin-right: 0.75rem;
+    cursor: pointer;
+}
+
+input[type="file"].form-control::file-selector-button:hover {
+    background: rgba(255,255,255,.12);
+}
+
+input[type="file"].form-control:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+input[type="file"].form-control:disabled::file-selector-button {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     body, html, .navbar, .card, .form-control,

@@ -36,6 +36,21 @@ public static class ProxyEndpoints
             
             return Results.Ok();
         });
+        
+        app.MapPatch("/settings", async (IHttpClientFactory cf, HttpContext ctx) =>
+        {
+            var http = cf.CreateClient("worker");
+    
+            using var reader = new StreamReader(ctx.Request.Body);
+            var jsonContent = await reader.ReadToEndAsync();
+    
+            var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+            var request = new HttpRequestMessage(HttpMethod.Patch, "/settings") { Content = content };
+            var res = await http.SendAsync(request);
+            res.EnsureSuccessStatusCode();
+    
+            return Results.Ok();
+        });
 
         app.MapGet("/settings/limits", async (IHttpClientFactory cf) =>
         {
@@ -103,7 +118,6 @@ public static class ProxyEndpoints
                 return Results.Json(new { error = "Worker unavailable", channels = new object[] { } }, statusCode: 503);
             }
         });
-
         
         app.MapPost("/sounds/upload", async (IHttpClientFactory cf, HttpContext ctx) =>
         {
