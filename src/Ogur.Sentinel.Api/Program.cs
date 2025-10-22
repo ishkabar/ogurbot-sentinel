@@ -10,6 +10,7 @@ using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.AspNetCore.DataProtection;
 using Ogur.Sentinel.Abstractions;
 using Ogur.Sentinel.Core;
+using Ogur.Sentinel.Api.Http;  // ← Nowy import
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,7 +39,6 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
     .SetApplicationName("Ogur.Sentinel.Api");
 
-//builder.Services.AddDistributedMemoryCache();
 var redisConn = builder.Configuration["Redis:ConnectionString"];
 if (!string.IsNullOrEmpty(redisConn))
 {
@@ -65,7 +65,6 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddSingleton<IVersionHelper, VersionHelper>();
 
-
 builder.Services.AddHttpClient("worker", (sp, http) =>
 {
     var cfg = sp.GetRequiredService<IConfiguration>();
@@ -89,6 +88,7 @@ app.UseSession();
 
 app.UseAuthorization();
 
+// Auth middleware - redirect to login if not authenticated
 app.Use(async (context, next) =>
 {
     if (context.Request.Path.StartsWithSegments("/respawn", StringComparison.OrdinalIgnoreCase))
@@ -105,6 +105,7 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// Role-based access control - Viewer = read-only
 app.Use(async (context, next) =>
 {
     var role = context.Session.GetString("Role");
@@ -125,83 +126,7 @@ app.Use(async (context, next) =>
 app.MapRazorPages();
 app.MapHealthChecks("/health");
 
-// === Proxy endpoints to Worker ===
-
-app.MapGet("/settings", async (IHttpClientFactory cf) =>
-{
-    var http = cf.CreateClient("worker");
-    var res = await http.GetFromJsonAsync<JsonElement>("/settings");
-    return Results.Ok(res);
-});
-
-app.MapPost("/settings", async (IHttpClientFactory cf, HttpContext ctx) =>
-{
-    var http = cf.CreateClient("worker");
-    
-    using var reader = new StreamReader(ctx.Request.Body);
-    var jsonContent = await reader.ReadToEndAsync();
-    
-    var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
-    var res = await http.PostAsync("/settings", content);
-    res.EnsureSuccessStatusCode();
-    
-    try
-    {
-        await http.PostAsync("/respawn/recalculate", null);
-    }
-    catch { /* ignore */ }
-    
-    return Results.Ok();
-});
-
-app.MapGet("/respawn/next", async (IHttpClientFactory cf) =>
-{
-    var http = cf.CreateClient("worker");
-    var res = await http.GetFromJsonAsync<JsonElement>("/respawn/next");
-    return Results.Ok(res);
-});
-
-app.MapGet("/settings/limits", async (IHttpClientFactory cf) =>
-{
-    var http = cf.CreateClient("worker");
-    var res = await http.GetFromJsonAsync<JsonElement>("/settings/limits");
-    return Results.Ok(res);
-});
-
-app.MapPost("/respawn/sync", async (IHttpClientFactory cf) =>
-{
-    var http = cf.CreateClient("worker");
-    var res = await http.PostAsync("/respawn/sync", null);
-    res.EnsureSuccessStatusCode();
-    var result = await res.Content.ReadFromJsonAsync<JsonElement>();
-    return Results.Ok(result);
-});
-
-app.MapPost("/respawn/toggle", async (IHttpClientFactory cf, HttpContext ctx) =>
-{
-    var http = cf.CreateClient("worker");
-    var payload = await ctx.Request.ReadFromJsonAsync<JsonElement>();
-    var res = await http.PostAsJsonAsync("/respawn/toggle", payload);
-    res.EnsureSuccessStatusCode();
-    var result = await res.Content.ReadFromJsonAsync<JsonElement>();
-    return Results.Ok(result);
-});
-
-app.MapPost("/respawn/recalculate", async (IHttpClientFactory cf) =>
-{
-    var http = cf.CreateClient("worker");
-    var res = await http.PostAsync("/respawn/recalculate", null);
-    res.EnsureSuccessStatusCode();
-    var result = await res.Content.ReadFromJsonAsync<JsonElement>();
-    return Results.Ok(result);
-});
-
-app.MapGet("/channels/info", async (IHttpClientFactory cf) =>
-{
-    var http = cf.CreateClient("worker");
-    var res = await http.GetFromJsonAsync<JsonElement>("/channels/info");
-    return Results.Ok(res);
-});
+// === Local API Endpoints ===
 
 app.MapGet("/version", (IVersionHelper versionHelper) =>
 {
@@ -213,18 +138,7 @@ app.MapGet("/version", (IVersionHelper versionHelper) =>
     });
 });
 
-app.MapGet("/worker/version", async (IHttpClientFactory cf) =>
-{
-    try
-    {
-        var http = cf.CreateClient("worker");
-        var res = await http.GetFromJsonAsync<JsonElement>("/version");
-        return Results.Ok(res);
-    }
-    catch
-    {
-        return Results.Json(new { version = "disconnected", build_time = "-" });
-    }
-});
+// === Proxy Endpoints to Worker ===
+app.MapProxyEndpoints();
 
 app.Run();

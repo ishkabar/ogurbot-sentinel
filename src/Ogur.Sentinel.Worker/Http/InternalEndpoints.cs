@@ -27,6 +27,7 @@ public sealed class InternalEndpoints
     private readonly DiscordSocketClient _discord;
     private readonly RespawnOptions _respawnOpts;
     private readonly WikiSyncService _wikiSync;
+    private readonly VoiceService2 _voice;
 	private readonly IVersionHelper _versionHelper;
 
 
@@ -38,6 +39,7 @@ public sealed class InternalEndpoints
         DiscordSocketClient discord,
         IOptions<RespawnOptions> respawnOpts,
         WikiSyncService wikiSync,
+        VoiceService2 voice,
     IVersionHelper versionHelper)
     {
         _state = state;
@@ -47,6 +49,7 @@ public sealed class InternalEndpoints
         _discord = discord;
         _respawnOpts = respawnOpts.Value;
         _wikiSync = wikiSync;
+        _voice = voice;
     _versionHelper = versionHelper;
     }
 
@@ -192,6 +195,141 @@ public sealed class InternalEndpoints
 
             return Results.Ok(infos);
         });
+        
+        webapp.MapGet("/channels/voice", () =>
+        {
+            if (_discord.LoginState != LoginState.LoggedIn || _discord.CurrentUser is null)
+            {
+                return Results.Json(new { error = "Bot not connected" }, statusCode: 503);
+            }
+
+            var channels = new List<object>();
+    
+            foreach (var guild in _discord.Guilds)
+            {
+                var voiceChannels = guild.VoiceChannels
+                    .OrderBy(c => c.Position)
+                    .Select(c => new
+                    {
+                        id = c.Id.ToString(),
+                        name = c.Name,
+                        guildId = guild.Id.ToString(),
+                        guildName = guild.Name,
+                        categoryId = c.CategoryId?.ToString(),
+                        categoryName = guild.CategoryChannels
+                            .FirstOrDefault(cat => cat.Id == c.CategoryId)?.Name,
+                        userCount = c.Users.Count,
+                        position = c.Position
+                    });
+        
+                channels.AddRange(voiceChannels);
+            }
+
+            return Results.Ok(new { channels });
+        });
+        
+        webapp.MapPost("/sounds/upload", async (HttpContext ctx) =>
+{
+    if (!ctx.Request.HasFormContentType)
+    {
+        return Results.BadRequest(new { error = "Invalid content type" });
+    }
+
+    var form = await ctx.Request.ReadFormAsync();
+    var file = form.Files.GetFile("file");
+    var soundType = form["sound_type"].ToString();
+
+    if (file == null || file.Length == 0)
+    {
+        return Results.BadRequest(new { error = "No file uploaded" });
+    }
+
+    if (!file.FileName.EndsWith(".wav", StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.BadRequest(new { error = "Only .wav files are supported" });
+    }
+
+    if (file.Length > 5 * 1024 * 1024) // 5MB
+    {
+        return Results.BadRequest(new { error = "File too large (max 5MB)" });
+    }
+
+    try
+    {
+        var targetPath = soundType == "10m" 
+            ? _respawnOpts.Sound10m ?? "assets/respawn_10m.wav"
+            : _respawnOpts.Sound2h ?? "assets/respawn_2h.wav";
+
+        // Normalize path
+        if (!Path.IsPathRooted(targetPath))
+        {
+            targetPath = Path.Combine(AppContext.BaseDirectory, targetPath);
+        }
+
+        // Ensure directory exists
+        var directory = Path.GetDirectoryName(targetPath);
+        if (!string.IsNullOrEmpty(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        // Save file (replace existing)
+        using (var stream = new FileStream(targetPath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return Results.Ok(new { success = true, path = targetPath });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message, statusCode: 500); 
+    }
+});
+
+webapp.MapPost("/respawn/test-sound", async (HttpContext ctx) =>
+{
+    var sound = ctx.Request.Query["sound"].ToString();
+    var useSettings = ctx.Request.Query["use_settings"].ToString() == "true";
+    
+    var channelId = _state.Channels.FirstOrDefault();
+    if (channelId == 0)
+    {
+        return Results.BadRequest(new { error = "No channels configured" });
+    }
+
+    var soundPath = sound == "2h" ? _respawnOpts.Sound2h : _respawnOpts.Sound10m;
+    if (!Path.IsPathRooted(soundPath))
+    {
+        soundPath = Path.Combine(AppContext.BaseDirectory, soundPath);
+    }
+
+    if (!File.Exists(soundPath))
+    {
+        return Results.NotFound(new { error = "Sound file not found" });
+    }
+
+    try
+    {
+        var repeatPlays = useSettings && _state.RepeatPlays > 0 ? _state.RepeatPlays : 1;
+        var repeatGapMs = useSettings && _state.RepeatGapMs > 0 ? _state.RepeatGapMs : 0;
+        
+        _ = Task.Run(async () => 
+        {
+            try
+            {
+                await _voice.JoinAndPlayAsync(channelId, soundPath, repeatPlays, repeatGapMs, CancellationToken.None);
+            }
+            catch { }
+        });
+
+        return Results.Ok(new { success = true });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message, statusCode: 500);
+    }
+});
         
         webapp.MapGet("/version", () =>
 {

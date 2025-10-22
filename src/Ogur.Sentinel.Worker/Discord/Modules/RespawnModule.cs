@@ -73,8 +73,15 @@ public sealed class RespawnModule
 
         b.AddOption(new SlashCommandOptionBuilder()
             .WithName("test-voice")
-            .WithDescription("Join first channel and play test sound")
-            .WithType(ApplicationCommandOptionType.SubCommand));
+            .WithDescription("Join channel and play test sound")
+            .WithType(ApplicationCommandOptionType.SubCommand)
+            .AddOption("sound", ApplicationCommandOptionType.String, "Which sound to play (10m or 2h)", isRequired: true,
+                choices: new []
+                {
+                    new ApplicationCommandOptionChoiceProperties { Name = "10m respawn", Value = "10m" },
+                    new ApplicationCommandOptionChoiceProperties { Name = "2h respawn", Value = "2h" }
+                })
+            .AddOption("channel", ApplicationCommandOptionType.String, "Voice channel ID (leave empty for first configured)", isRequired: false));
 
         return b;
     }
@@ -146,22 +153,41 @@ public sealed class RespawnModule
 
             case "test-voice":
             {
-                var first = _state.Channels.FirstOrDefault();
-                if (first == 0)
+                var subCommand = cmd.Data.Options.First();
+                var soundType = subCommand.Options.FirstOrDefault(o => o.Name == "sound")?.Value?.ToString() ?? "10m";
+                var channelIdStr = subCommand.Options.FirstOrDefault(o => o.Name == "channel")?.Value?.ToString();
+    
+                ulong channelId;
+                
+                if (!string.IsNullOrEmpty(channelIdStr) && ulong.TryParse(channelIdStr, out var parsed))
                 {
-                    await cmd.RespondAsync("Brak skonfigurowanych kanałów. Użyj `respawn add-channel`.", ephemeral: true);
-                    return;
+                    channelId = parsed;
                 }
-
-                var path = _respawn.Sound10m ?? "/assets/respawn_10m.wav";
+  
+                else
+                {
+                    channelId = _state.Channels.FirstOrDefault();
+                    if (channelId == 0)
+                    {
+                        await cmd.RespondAsync("Brak skonfigurowanych kanałów. Użyj `respawn add-channel` lub podaj ID kanału.", ephemeral: true);
+                        return;
+                    }
+                }
+                
+                var path = soundType == "2h" ? _respawn.Sound2h : _respawn.Sound10m;
+                path ??= soundType == "2h" ? "/assets/respawn_2h.wav" : "/assets/respawn_10m.wav";
+    
                 if (!File.Exists(path))
                 {
                     await cmd.RespondAsync($"Plik audio nie istnieje: `{path}`", ephemeral: true);
                     return;
                 }
+                
+                var repeatPlays = _state.RepeatPlays > 0 ? _state.RepeatPlays : 3;
+                var repeatGapMs = _state.RepeatGapMs > 0 ? _state.RepeatGapMs : 250;
 
-                await cmd.RespondAsync("OK, próbuję wejść i zagrać (10m).", ephemeral: true);
-                _ = _voice.JoinAndPlayAsync(first, path, CancellationToken.None); // fire-and-forget
+                await cmd.RespondAsync($"OK, próbuję wejść na kanał `{channelId}` i zagrać ({soundType}, {repeatPlays}x).", ephemeral: true);
+                _ = _voice.JoinAndPlayAsync(channelId, path, repeatPlays, repeatGapMs, CancellationToken.None);
                 break;
             }
 

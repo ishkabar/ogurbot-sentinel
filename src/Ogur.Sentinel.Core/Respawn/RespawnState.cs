@@ -19,8 +19,7 @@ public sealed class RespawnState
     public IReadOnlyList<ulong> Channels => _channels;
     public string BaseHhmm { get; set; } = "00:00:00";
     public int LeadSeconds { get; set; } = 0;
-
-    // Runtime toggles (controlled by slash commands in Worker)
+    
     public bool Enabled10m { get; set; } = false;
     public bool Enabled2h { get; set; } = false;
     public int MaxChannels { get; set; } = 3;
@@ -29,6 +28,8 @@ public sealed class RespawnState
     public DateTimeOffset? LastSyncAt { get; set; }
     
     public HashSet<ulong> RolesAllowed { get; } = new();
+    public int RepeatPlays { get; set; } = 3;
+    public int RepeatGapMs { get; set; } = 250;
 
     public void SetChannels(IEnumerable<ulong> ids)
     {

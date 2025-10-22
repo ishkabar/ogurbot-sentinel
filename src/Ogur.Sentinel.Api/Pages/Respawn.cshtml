@@ -102,8 +102,51 @@
                             </span>
                         </div>
                     </div>
+
+
+                    <div id="sound-upload-section" class="d-none mt-3">
+                        <h5 class="title-gradient">🔊 Custom Sounds</h5>
+
+                        <div class="glass p-3 mb-3">
+                            <h6 class="muted">10-minute Sound</h6>
+                            <div class="d-flex gap-2 mb-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary flex-fill"
+                                        onclick="playSound('10m', false)">
+                                    ▶️ Once
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary flex-fill"
+                                        onclick="playSound('10m', true)">
+                                    🔁 Loop
+                                </button>
+                            </div>
+                            <input type="file" class="form-control form-control-sm mb-2" id="upload-10m" accept=".wav">
+                            <button type="button" class="btn btn-sm btn-primary w-100" onclick="uploadSound('10m')">
+                                📤 Upload
+                            </button>
+                        </div>
+
+                        <div class="glass p-3">
+                            <h6 class="muted">2-hour Sound</h6>
+                            <div class="d-flex gap-2 mb-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary flex-fill"
+                                        onclick="playSound('2h', false)">
+                                    ▶️ Once
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary flex-fill"
+                                        onclick="playSound('2h', true)">
+                                    🔁 Loop
+                                </button>
+                            </div>
+                            <input type="file" class="form-control form-control-sm mb-2" id="upload-2h" accept=".wav">
+                            <button type="button" class="btn btn-sm btn-primary w-100" onclick="uploadSound('2h')">
+                                📤 Upload
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
+
 
             <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                 <button type="button" id="reloadBtn" class="btn" onclick="reloadWithFeedback(event)">🔄 Reload</button>
@@ -115,418 +158,733 @@
         </form>
     </div>
 </div>
+<div class="modal fade" id="addChannelModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Select Voice Channels</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="voiceChannelsList">
+                    <div class="text-center">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-2">Loading channels...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveSelectedChannels()">Add Selected</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
-<script>
-    const IS_VIEWER = @(Model.IsViewer ? "true" : "false");
-    let currentChannels = [];
-    let maxChannels = 3;
+    <script>
+        const IS_VIEWER = @(Model.IsViewer ? "true" : "false");
+        let currentChannels = [];
+        let maxChannels = 3;
+        let availableVoiceChannels = [];
+        let selectedChannelsForAdd = new Set();
 
-    // Helper function for button feedback
-    function showButtonFeedback(button, successText, duration = 2000) {
-        const originalText = button.innerHTML;
-        const originalDisabled = button.disabled;
 
-        button.disabled = true;
-        button.innerHTML = successText;
+        // Helper function for button feedback
+        function showButtonFeedback(button, successText, duration = 2000) {
+            const originalText = button.innerHTML;
+            const originalDisabled = button.disabled;
 
-        setTimeout(() => {
-            button.innerHTML = originalText;
-            button.disabled = originalDisabled;
-        }, duration);
-    }
+            button.disabled = true;
+            button.innerHTML = successText;
 
-    function disableIfViewer(elementId) {
-        if (IS_VIEWER) {
-            const el = document.getElementById(elementId);
-            if (el) el.disabled = true;
-        }
-    }
-
-    async function loadSettings() {
-        document.getElementById('loading').classList.remove('d-none');
-        document.getElementById('error').classList.add('d-none');
-        document.getElementById('success').classList.add('d-none');
-
-        try {
-            const response = await fetch('/settings');
-            const data = await response.json();
-
-            document.getElementById('baseTime').value = data.base_hhmm;
-            document.getElementById('leadSeconds').value = data.lead_seconds;
-            document.getElementById('enabled10m').checked = data.enabled_10m;
-            document.getElementById('enabled2h').checked = data.enabled_2h;
-
-            // Wiki sync settings
-            document.getElementById('useSyncedTime').checked = data.use_synced_time || false;
-            if (data.synced_base_time) {
-                document.getElementById('syncedTime').textContent = data.synced_base_time;
-                document.getElementById('lastSync').textContent = data.last_sync_at
-                    ? new Date(data.last_sync_at).toLocaleString()
-                    : 'Never';
-                document.getElementById('syncedTimeInfo').classList.remove('d-none');
-            }
-
-            currentChannels = (data.channels || []).map(ch => String(ch));
-
-            try {
-                const channelsResp = await fetch('/channels/info');
-                const channelsData = await channelsResp.json();
-                window.channelNames = {};
-                channelsData.forEach(ch => {
-                    window.channelNames[String(ch.id)] = {name: ch.name, guild: ch.guild};
-                });
-            } catch (e) {
-                console.warn('Failed to load channel names:', e);
-            }
-
-            renderChannels();
-
-            // Load next triggers
-            const nextResp = await fetch('/respawn/next');
-            const nextData = await nextResp.json();
-
-            // Load limits
-            try {
-                const limitsResp = await fetch('/settings/limits');
-                const limitsData = await limitsResp.json();
-                maxChannels = limitsData.max_channels;
-
-                const label = document.querySelector('label[for="channelsList"]')
-                    || document.querySelector('.form-label');
-                if (label && label.textContent.includes('Voice Channels')) {
-                    label.textContent = `Voice Channels (max ${maxChannels})`;
-                }
-            } catch (e) {
-                console.warn('Failed to load limits, using default:', e);
-            }
-
-            document.getElementById('next10m').textContent = new Date(nextData.next10m).toLocaleString();
-            document.getElementById('next2h').textContent = new Date(nextData.next2h).toLocaleString();
-
-            document.getElementById('loading').classList.add('d-none');
-            document.getElementById('settings-form').classList.remove('d-none');
-
-            // Disable kontrolki dla viewer
-            if (IS_VIEWER) {
-                disableIfViewer('baseTime');
-                disableIfViewer('leadSeconds');
-                disableIfViewer('useSyncedTime');
-                disableIfViewer('enabled10m');
-                disableIfViewer('enabled2h');
-                disableIfViewer('saveBtn');
-                disableIfViewer('recalculateBtn');
-
-                // Ukryj przyciski akcji
-                document.querySelectorAll('button[onclick*="addChannel"], button[onclick*="manualSync"]').forEach(btn => {
-                    btn.disabled = true;
-                    btn.style.opacity = '0.5';
-                });
-
-                // Ukryj przyciski usuwania kanałów
-                document.querySelectorAll('.btn-close').forEach(btn => btn.style.display = 'none');
-            }
-        } catch (error) {
-            document.getElementById('loading').classList.add('d-none');
-            document.getElementById('error').textContent = 'Failed to load settings: ' + error.message;
-            document.getElementById('error').classList.remove('d-none');
-        }
-    }
-
-    async function reloadWithFeedback(event) {
-        if (IS_VIEWER) return;
-        const btn = event.target;
-        await loadSettings();
-        showButtonFeedback(btn, '✓ Reloaded!', 2000);
-    }
-
-    async function recalculateWithFeedback(event) {
-        if (IS_VIEWER) return;
-        const btn = event.target;
-
-        try {
-            const response = await fetch('/respawn/recalculate', {
-                method: 'POST'
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                document.getElementById('next10m').textContent = new Date(data.next10m).toLocaleString();
-                document.getElementById('next2h').textContent = new Date(data.next2h).toLocaleString();
-
-                showButtonFeedback(btn, '✓ Recalculated!', 2000);
-            } else {
-                throw new Error('Recalculation failed');
-            }
-        } catch (error) {
-            console.error('Recalculate failed:', error);
-            showButtonFeedback(btn, '✗ Failed', 2000);
-        }
-    }
-
-    async function manualSync() {
-        if (IS_VIEWER) return;
-        const btn = event.target;
-        const originalText = btn.innerHTML;
-
-        btn.disabled = true;
-        btn.innerHTML = '🔄 Syncing...';
-
-        try {
-            const response = await fetch('/respawn/sync', { method: 'POST' });
-            const data = await response.json();
-
-            if (data.success) {
-                document.getElementById('syncedTime').textContent = data.synced_time;
-                document.getElementById('lastSync').textContent = new Date(data.last_sync).toLocaleString();
-                document.getElementById('syncedTimeInfo').classList.remove('d-none');
-
-                btn.innerHTML = '✓ Synced!';
-
-                await recalculateWithFeedback({ target: document.getElementById('recalculateBtn') });
-            } else {
-                btn.innerHTML = '✗ Failed';
-            }
-        } catch (error) {
-            console.error('Manual sync failed:', error);
-            btn.innerHTML = '✗ Error';
-        } finally {
             setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.disabled = IS_VIEWER;
-            }, 2000);
-        }
-    }
-
-    function renderChannels() {
-        const container = document.getElementById('channelsList');
-        container.innerHTML = '';
-
-        if (currentChannels.length === 0) {
-            container.innerHTML = '<p class="text-muted">No channels configured</p>';
-            return;
+                button.innerHTML = originalText;
+                button.disabled = originalDisabled;
+            }, duration);
         }
 
-        currentChannels.forEach((ch, idx) => {
-            const info = window.channelNames?.[ch];
-            const displayName = info ? `#${info.name}` : `Channel`;
-            const displayId = `<code style="color: var(--muted); font-size: 0.75em;">${ch}</code>`;
+        function disableIfViewer(elementId) {
+            if (IS_VIEWER) {
+                const el = document.getElementById(elementId);
+                if (el) el.disabled = true;
+            }
+        }
 
-            const pill = document.createElement('span');
-            pill.className = 'pill me-2 mb-2 d-inline-flex align-items-center';
+        async function loadSettings() {
+            document.getElementById('loading').classList.remove('d-none');
+            document.getElementById('error').classList.add('d-none');
+            document.getElementById('success').classList.add('d-none');
 
-            const closeBtn = IS_VIEWER ? '' : `
+            try {
+                const response = await fetch('/settings');
+                const data = await response.json();
+
+                document.getElementById('baseTime').value = data.base_hhmm;
+                document.getElementById('leadSeconds').value = data.lead_seconds;
+                document.getElementById('enabled10m').checked = data.enabled_10m;
+                document.getElementById('enabled2h').checked = data.enabled_2h;
+
+                // Wiki sync settings
+                document.getElementById('useSyncedTime').checked = data.use_synced_time || false;
+                if (data.synced_base_time) {
+                    document.getElementById('syncedTime').textContent = data.synced_base_time;
+                    document.getElementById('lastSync').textContent = data.last_sync_at
+                        ? new Date(data.last_sync_at).toLocaleString()
+                        : 'Never';
+                    document.getElementById('syncedTimeInfo').classList.remove('d-none');
+                }
+
+                currentChannels = (data.channels || []).map(ch => String(ch));
+
+                try {
+                    const channelsResp = await fetch('/channels/info');
+                    const channelsData = await channelsResp.json();
+                    window.channelNames = {};
+                    channelsData.forEach(ch => {
+                        window.channelNames[String(ch.id)] = {name: ch.name, guild: ch.guild};
+                    });
+                } catch (e) {
+                    console.warn('Failed to load channel names:', e);
+                }
+
+                renderChannels();
+
+                // Load next triggers
+                const nextResp = await fetch('/respawn/next');
+                const nextData = await nextResp.json();
+
+                // Load limits
+                try {
+                    const limitsResp = await fetch('/settings/limits');
+                    const limitsData = await limitsResp.json();
+                    maxChannels = limitsData.max_channels;
+
+                    const label = document.querySelector('label[for="channelsList"]')
+                        || document.querySelector('.form-label');
+                    if (label && label.textContent.includes('Voice Channels')) {
+                        label.textContent = `Voice Channels (max ${maxChannels})`;
+                    }
+                } catch (e) {
+                    console.warn('Failed to load limits, using default:', e);
+                }
+
+                document.getElementById('next10m').textContent = new Date(nextData.next10m).toLocaleString();
+                document.getElementById('next2h').textContent = new Date(nextData.next2h).toLocaleString();
+
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('settings-form').classList.remove('d-none');
+
+                // Disable kontrolki dla viewer
+                if (IS_VIEWER) {
+                    disableIfViewer('baseTime');
+                    disableIfViewer('leadSeconds');
+                    disableIfViewer('useSyncedTime');
+                    disableIfViewer('enabled10m');
+                    disableIfViewer('enabled2h');
+                    disableIfViewer('saveBtn');
+                    disableIfViewer('recalculateBtn');
+
+                    // Ukryj przyciski akcji
+                    document.querySelectorAll('button[onclick*="addChannel"], button[onclick*="manualSync"]').forEach(btn => {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.5';
+                    });
+
+                    // Ukryj przyciski usuwania kanałów
+                    document.querySelectorAll('.btn-close').forEach(btn => btn.style.display = 'none');
+                }
+            } catch (error) {
+                document.getElementById('loading').classList.add('d-none');
+                document.getElementById('error').textContent = 'Failed to load settings: ' + error.message;
+                document.getElementById('error').classList.remove('d-none');
+            }
+        }
+
+        async function reloadWithFeedback(event) {
+            if (IS_VIEWER) return;
+            const btn = event.target;
+            await loadSettings();
+            showButtonFeedback(btn, '✓ Reloaded!', 2000);
+        }
+
+        async function recalculateWithFeedback(event) {
+            if (IS_VIEWER) return;
+            const btn = event.target;
+
+            try {
+                const response = await fetch('/respawn/recalculate', {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('next10m').textContent = new Date(data.next10m).toLocaleString();
+                    document.getElementById('next2h').textContent = new Date(data.next2h).toLocaleString();
+
+                    showButtonFeedback(btn, '✓ Recalculated!', 2000);
+                } else {
+                    throw new Error('Recalculation failed');
+                }
+            } catch (error) {
+                console.error('Recalculate failed:', error);
+                showButtonFeedback(btn, '✗ Failed', 2000);
+            }
+        }
+
+        async function manualSync() {
+            if (IS_VIEWER) return;
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '🔄 Syncing...';
+
+            try {
+                const response = await fetch('/respawn/sync', {method: 'POST'});
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('syncedTime').textContent = data.synced_time;
+                    document.getElementById('lastSync').textContent = new Date(data.last_sync).toLocaleString();
+                    document.getElementById('syncedTimeInfo').classList.remove('d-none');
+
+                    btn.innerHTML = '✓ Synced!';
+
+                    await recalculateWithFeedback({target: document.getElementById('recalculateBtn')});
+                } else {
+                    btn.innerHTML = '✗ Failed';
+                }
+            } catch (error) {
+                console.error('Manual sync failed:', error);
+                btn.innerHTML = '✗ Error';
+            } finally {
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = IS_VIEWER;
+                }, 2000);
+            }
+        }
+
+        function renderChannels() {
+            const container = document.getElementById('channelsList');
+            container.innerHTML = '';
+
+            if (currentChannels.length === 0) {
+                container.innerHTML = '<p class="text-muted">No channels configured</p>';
+                return;
+            }
+
+            currentChannels.forEach((ch, idx) => {
+                const info = window.channelNames?.[ch];
+                const displayName = info ? `#${info.name}` : `Channel`;
+                const displayId = `<code style="color: var(--muted); font-size: 0.75em;">${ch}</code>`;
+
+                const pill = document.createElement('span');
+                pill.className = 'pill me-2 mb-2 d-inline-flex align-items-center';
+
+                const closeBtn = IS_VIEWER ? '' : `
                 <button class="btn-close btn-close-white ms-2" type="button" onclick="removeChannel(${idx})" 
                         style="font-size: 0.7em; opacity: 0.7;" 
                         aria-label="Remove"></button>
             `;
 
-            pill.innerHTML = `
+                pill.innerHTML = `
                 <span style="color: var(--accent);">${displayName}</span>
                 <span class="ms-2">${displayId}</span>
                 ${closeBtn}
             `;
-            container.appendChild(pill);
-        });
-    }
-
-    function addChannel() {
-        if (IS_VIEWER) return;
-
-        const input = prompt('Enter Discord Channel ID(s):\n(separate multiple IDs with commas, spaces, or new lines)');
-        if (!input) return;
-
-        const ids = input
-            .split(/[\s,\n]+/)
-            .map(id => id.trim())
-            .filter(id => id.length > 0)
-            .filter(id => /^\d+$/.test(id));
-
-        if (ids.length === 0) {
-            alert('No valid channel IDs found');
-            return;
+                container.appendChild(pill);
+            });
         }
 
-        const available = maxChannels - currentChannels.length;
-        const toAdd = ids.slice(0, available);
+        async function addChannel() {
+            if (IS_VIEWER) return;
 
-        if (toAdd.length < ids.length) {
-            alert(`Added ${toAdd.length} channels (max ${maxChannels} total). ${ids.length - toAdd.length} ignored.`);
+            selectedChannelsForAdd.clear();
+
+            const modal = new bootstrap.Modal(document.getElementById('addChannelModal'));
+            modal.show();
+
+            await loadVoiceChannels();
         }
 
-        currentChannels.push(...toAdd);
-        renderChannels();
-    }
+        async function loadVoiceChannels() {
+            const container = document.getElementById('voiceChannelsList');
 
-    function removeChannel(idx) {
-        if (IS_VIEWER) return;
-        currentChannels.splice(idx, 1);
-        renderChannels();
-    }
+            try {
+                const response = await fetch('/channels/voice');
+                if (!response.ok) throw new Error('Failed to load channels');
 
-    document.getElementById('respawnForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+                const data = await response.json();
 
-        if (IS_VIEWER) {
-            alert('You have read-only access. Contact admin to make changes.');
-            return;
+                if (data.error) {
+                    container.innerHTML = `<p class="text-danger text-center">${data.error}</p>`;
+                    return;
+                }
+
+                availableVoiceChannels = data.channels || [];
+
+                if (availableVoiceChannels.length === 0) {
+                    container.innerHTML = '<p class="text-muted text-center">No voice channels found</p>';
+                    return;
+                }
+
+                renderVoiceChannelsList();
+
+            } catch (error) {
+                console.error('Error loading voice channels:', error);
+                container.innerHTML = '<p class="text-danger text-center">Error loading channels</p>';
+            }
+
+
         }
 
-        const saveBtn = document.getElementById('saveBtn');
-        const originalText = saveBtn.innerHTML;
 
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '💾 Saving...';
+        function saveSelectedChannels() {
+            if (selectedChannelsForAdd.size === 0) {
+                alert('No channels selected');
+                return;
+            }
 
-        const payload = {
-            base_hhmm: document.getElementById('baseTime').value,
-            lead_seconds: parseInt(document.getElementById('leadSeconds').value),
-            channels: currentChannels,
-            roles_allowed: [],
-            use_synced_time: document.getElementById('useSyncedTime').checked
-        };
+            const available = maxChannels - currentChannels.length;
+            if (selectedChannelsForAdd.size > available) {
+                alert(`Can only add ${available} more channel(s)`);
+                return;
+            }
 
-        console.log('Sending payload:', payload);
+            // Add selected channels
+            currentChannels.push(...Array.from(selectedChannelsForAdd));
 
-        try {
-            const response = await fetch('/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+            if (!window.channelNames) {
+                window.channelNames = {};
+            }
+
+            selectedChannelsForAdd.forEach(channelId => {
+                const channelData = availableVoiceChannels.find(ch => ch.id === channelId);
+                if (channelData) {
+                    window.channelNames[channelId] = {
+                        name: channelData.name,
+                        guild: channelData.guildName
+                    };
+                }
             });
 
-            if (response.ok) {
-                saveBtn.innerHTML = '✓ Saved!';
-                document.getElementById('success').classList.remove('d-none');
-                setTimeout(() => document.getElementById('success').classList.add('d-none'), 3000);
+            renderChannels();
 
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('addChannelModal')).hide();
+
+            // Reset selection
+            selectedChannelsForAdd.clear();
+        }
+
+
+        function renderVoiceChannelsList() {
+            const container = document.getElementById('voiceChannelsList');
+            container.innerHTML = '';
+
+            // Group by guild
+            const byGuild = {};
+            availableVoiceChannels.forEach(ch => {
+                if (!byGuild[ch.guildId]) {
+                    byGuild[ch.guildId] = {
+                        name: ch.guildName,
+                        channels: []
+                    };
+                }
+                byGuild[ch.guildId].channels.push(ch);
+            });
+
+            Object.entries(byGuild).forEach(([guildId, guild]) => {
+                // Guild header (if multiple guilds)
+                if (Object.keys(byGuild).length > 1) {
+                    const guildHeader = document.createElement('h6');
+                    guildHeader.className = 'text-muted mt-3 mb-2';
+                    guildHeader.style.fontWeight = '700';
+                    guildHeader.textContent = guild.name;
+                    container.appendChild(guildHeader);
+                }
+
+                // Group channels by category
+                const byCategory = {};
+                const uncategorized = [];
+
+                guild.channels.forEach(channel => {
+                    if (channel.categoryName) {
+                        if (!byCategory[channel.categoryId]) {
+                            byCategory[channel.categoryId] = {
+                                name: channel.categoryName,
+                                channels: []
+                            };
+                        }
+                        byCategory[channel.categoryId].channels.push(channel);
+                    } else {
+                        uncategorized.push(channel);
+                    }
+                });
+
+                // Render categorized channels
+                Object.entries(byCategory).forEach(([categoryId, category]) => {
+                    const categoryHeader = document.createElement('div');
+                    categoryHeader.className = 'category-header';
+                    categoryHeader.textContent = category.name;
+                    container.appendChild(categoryHeader);
+
+                    category.channels.forEach(channel => {
+                        renderChannelCheckbox(container, channel);
+                    });
+                });
+
+                // Render uncategorized channels
+                if (uncategorized.length > 0) {
+                    if (Object.keys(byCategory).length > 0) {
+                        const categoryHeader = document.createElement('div');
+                        categoryHeader.className = 'category-header';
+                        categoryHeader.textContent = 'Uncategorized';
+                        container.appendChild(categoryHeader);
+                    }
+
+                    uncategorized.forEach(channel => {
+                        renderChannelCheckbox(container, channel);
+                    });
+                }
+            });
+
+            // Info about limit
+            if (currentChannels.length >= maxChannels) {
+                const warning = document.createElement('div');
+                warning.className = 'alert alert-warning mt-3';
+                warning.innerHTML = `<small>⚠️ Maximum ${maxChannels} channels reached. Remove existing channels to add new ones.</small>`;
+                container.appendChild(warning);
+            }
+
+
+        }
+
+        function renderChannelCheckbox(container, channel) {
+            const isAlreadyAdded = currentChannels.includes(channel.id);
+            const isDisabled = isAlreadyAdded || (currentChannels.length >= maxChannels && !selectedChannelsForAdd.has(channel.id));
+
+            const itemHtml = `
+        <div class="channel-list-item ${isDisabled ? 'disabled' : ''}">
+            <input 
+                class="channel-checkbox form-check-input" 
+                type="checkbox" 
+                id="channel_${channel.id}" 
+                value="${channel.id}"
+                ${isDisabled ? 'disabled' : ''}
+                ${selectedChannelsForAdd.has(channel.id) ? 'checked' : ''}
+            >
+            <label class="channel-label" for="channel_${channel.id}">
+                <div class="channel-info">
+                    <span class="channel-name">🔊 ${channel.name}</span>
+                    ${channel.userCount > 0 ? `<span class="badge bg-success">${channel.userCount} 👤</span>` : ''}
+                    ${isAlreadyAdded ? '<span class="badge bg-secondary">Added</span>' : ''}
+                </div>
+                <code class="channel-id">${channel.id}</code>
+            </label>
+        </div>
+    `;
+
+            const temp = document.createElement('div');
+            temp.innerHTML = itemHtml;
+            const item = temp.firstElementChild;
+
+            if (!isDisabled) {
+                const checkbox = item.querySelector('input');
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        const available = maxChannels - currentChannels.length;
+                        if (selectedChannelsForAdd.size >= available) {
+                            e.target.checked = false;
+                            alert(`Maximum ${maxChannels} channels allowed`);
+                            return;
+                        }
+                        selectedChannelsForAdd.add(channel.id);
+                    } else {
+                        selectedChannelsForAdd.delete(channel.id);
+                    }
+                });
+            }
+
+            container.appendChild(item);
+        }
+
+        function removeChannel(idx) {
+            if (IS_VIEWER) return;
+            currentChannels.splice(idx, 1);
+            renderChannels();
+        }
+
+        async function playSound(soundType, useSettings) {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '🔊...';
+
+            try {
+                const url = `/respawn/test-sound?sound=${soundType}&use_settings=${useSettings}`;
+                console.log('🔊 Calling:', url);
+
+                const response = await fetch(url, {method: 'POST'});
+                console.log('📡 Response status:', response.status);
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    console.error('Error response:', error);
+                    throw new Error(error.error || `Server returned ${response.status}`);
+                }
+
+                const result = await response.json();
+                console.log('Success:', result);
+
+                btn.innerHTML = '✓';
                 setTimeout(() => {
-                    saveBtn.innerHTML = originalText;
-                    saveBtn.disabled = false;
+                    btn.innerHTML = originalText;
+                    btn.disabled = IS_VIEWER;
                 }, 2000);
 
-                setTimeout(() => loadSettings(), 500);
-            } else {
-                throw new Error('Save failed');
+            } catch (error) {
+                console.error('Exception:', error);
+                alert('Failed to play sound: ' + error.message);
+
+                btn.innerHTML = '✗';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = IS_VIEWER;
+                }, 2000);
             }
-        } catch (error) {
-            saveBtn.innerHTML = originalText;
-            saveBtn.disabled = false;
+            
 
-            document.getElementById('error').textContent = 'Failed to save: ' + error.message;
-            document.getElementById('error').classList.remove('d-none');
-        }
-    });
-
-    // Toggle handlers
-    document.getElementById('enabled10m').addEventListener('change', async (e) => {
-        if (IS_VIEWER) {
-            e.target.checked = !e.target.checked;
-            alert('You have read-only access');
-            return;
         }
 
-        const checkbox = e.target;
-        const originalState = checkbox.checked;
 
-        try {
-            const response = await fetch('/respawn/toggle', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    enable10m: checkbox.checked,
-                    enable2h: null
-                })
-            });
+        async function uploadSound(soundType) {
+            if (IS_VIEWER) return;
 
-            if (!response.ok) throw new Error('Toggle failed');
+            const fileInput = document.getElementById(`upload-${soundType}`);
+            const file = fileInput.files[0];
 
-            const label = checkbox.nextElementSibling;
-            const originalText = label.innerHTML;
-            label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
-            setTimeout(() => label.innerHTML = originalText, 2000);
+            if (!file) {
+                alert('Select a file first');
+                return;
+            }
 
-        } catch (error) {
-            console.error('Toggle 10m failed:', error);
-            checkbox.checked = !originalState;
-            alert('Failed to toggle 10m respawns');
-        }
-    });
+            if (!file.name.toLowerCase().endsWith('.wav')) {
+                alert('Only .wav files');
+                return;
+            }
 
-    document.getElementById('enabled2h').addEventListener('change', async (e) => {
-        if (IS_VIEWER) {
-            e.target.checked = !e.target.checked;
-            alert('You have read-only access');
-            return;
-        }
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File too large (max 5MB)');
+                return;
+            }
 
-        const checkbox = e.target;
-        const originalState = checkbox.checked;
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '📤...';
 
-        try {
-            const response = await fetch('/respawn/toggle', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    enable10m: null,
-                    enable2h: checkbox.checked
-                })
-            });
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('sound_type', soundType);
 
-            if (!response.ok) throw new Error('Toggle failed');
+                const response = await fetch('/sounds/upload', {
+                    method: 'POST',
+                    body: formData
+                });
 
-            const label = checkbox.nextElementSibling;
-            const originalText = label.innerHTML;
-            label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
-            setTimeout(() => label.innerHTML = originalText, 2000);
+                if (response.ok) {
+                    btn.innerHTML = '✓ Done!';
+                    fileInput.value = '';
 
-        } catch (error) {
-            console.error('Toggle 2h failed:', error);
-            checkbox.checked = !originalState;
-            alert('Failed to toggle 2h respawns');
-        }
-    });
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = IS_VIEWER;
+                    }, 2000);
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Upload failed');
+                }
+            } catch (error) {
+                alert('Upload failed: ' + error.message);
+                btn.innerHTML = originalText;
+                btn.disabled = IS_VIEWER;
+            }
 
-    document.getElementById('useSyncedTime').addEventListener('change', async (e) => {
-        if (IS_VIEWER) {
-            e.target.checked = !e.target.checked;
-            alert('You have read-only access');
-            return;
+
         }
 
-        const checkbox = e.target;
-        const originalState = checkbox.checked;
 
-        const payload = {
-            base_hhmm: document.getElementById('baseTime').value,
-            lead_seconds: parseInt(document.getElementById('leadSeconds').value),
-            channels: currentChannels,
-            roles_allowed: [],
-            use_synced_time: checkbox.checked
-        };
+        document.getElementById('respawnForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-        try {
-            const response = await fetch('/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+            if (IS_VIEWER) {
+                alert('You have read-only access. Contact admin to make changes.');
+                return;
+            }
 
-            if (!response.ok) throw new Error('Toggle sync failed');
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.innerHTML;
 
-            const label = checkbox.nextElementSibling;
-            const originalText = label.innerHTML;
-            label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
-            setTimeout(() => label.innerHTML = originalText, 2000);
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '💾 Saving...';
 
-            await recalculateWithFeedback({ target: document.getElementById('recalculateBtn') });
-        } catch (error) {
-            console.error('Toggle sync failed:', error);
-            checkbox.checked = originalState;
-            alert('Failed to toggle wiki sync');
-        }
-    });
+            const payload = {
+                base_hhmm: document.getElementById('baseTime').value,
+                lead_seconds: parseInt(document.getElementById('leadSeconds').value),
+                channels: currentChannels,
+                roles_allowed: [],
+                use_synced_time: document.getElementById('useSyncedTime').checked
+            };
 
-    loadSettings();
-</script>
+            console.log('Sending payload:', payload);
+
+            try {
+                const response = await fetch('/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    saveBtn.innerHTML = '✓ Saved!';
+                    document.getElementById('success').classList.remove('d-none');
+                    setTimeout(() => document.getElementById('success').classList.add('d-none'), 3000);
+
+                    setTimeout(() => {
+                        saveBtn.innerHTML = originalText;
+                        saveBtn.disabled = false;
+                    }, 2000);
+
+                    setTimeout(() => loadSettings(), 500);
+                } else {
+                    throw new Error('Save failed');
+                }
+            } catch (error) {
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+
+                document.getElementById('error').textContent = 'Failed to save: ' + error.message;
+                document.getElementById('error').classList.remove('d-none');
+            }
+        });
+
+        // Toggle handlers
+        document.getElementById('enabled10m').addEventListener('change', async (e) => {
+            if (IS_VIEWER) {
+                e.target.checked = !e.target.checked;
+                alert('You have read-only access');
+                return;
+            }
+
+            const checkbox = e.target;
+            const originalState = checkbox.checked;
+
+            try {
+                const response = await fetch('/respawn/toggle', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        enable10m: checkbox.checked,
+                        enable2h: null
+                    })
+                });
+
+                if (!response.ok) throw new Error('Toggle failed');
+
+                const label = checkbox.nextElementSibling;
+                const originalText = label.innerHTML;
+                label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
+                setTimeout(() => label.innerHTML = originalText, 2000);
+
+            } catch (error) {
+                console.error('Toggle 10m failed:', error);
+                checkbox.checked = !originalState;
+                alert('Failed to toggle 10m respawns');
+            }
+        });
+
+        document.getElementById('enabled2h').addEventListener('change', async (e) => {
+            if (IS_VIEWER) {
+                e.target.checked = !e.target.checked;
+                alert('You have read-only access');
+                return;
+            }
+
+            const checkbox = e.target;
+            const originalState = checkbox.checked;
+
+            try {
+                const response = await fetch('/respawn/toggle', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        enable10m: null,
+                        enable2h: checkbox.checked
+                    })
+                });
+
+                if (!response.ok) throw new Error('Toggle failed');
+
+                const label = checkbox.nextElementSibling;
+                const originalText = label.innerHTML;
+                label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
+                setTimeout(() => label.innerHTML = originalText, 2000);
+
+            } catch (error) {
+                console.error('Toggle 2h failed:', error);
+                checkbox.checked = !originalState;
+                alert('Failed to toggle 2h respawns');
+            }
+        });
+
+        document.getElementById('useSyncedTime').addEventListener('change', async (e) => {
+            if (IS_VIEWER) {
+                e.target.checked = !e.target.checked;
+                alert('You have read-only access');
+                return;
+            }
+
+            const checkbox = e.target;
+            const originalState = checkbox.checked;
+
+            const payload = {
+                base_hhmm: document.getElementById('baseTime').value,
+                lead_seconds: parseInt(document.getElementById('leadSeconds').value),
+                channels: currentChannels,
+                roles_allowed: [],
+                use_synced_time: checkbox.checked
+            };
+
+            try {
+                const response = await fetch('/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('Toggle sync failed');
+
+                const label = checkbox.nextElementSibling;
+                const originalText = label.innerHTML;
+                label.innerHTML = '<strong class="ok">✓ Updated!</strong>';
+                setTimeout(() => label.innerHTML = originalText, 2000);
+
+                await recalculateWithFeedback({target: document.getElementById('recalculateBtn')});
+            } catch (error) {
+                console.error('Toggle sync failed:', error);
+                checkbox.checked = originalState;
+                alert('Failed to toggle wiki sync');
+            }
+        });
+
+        document.getElementById('sound-upload-section').classList.remove('d-none');
+
+        loadSettings();
+    </script>
 }

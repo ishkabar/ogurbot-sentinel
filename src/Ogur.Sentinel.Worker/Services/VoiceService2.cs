@@ -33,108 +33,214 @@ public sealed class VoiceService2
         _voiceLogger = voiceLogger;
     }
 
-    public async Task JoinAndPlayAsync(ulong channelId, string wavPath, CancellationToken ct = default)
+    public async Task JoinAndPlayAsync(ulong channelId, string wavPath, int repeatCount = 1, int repeatGapMs = 250,
+    CancellationToken ct = default)
+{
+    var callId = Guid.NewGuid().ToString().Substring(0, 8);
+    _logger.LogWarning("[VOICE] 🆔 JoinAndPlayAsync START - CallId: {CallId}, Channel: {ChannelId}, Repeat: {Repeat}", 
+        callId, channelId, repeatCount);
+    
+    await _ready.WaitForStableAsync(ct);
+
+    if (_client.ConnectionState != ConnectionState.Connected || _client.CurrentUser is null)
     {
-        await _ready.WaitForStableAsync(ct);
+        _logger.LogWarning("[VOICE] Discord not connected");
+        return;
+    }
 
-        if (_client.ConnectionState != ConnectionState.Connected || _client.CurrentUser is null)
+    if (_client.GetChannel(channelId) is not SocketVoiceChannel targetVc)
+    {
+        _logger.LogWarning("[VOICE] Channel {ChannelId} not found", channelId);
+        return;
+    }
+
+    if (!File.Exists(wavPath))
+    {
+        _logger.LogWarning("[VOICE] Audio file not found: {Path}", wavPath);
+        return;
+    }
+
+    _logger.LogInformation("[VOICE] 🎤 Joining #{Channel} in {Guild}", targetVc.Name, targetVc.Guild.Name);
+
+    DiscordVoiceClient? voiceClient = null;
+
+    try
+    {
+        // Step 1: Setup tasks BEFORE connecting
+        var voiceServerTcs = new TaskCompletionSource<(string token, string endpoint)>();
+        var voiceStateTcs = new TaskCompletionSource<string>(); // session_id
+        
+        Task VoiceServerHandler(SocketVoiceServer vs)
         {
-            _logger.LogWarning("[VOICE] Discord not connected");
-            return;
+            _logger.LogWarning("[VOICE] 🔔 VoiceServerHandler triggered - Guild: {Guild}", vs.Guild.Id);
+    
+            if (vs.Guild.Id == targetVc.Guild.Id)
+            {
+                _logger.LogWarning("[VOICE] 🔍 VoiceServer RAW:");
+                _logger.LogWarning("[VOICE]   Token: '{Token}'", vs.Token ?? "NULL");
+                _logger.LogWarning("[VOICE]   Token Length: {Len}", vs.Token?.Length ?? 0);
+                _logger.LogWarning("[VOICE]   Endpoint: '{Ep}'", vs.Endpoint ?? "NULL");
+        
+                _logger.LogInformation("[VOICE] ✅ VoiceServerUpdate - Endpoint: {Ep}", vs.Endpoint);
+                voiceServerTcs.TrySetResult((vs.Token!, vs.Endpoint!));
+            }
+            else
+            {
+                _logger.LogWarning("[VOICE] Guild mismatch: got {Got}, expected {Expected}", vs.Guild.Id, targetVc.Guild.Id);
+            }
+    
+            return Task.CompletedTask;
+        }
+        
+        Task VoiceStateHandler(SocketUser user, SocketVoiceState oldState, SocketVoiceState newState)
+        {
+            _logger.LogDebug("[VOICE] 🔔 VoiceStateUpdate: User={UserId}, OldChannel={Old}, NewChannel={New}", 
+                user.Id, oldState.VoiceChannel?.Id, newState.VoiceChannel?.Id);
+    
+            if (user.Id == _client.CurrentUser.Id)
+            {
+                _logger.LogDebug("[VOICE] 🤖 VoiceState update for BOT itself");
+        
+                if (newState.VoiceChannel?.Id == channelId)
+                {
+                    var sessionId = newState.VoiceSessionId;
+            
+                    _logger.LogInformation("[VOICE] 🔍 Bot joined target channel. SessionId: '{Sid}' (length: {Len}, IsNullOrEmpty: {Empty})", 
+                        sessionId, sessionId?.Length ?? 0, string.IsNullOrEmpty(sessionId));
+            
+                    if (!string.IsNullOrEmpty(sessionId))
+                    {
+                        _logger.LogInformation("[VOICE] ✅ VoiceStateUpdate - Valid SessionId: {Sid}", sessionId);
+                        voiceStateTcs.TrySetResult(sessionId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("[VOICE] ⚠️ VoiceStateUpdate - SessionId is null or empty!");
+                    }
+                }
+                else
+                {
+                    _logger.LogDebug("[VOICE] Bot joined different channel: {ActualChannel} (expected: {ExpectedChannel})", 
+                        newState.VoiceChannel?.Id, channelId);
+                }
+            }
+    
+            return Task.CompletedTask;
         }
 
-        if (_client.GetChannel(channelId) is not SocketVoiceChannel targetVc)
-        {
-            _logger.LogWarning("[VOICE] Channel {ChannelId} not found", channelId);
-            return;
-        }
-
-        if (!File.Exists(wavPath))
-        {
-            _logger.LogWarning("[VOICE] Audio file not found: {Path}", wavPath);
-            return;
-        }
-
-        _logger.LogInformation("[VOICE] Joining #{Channel} ({Guild})", targetVc.Name, targetVc.Guild.Name);
-
-        DiscordVoiceClient? voiceClient = null;
+        _client.VoiceServerUpdated += VoiceServerHandler;
+        _client.UserVoiceStateUpdated += VoiceStateHandler;
 
         try
         {
-            // Step 1: Connect to voice channel with EXTERNAL flag (no AudioClient!)
-            var voiceServerTask = WaitForVoiceServerAsync(targetVc.Guild.Id, ct);
+            //_logger.LogDebug("[VOICE] Connecting (normal mode - testing)...");
+            //await targetVc.ConnectAsync(selfDeaf: true, selfMute: false);
+            // Step 2: Connect with external=true
             
-            // Use reflection to call ConnectAudioAsync with external=true
             if (ConnectAudioInternal != null)
             {
-                _logger.LogDebug("[VOICE] Connecting with external=true flag...");
+                _logger.LogDebug("[VOICE] 📞 Connecting with external=true...");
                 var task = (Task)ConnectAudioInternal.Invoke(targetVc.Guild, new object[]
                 {
                     channelId,
                     true,  // selfDeaf
                     false, // selfMute
-                    true,  // external - CRITICAL! This prevents AudioClient creation
+                    true,  // external - CRITICAL! Prevents AudioClient creation
                     false  // disconnect
                 })!;
-                
+
                 await task.WaitAsync(TimeSpan.FromSeconds(5), ct);
             }
             else
             {
-                _logger.LogError("[VOICE] Cannot access ConnectAudioAsync via reflection!");
+                _logger.LogError("[VOICE] ❌ Cannot access ConnectAudioAsync!");
                 return;
             }
 
-            _logger.LogDebug("[VOICE] Waiting for VOICE_SERVER_UPDATE...");
-
-            // Step 2: Wait for VOICE_SERVER_UPDATE event
-            var voiceServer = await voiceServerTask;
+            // Step 3: Wait for BOTH events with timeout
+            _logger.LogDebug("[VOICE] ⏳ Waiting for voice events...");
             
-            // Step 3: Get session_id from bot's voice state
-            await Task.Delay(300, ct);
-            var me = targetVc.Guild.CurrentUser as SocketGuildUser;
-            var sessionId = me?.VoiceSessionId;
-
-            if (string.IsNullOrEmpty(sessionId))
+            var timeout = Task.Delay(10000, ct);
+            var voiceServerTask = voiceServerTcs.Task;
+            var voiceStateTask = voiceStateTcs.Task;
+            
+            await Task.WhenAny(Task.WhenAll(voiceServerTask, voiceStateTask), timeout);
+            
+            if (!voiceServerTask.IsCompleted || !voiceStateTask.IsCompleted)
             {
-                _logger.LogError("[VOICE] Missing session_id after voice state update");
+                _logger.LogError("[VOICE] ❌ Timeout waiting for voice events");
                 return;
             }
 
-            _logger.LogInformation("[VOICE] SessionId={Sid} Endpoint={Ep}", sessionId, voiceServer.endpoint);
+            var (token, endpoint) = await voiceServerTask;
+            var sessionId = await voiceStateTask;
 
-            // Step 4: Connect our custom voice client
+            _logger.LogInformation("[VOICE] 🔑 SessionId: {SessionId}", sessionId);
+            _logger.LogInformation("[VOICE] 🎫 Token preview: {Token}...", 
+                token.Substring(0, Math.Min(15, token.Length)));
+
+            // Step 4: Connect IMMEDIATELY - no delay!
+            _logger.LogInformation("[VOICE] 🔌 Creating voice client...");
             voiceClient = new DiscordVoiceClient(_voiceLogger);
+            
             await voiceClient.ConnectAsync(
                 targetVc.Guild.Id,
                 _client.CurrentUser.Id,
                 channelId,
                 sessionId,
-                voiceServer.token,
-                voiceServer.endpoint,
+                token,
+                endpoint,
                 ct);
 
-            // Step 5: Convert WAV to PCM and send
-            await PlayWavAsync(voiceClient, wavPath, ct);
+            _logger.LogInformation("[VOICE] ✅ Voice client connected!");
 
-            _logger.LogInformation("[VOICE] ✓ Played {File} on #{Channel}", Path.GetFileName(wavPath), targetVc.Name);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "[VOICE] Failed to play audio");
+            // Step 5: Play audio
+            for (int i = 0; i < repeatCount; i++)
+            {
+                _logger.LogInformation("[VOICE] 🎵 Playing #{Play}/{Total}...", i + 1, repeatCount);
+                await PlayWavAsync(voiceClient, wavPath, ct);
+
+                if (i + 1 < repeatCount)
+                {
+                    _logger.LogDebug("[VOICE] ⏸️ Gap {Ms}ms...", repeatGapMs);
+                    await Task.Delay(repeatGapMs, ct);
+                }
+            }
+
+            _logger.LogInformation("[VOICE] ✅ Played {File} {Count}x on #{Channel}",
+                Path.GetFileName(wavPath), repeatCount, targetVc.Name);
         }
         finally
         {
-            // Cleanup
-            if (voiceClient != null)
-                await voiceClient.DisposeAsync();
-
-            // Disconnect from voice
-            try { await targetVc.DisconnectAsync(); }
-            catch { }
+            _client.VoiceServerUpdated -= VoiceServerHandler;
+            _client.UserVoiceStateUpdated -= VoiceStateHandler;
         }
     }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "[VOICE] ❌ Failed to play audio");
+    }
+    finally
+    {
+        if (voiceClient != null)
+        {
+            _logger.LogDebug("[VOICE] 🧹 Disposing voice client...");
+            await voiceClient.DisposeAsync();
+        }
 
+        try
+        {
+            _logger.LogDebug("[VOICE] 👋 Disconnecting...");
+            await targetVc.DisconnectAsync();
+        }
+        catch { }
+    }
+    
+    _logger.LogWarning("[VOICE] 🆔 JoinAndPlayAsync END - CallId: {CallId}", callId);
+}
+
+    
+    
     private async Task PlayWavAsync(DiscordVoiceClient client, string wavPath, CancellationToken ct)
     {
         // Use ffmpeg to convert to 48kHz stereo PCM
@@ -174,7 +280,7 @@ public sealed class VoiceService2
     private Task<(string token, string endpoint)> WaitForVoiceServerAsync(ulong guildId, CancellationToken ct)
     {
         var tcs = new TaskCompletionSource<(string, string)>();
-        
+
         Task Handler(SocketVoiceServer vsu)
         {
             if (vsu.Guild.Id == guildId)
@@ -192,7 +298,9 @@ public sealed class VoiceService2
                 await Task.Delay(5000, ct);
                 tcs.TrySetException(new TimeoutException("VOICE_SERVER_UPDATE not received"));
             }
-            catch { }
+            catch
+            {
+            }
         });
 
         tcs.Task.ContinueWith(_ => _client.VoiceServerUpdated -= Handler);
