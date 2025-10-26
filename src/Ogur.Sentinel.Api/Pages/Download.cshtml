@@ -1,29 +1,49 @@
 ﻿@page
 @{
-ViewData["Title"] = "Download - Ogur Sentinel";
+    ViewData["Title"] = "Download - Ogur Sentinel";
 }
 
 <div class="container mt-5">
     <div class="text-center mb-5">
-        <h1 class="display-3">💾 Ogur Sentinel Desktop</h1>
+        <h1 class="display-4">Ogur Sentinel Desktop</h1>
         <p class="lead">Aplikacja do monitorowania respawnów</p>
     </div>
-
+    
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card bg-dark text-white">
                 <div class="card-body p-5">
-                    <h3 class="card-title mb-4">🚀 Pobierz aplikację</h3>
-
+                    <h3 class="card-title mb-4">Pobierz aplikację</h3>
+                    
                     <div class="mb-4">
                         <a href="/files/Ogur.Sentinel.Desktop.exe" class="btn btn-success btn-lg w-100" download>
-                            <i class="bi bi-download"></i> Pobierz Ogur.Sentinel.Desktop.exe
+                            Pobierz Ogur.Sentinel.Desktop.exe
                         </a>
                         <small class="text-muted d-block mt-2">Windows 10/11 (x64)</small>
                     </div>
-
+                    
                     <hr class="my-4">
-
+                    
+                    <!-- Screenshots -->
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <img src="/files/screenshot1.png" 
+                                 alt="Ogur Sentinel Desktop - Widok timerów" 
+                                 class="img-fluid rounded border border-secondary"
+                                 style="max-width: 100%; height: auto;">
+                            <small class="text-muted d-block mt-2 text-center">Widok timerów</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <img src="/files/screenshot2.png" 
+                                 alt="Ogur Sentinel Desktop - Ustawienia" 
+                                 class="img-fluid rounded border border-secondary"
+                                 style="max-width: 100%; height: auto;">
+                            <small class="text-muted d-block mt-2 text-center">Ustawienia</small>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
                     <h5 class="mb-3">Funkcje:</h5>
                     <ul class="list-unstyled">
                         <li class="mb-2">• Timery respawnów (10m i 2h)</li>
@@ -44,7 +64,7 @@ ViewData["Title"] = "Download - Ogur Sentinel";
                     </ul>
                     
                     <hr class="my-4">
-
+                    
                     <div class="alert alert-info">
                         <strong>Pierwsze uruchomienie:</strong><br>
                         Config zostanie utworzony automatycznie w:<br>
@@ -54,7 +74,7 @@ ViewData["Title"] = "Download - Ogur Sentinel";
             </div>
         </div>
     </div>
-
+    
     <div class="text-center mt-4">
         <a href="/" class="btn btn-outline-secondary">← Powrót do głównej</a>
     </div>
