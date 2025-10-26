@@ -3,6 +3,69 @@
 @{
     ViewData["Title"] = "Privacy Policy";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="container mt-4">
+    <h1 class="display-4 mb-4">@ViewData["Title"]</h1>
+
+    <div class="alert alert-warning">
+        <strong>TL;DR:</strong> Nie zbieramy niczego, bo nam się nie chce.
+    </div>
+
+    <div class="card bg-dark mb-4">
+        <div class="card-body">
+            <h3>Co zbieramy?</h3>
+            <p class="lead">Nic. Dosłownie nic.</p>
+            <ul>
+                <li>Nie mamy Google Analytics</li>
+                <li>Nie mamy cookies (oprócz tego jednego tokena do logowania)</li>
+                <li>Nie wysyłamy danych nigdzie poza tym serwerem</li>
+                <li>Nie sprzedajemy niczego nikomu, bo nic nie mamy</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card bg-dark mb-4">
+        <div class="card-body">
+            <h3>Co robimy z Twoimi danymi?</h3>
+            <p>Twój login i hasło są hashowane i trzymane lokalnie. Token sesji jest w pamięci serwera.</p>
+            <p>Timery respawnów? To tylko matematyka. Nikt tego nie loguje.</p>
+            <p class="text-muted">Serio, mamy lepsze rzeczy do roboty niż śledzenie kiedy farmujesz bossów.</p>
+        </div>
+    </div>
+
+    <div class="card bg-dark mb-4">
+        <div class="card-body">
+            <h3>Cookies</h3>
+            <p>Używamy <strong>tylko</strong> localStorage do trzymania tokena logowania.</p>
+            <p>Nie ma tu marketingu, trackerów, ani żadnych innych głupot.</p>
+            <p class="text-muted">Jeśli nie chcesz żeby przeglądarka pamiętała token - wyloguj się. Koniec.</p>
+        </div>
+    </div>
+
+    <div class="card bg-dark mb-4">
+        <div class="card-body">
+            <h3>RODO / GDPR</h3>
+            <p>Technicznie rzecz biorąc, nie przetwarzamy danych osobowych w rozumieniu RODO.</p>
+            <p>Twój login to nie dane osobowe (chyba że nazwałeś się swoim imieniem i nazwiskiem, ale to Twój problem).</p>
+            <p>Nie mamy Twojego emaila, telefonu, adresu, ani nic innego.</p>
+            <p class="text-muted">Gdybyś chciał usunąć swoje "dane" - po prostu przestań korzystać z apki. Done.</p>
+        </div>
+    </div>
+
+    <div class="card bg-dark mb-4">
+        <div class="card-body">
+            <h3>Czy mogę zaufać tej stronie?</h3>
+            <p>Tak bardzo jak każdej innej stronie hostowanej przez randomowego gościa.</p>
+            <p>Kod jest prosty. Nie ma tu magii. Jeśli nie wierzysz - nie używaj.</p>
+            <p class="text-muted">Ale szczerze, jakbyśmy chcieli Cię zhackować to byśmy nie pisali privacy policy.</p>
+        </div>
+    </div>
+
+    <div class="text-center mt-5 mb-5">
+        <p class="text-muted">
+            Pytania? Sugestie? Skargi?<br>
+            Spytaj Ogura.
+        </p>
+        <a href="/" class="btn btn-outline-secondary">Wróć do strony głównej</a>
+    </div>
+</div>

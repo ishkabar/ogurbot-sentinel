@@ -1,8 +1,8 @@
 ﻿@page
 @model Ogur.Sentinel.Api.Pages.LoginModel
 @{
-    ViewData["Title"] = "Login";
-    Layout = null;
+ViewData["Title"] = "Login";
+Layout = null;
 }
 
 <!DOCTYPE html>
@@ -21,39 +21,104 @@
             min-height: 100vh;
             margin: 0;
         }
+        .error-message {
+            display: none;
+        }
+        .error-message.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
 <div style="width: 100%; max-width: 400px; padding: 20px;">
     <div class="main-block card">
         <h1 class="text-center mb-4">🔐 Login</h1>
-            
-        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-        {
-            <div class="alert alert-danger">
-                @Model.ErrorMessage
-            </div>
-        }
 
-        <form method="post" asp-page="/Login">
-            
+        <div class="alert alert-danger error-message" id="errorMessage">
+            Invalid username or password
+        </div>
+
+        <form id="loginForm" autocomplete="on">
+
             <div class="mb-3">
                 <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" required autofocus>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="username"
+                    name="username"
+                    autocomplete="username"
+                    required
+                    autofocus>
             </div>
 
             <div class="mb-3">
                 <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <input
+                    type="password"
+                    class="form-control"
+                    id="password"
+                    name="password"
+                    autocomplete="current-password"
+                    required>
             </div>
 
             <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-lg">
+                <button type="submit" class="btn btn-primary btn-lg" id="loginButton">
                     🔓 Login
                 </button>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const errorMessage = document.getElementById('errorMessage');
+        const loginButton = document.getElementById('loginButton');
+
+        errorMessage.classList.remove('show');
+        loginButton.disabled = true;
+        loginButton.textContent = '⏳ Logging in...';
+
+        try {
+            const response = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+
+                // ✅ Zapisz token, role i username
+                localStorage.setItem('auth_token', data.token);
+                localStorage.setItem('token_expires', data.expiresAt);
+                localStorage.setItem('username', username);
+                localStorage.setItem('role', data.role);  // ✅ Zapisz role!
+
+                window.location.href = '/';
+            } else {
+                errorMessage.classList.add('show');
+                loginButton.disabled = false;
+                loginButton.textContent = '🔓 Login';
+            }
+        } catch (err) {
+            console.error('Login error:', err);
+            errorMessage.textContent = 'Connection error. Please try again.';
+            errorMessage.classList.add('show');
+            loginButton.disabled = false;
+            loginButton.textContent = '🔓 Login';
+        }
+    });
+
+    if (localStorage.getItem('auth_token')) {
+        window.location.href = '/';
+    }
+</script>
 </body>
 </html>

@@ -1,5 +1,101 @@
+# Build results
 bin/
 obj/
-/packages/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]uild/
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+**/packages/*
+!**/packages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# .NET Core
+project.assets.json
+project.nuget.cache
+*.csproj.nuget.dgspec.json
+*.csproj.nuget.g.props
+*.csproj.nuget.g.targets
+
+# Rider
+.idea/
+*.sln.iml
 riderModule.iml
 /_ReSharper.Caches/
+*.DotSettings.user
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Logs
+logs/
+*.log
+nlog-internal-*.log
+
+# Test Results
+TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+
+# User-specific files
+*.rsuser
+appsettings.Development.json
+appsettings.Local.json
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Docker
+.dockerignore
+
+# Backup files
+*.bak
+*.backup
+
+# Database files (if any)
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Tag messages
+tag_message.txt
+
+# Installation scripts (optional - uncomment if not needed in repo)
+# dotnet-install.shsrc/Ogur.Sentinel.Api/wwwroot/files/*.exe
+src/Ogur.Sentinel.Api/wwwroot/files/*.zip
+src/Ogur.Sentinel.Api/wwwroot/files/*.rar
+src/Ogur.Sentinel.Api/appsettings/users.json

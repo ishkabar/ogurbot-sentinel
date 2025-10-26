@@ -1,0 +1,61 @@
+﻿@page
+@{
+ViewData["Title"] = "Download - Ogur Sentinel";
+}
+
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h1 class="display-3">💾 Ogur Sentinel Desktop</h1>
+        <p class="lead">Aplikacja do monitorowania respawnów</p>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark text-white">
+                <div class="card-body p-5">
+                    <h3 class="card-title mb-4">🚀 Pobierz aplikację</h3>
+
+                    <div class="mb-4">
+                        <a href="/files/Ogur.Sentinel.Desktop.exe" class="btn btn-success btn-lg w-100" download>
+                            <i class="bi bi-download"></i> Pobierz Ogur.Sentinel.Desktop.exe
+                        </a>
+                        <small class="text-muted d-block mt-2">Windows 10/11 (x64)</small>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="mb-3">Funkcje:</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">• Timery respawnów (10m i 2h)</li>
+                        <li class="mb-2">• Odliczanie czasu w czasie rzeczywistym</li>
+                        <li class="mb-2">• Kolorowe ostrzeżenia (czerwone/pomarańczowe)</li>
+                        <li class="mb-2">• Regulowany offset czasu</li>
+                        <li class="mb-2">• Zawsze na wierzchu (pin)</li>
+                        <li class="mb-2">• Responsywny layout (min 50x50px)</li>
+                    </ul>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3">Wymagania:</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">• Windows 10 lub nowszy</li>
+                        <li class="mb-2">• Nie wymaga instalacji .NET</li>
+                        <li class="mb-2">• ~70-100 MB miejsca</li>
+                    </ul>
+                    
+                    <hr class="my-4">
+
+                    <div class="alert alert-info">
+                        <strong>Pierwsze uruchomienie:</strong><br>
+                        Config zostanie utworzony automatycznie w:<br>
+                        <code>%LOCALAPPDATA%\OgurSentinel\appsettings.json</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="/" class="btn btn-outline-secondary">← Powrót do głównej</a>
+    </div>
+</div>

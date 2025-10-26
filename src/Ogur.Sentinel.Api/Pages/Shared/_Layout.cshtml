@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿<!-- Pages/Shared/_Layout.cshtml -->
+@{
+    var username = Context.Items["Username"] as string;
+    var role = Context.Items["Role"] as string;
+    var isAuthenticated = !string.IsNullOrEmpty(username);
+}
+
+<!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="utf-8"/>
@@ -27,31 +34,21 @@
                         <a class="nav-link" asp-area="" asp-page="/Respawn">Respawn</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-page="/Download">Download</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" asp-area="" asp-page="/Privacy">Privacy</a>
                     </li>
                 </ul>
     
-                @if (Context.Session.GetString("IsAuthenticated") == "true")
-                {
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <span class="navbar-text me-3">
-                                👤 @Context.Session.GetString("Username") 
-                                @if (Context.Session.GetString("Role") == "Viewer")
-                                {
-                                    <span class="badge bg-secondary">Read-only</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-primary">Admin</span>
-                                }
-                            </span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-page="/Logout">Logout</a>
-                        </li>
-                    </ul>
-                }
+                <!-- ✅ User info - wypełnione przez JavaScript -->
+                <div id="user-info" class="user-info" style="display: none;">
+                    👤 <span id="username-display"></span>
+                    <span id="role-badge"></span>
+                    <a href="/Logout" class="btn btn-sm btn-outline-secondary">
+                        Logout 🔓
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
@@ -77,8 +74,32 @@
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
+<script src="~/js/auth.js"></script>
+
+<!-- ✅ Wypełnij user info z localStorage -->
+<script>
+    (function() {
+        const username = localStorage.getItem('username');
+        const role = localStorage.getItem('role');
+        
+        if (username && role) {
+            document.getElementById('username-display').textContent = username;
+            document.getElementById('user-info').style.display = 'block';
+            
+            // Pokaż badge tylko dla niektórych ról
+            const roleBadge = document.getElementById('role-badge');
+            if (role === 'Operator') {
+                roleBadge.innerHTML = '<span class="badge bg-info">Operator</span>';
+            } else if (role === 'Timer') {
+                roleBadge.innerHTML = '<span class="badge bg-secondary">Timer</span>';
+            }
+        }
+    })();
+</script>
 
 @await RenderSectionAsync("Scripts", required: false)
+
+<!-- Versions -->
 <script>
     (async () => {
         try {

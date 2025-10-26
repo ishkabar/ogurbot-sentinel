@@ -50,6 +50,7 @@
       <PackageReference Include="NLog.Web" Version="6.0.5" />
       <PackageReference Include="Sodium.Core" Version="1.4.0" />
       <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="8.0.0" />
+      <PackageReference Include="System.Net.Http.Json" Version="9.0.5" />
     </ItemGroup>
     <ItemGroup>
       <None Update="appsettings\appsettings.json">

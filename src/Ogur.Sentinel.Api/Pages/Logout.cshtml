@@ -1,19 +1,20 @@
 ﻿@page
-@model Ogur.Sentinel.Api.Pages.LogoutModel
-
 @{
     Layout = null;
 }
 
 <!DOCTYPE html>
-
 <html>
 <head>
-    <title></title>
+    <meta charset="utf-8" />
+    <title>Logging out...</title>
 </head>
 <body>
-<div>
-    
-</div>
+<script>
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('token_expires');
+        localStorage.removeItem('username');
+        window.location.href = '/';
+    </script>
 </body>
 </html>

@@ -1,13 +1,63 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Ogur.Sentinel.Core.Auth;
 
 namespace Ogur.Sentinel.Api.Http;
 
 public static class ProxyEndpoints
 {
+    // ========== API endpoints (WPF token) ==========
+
     public static void MapProxyEndpoints(this WebApplication app)
     {
+        app.MapGet("/api/users", (HttpContext context, UserStore userStore) =>
+        {
+            var role = context.Items["Role"] as string;
+    
+            if (role != "Admin")
+            {
+                return Results.Forbid();
+            }
+            
+            var users = userStore.GetAllUsers()
+                .Select(u => new { u.Username, u.Role });
+    
+            return Results.Ok(users);
+        });
+        
+        app.MapGet("/api/settings", async (IHttpClientFactory cf) =>
+        {
+            try
+            {
+                var http = cf.CreateClient("worker");
+                var response = await http.GetAsync("/settings");
+                response.EnsureSuccessStatusCode();
+                var res = await response.Content.ReadFromJsonAsync<JsonElement>();
+                return Results.Ok(res);
+            }
+            catch (HttpRequestException ex)
+            {
+                return Results.Json(new { error = $"Worker error: {ex.Message}" }, statusCode: 503);
+            }
+        });
+    
+        app.MapGet("/api/respawn/next", async (IHttpClientFactory cf) =>
+        {
+            try
+            {
+                var http = cf.CreateClient("worker");
+                var response = await http.GetAsync("/respawn/next");
+                response.EnsureSuccessStatusCode();
+                var res = await response.Content.ReadFromJsonAsync<JsonElement>();
+                return Results.Ok(res);
+            }
+            catch (HttpRequestException ex)
+            {
+                return Results.Json(new { error = $"Worker error: {ex.Message}" }, statusCode: 503);
+            }
+        });
+        
         // === Settings ===
         
         app.MapGet("/settings", async (IHttpClientFactory cf) =>
