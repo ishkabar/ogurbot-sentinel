@@ -2,7 +2,7 @@
 WORKDIR /app
 
 RUN apt-get update && \
-    apt-get install -y ffmpeg && \
+    apt-get install -y ffmpeg libopus0 libopus-dev libsodium23 && \
     rm -rf /var/lib/apt/lists/*
 
 ENV ASPNETCORE_URLS=http://0.0.0.0:9090

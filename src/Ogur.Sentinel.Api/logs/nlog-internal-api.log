@@ -4035,3 +4035,6 @@ File name: 'NLog.Web.AspNetCore, Culture=neutral, PublicKeyToken=null'
 2025-10-26 06:23:58.5403 Info Registered target NLog.Targets.FileTarget(Name=httpfile)
 2025-10-26 06:23:58.5448 Info NLog, Version=6.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 6.0.5.4631. Product version: 6.0.5+a023270f66a9445456a70c06668acabe7179c723. GlobalAssemblyCache: False
 2025-10-26 06:23:58.5583 Info Configuration initialized: Targets=9, ConfigItems=152, AutoReload=true, FilePath=/home/ubuntu/source/Ogur.Sentinel/src/Ogur.Sentinel.Api/bin/Debug/net9.0/appsettings/nlog.config
+2025-10-26 06:42:38.3383 Info LogFactory shutting down ...
+2025-10-26 06:42:38.3383 Info Closing old configuration.
+2025-10-26 06:42:38.3383 Info LogFactory shutdown completed.

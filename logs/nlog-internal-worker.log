@@ -1884,3 +1884,6 @@ File name: 'NLog.Web.AspNetCore, Culture=neutral, PublicKeyToken=null'
 2025-10-26 06:24:01.5970 Info Registered target NLog.Targets.FileTarget(Name=discordfile)
 2025-10-26 06:24:01.6014 Info NLog, Version=6.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c. File version: 6.0.5.4631. Product version: 6.0.5+a023270f66a9445456a70c06668acabe7179c723. GlobalAssemblyCache: False
 2025-10-26 06:24:01.6153 Info Configuration initialized: Targets=10, ConfigItems=177, AutoReload=true, FilePath=/home/ubuntu/source/Ogur.Sentinel/src/Ogur.Sentinel.Worker/bin/Debug/net9.0/appsettings/nlog.config
+2025-10-26 06:47:03.0543 Info LogFactory shutting down ...
+2025-10-26 06:47:03.0543 Info Closing old configuration.
+2025-10-26 06:47:03.0543 Info LogFactory shutdown completed.
