@@ -78,6 +78,7 @@ public class AuthMiddleware
                path == "/index" ||
                path == "/privacy" ||
                path == "/download" ||
+               path == "/respawn" ||
                path == "/login" ||
                path == "/logout" ||
                path.StartsWith("/api/auth/login") ||
