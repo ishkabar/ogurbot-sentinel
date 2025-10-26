@@ -4,6 +4,12 @@
     ViewData["Title"] = "Respawn Settings";
 }
 
+<script>
+    if (!localStorage.getItem('auth_token')) {
+        window.location.href = '/Login';
+    }
+</script>
+
 @if (Model.IsViewer)
 {
     <div class="alert alert-info">
