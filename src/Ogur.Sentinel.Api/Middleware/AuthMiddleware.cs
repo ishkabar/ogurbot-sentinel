@@ -16,24 +16,24 @@ public class AuthMiddleware
     public async Task InvokeAsync(HttpContext context, ITokenStore tokenStore)
     {
         var path = context.Request.Path.Value?.ToLower() ?? "";
-    
-        _logger.LogWarning("🔍 AUTH MIDDLEWARE: Path={Path}", path);
-        _logger.LogWarning("🔍 IsPublicPath={IsPublic}", IsPublicPath(path));
 
-        if (IsPublicPath(path))
+        _logger.LogWarning("🔍 AUTH MIDDLEWARE: Path={Path}", path);
+        _logger.LogWarning("🔍 IsPublicPagePath={IsPublic}", IsPublicPagePath(path));  // ✅ Zmień tutaj
+
+        if (IsPublicPagePath(path))  // ✅ I tutaj
         {
             _logger.LogWarning("✅ PUBLIC - passing through");
             await _next(context);
             return;
         }
-    
+
         _logger.LogWarning("❌ NOT PUBLIC - checking auth");
 
         var authHeader = context.Request.Headers["Authorization"].ToString();
 
         if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
         {
-            if (path.StartsWith("/api"))
+            if (path.StartsWith("/api") || IsApiEndpoint(path))
             {
                 await HandleUnauthorized(context, path);
                 return;
@@ -49,7 +49,7 @@ public class AuthMiddleware
 
         if (!success || tokenData == null || tokenData.ExpiresAt < DateTime.UtcNow)
         {
-            if (path.StartsWith("/api"))
+            if (path.StartsWith("/api") || IsApiEndpoint(path))
             {
                 await HandleUnauthorized(context, path, "Invalid or expired token");
                 return;
@@ -72,7 +72,7 @@ public class AuthMiddleware
         await _next(context);
     }
 
-    private static bool IsPublicPath(string path)
+    private static bool IsPublicPagePath(string path)
     {
         return path == "/" ||
                path == "/index" ||
@@ -84,9 +84,10 @@ public class AuthMiddleware
                path.StartsWith("/api/auth/login") ||
                path.StartsWith("/health") ||
                path.StartsWith("/version") ||
-               path.StartsWith("/worker") ||
-               path.StartsWith("/respawn/") ||
-               path.StartsWith("/settings") ||
+               //path.StartsWith("/worker") ||
+               //path.StartsWith("/respawn/") ||
+               //path.StartsWith("/settings") ||
+               //path.StartsWith("/channels") ||
                path.StartsWith("/error") ||
                path.StartsWith("/css") ||
                path.StartsWith("/js") ||
@@ -96,21 +97,13 @@ public class AuthMiddleware
     }
 
 
-   private static bool HasPermission(string role, string method, string path)
-    {
-        return role switch
-        {
-            Roles.Admin => true,
-
-            Roles.Operator =>
-                !((method == "POST" || method == "PATCH") && path.StartsWith("/settings")),
-
-            Roles.Timer =>
-                method == "GET" && path == "/respawn/next",
-
-            _ => false
-        };
-    }
+   private static bool IsApiEndpoint(string path)
+{
+    return path.StartsWith("/respawn/") ||
+           path.StartsWith("/settings") ||
+           path.StartsWith("/channels") ||
+           path.StartsWith("/worker");
+}
 
     private async Task HandleUnauthorized(HttpContext context, string path, string? message = null)
     {
@@ -142,6 +135,17 @@ public class AuthMiddleware
         };
 
         await context.Response.WriteAsJsonAsync(new { error = message });
+    }
+    
+    private static bool HasPermission(string role, string method, string path)
+    {
+        return role switch
+        {
+            Roles.Admin => true,
+            Roles.Operator => !((method == "POST" || method == "PATCH") && path.StartsWith("/settings")),
+            Roles.Timer => method == "GET" && path == "/respawn/next",
+            _ => false
+        };
     }
 }
 
