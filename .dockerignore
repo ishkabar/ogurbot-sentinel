@@ -36,3 +36,6 @@ README.md
 .vscode
 **/bin/
 **/obj/
+
+wwwroot/files/*
+!wwwroot/files/.gitkeep
