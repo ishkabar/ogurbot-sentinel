@@ -18,9 +18,9 @@ public class AuthMiddleware
         var path = context.Request.Path.Value?.ToLower() ?? "";
 
         _logger.LogWarning("🔍 AUTH MIDDLEWARE: Path={Path}", path);
-        _logger.LogWarning("🔍 IsPublicPagePath={IsPublic}", IsPublicPagePath(path));  // ✅ Zmień tutaj
+        _logger.LogWarning("🔍 IsPublicPagePath={IsPublic}", IsPublicPagePath(path)); // ✅ Zmień tutaj
 
-        if (IsPublicPagePath(path))  // ✅ I tutaj
+        if (IsPublicPagePath(path)) // ✅ I tutaj
         {
             _logger.LogWarning("✅ PUBLIC - passing through");
             await _next(context);
@@ -38,7 +38,7 @@ public class AuthMiddleware
                 await HandleUnauthorized(context, path);
                 return;
             }
-            
+
             //await _next(context);
             context.Response.Redirect("/login");
             return;
@@ -78,16 +78,12 @@ public class AuthMiddleware
                path == "/index" ||
                path == "/privacy" ||
                path == "/download" ||
-               path == "/respawn" ||
                path == "/login" ||
                path == "/logout" ||
                path.StartsWith("/api/auth/login") ||
                path.StartsWith("/health") ||
                path.StartsWith("/version") ||
-               //path.StartsWith("/worker") ||
-               //path.StartsWith("/respawn/") ||
-               //path.StartsWith("/settings") ||
-               //path.StartsWith("/channels") ||
+               path.StartsWith("/worker/version") ||
                path.StartsWith("/error") ||
                path.StartsWith("/css") ||
                path.StartsWith("/js") ||
@@ -97,22 +93,22 @@ public class AuthMiddleware
     }
 
 
-   private static bool IsApiEndpoint(string path)
-{
-    return path.StartsWith("/respawn/") ||
-           path.StartsWith("/settings") ||
-           path.StartsWith("/channels") ||
-           path.StartsWith("/worker");
-}
+    private static bool IsApiEndpoint(string path)
+    {
+        return path.StartsWith("/respawn/") ||
+               path.StartsWith("/settings") ||
+               path.StartsWith("/channels") ||
+               (path.StartsWith("/worker") && path != "/worker/version");
+    }
 
     private async Task HandleUnauthorized(HttpContext context, string path, string? message = null)
     {
         if (path.StartsWith("/api"))
         {
             context.Response.StatusCode = 401;
-            await context.Response.WriteAsJsonAsync(new 
-            { 
-                error = message ?? "Unauthorized" 
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = message ?? "Unauthorized"
             });
         }
         else
@@ -124,9 +120,9 @@ public class AuthMiddleware
     private async Task HandleForbidden(HttpContext context, string role, string path)
     {
         _logger.LogWarning("Access denied for role {Role} on {Path}", role, path);
-        
+
         context.Response.StatusCode = 403;
-        
+
         var message = role switch
         {
             Roles.Timer => "Timer role can only view next respawn time",
@@ -136,7 +132,7 @@ public class AuthMiddleware
 
         await context.Response.WriteAsJsonAsync(new { error = message });
     }
-    
+
     private static bool HasPermission(string role, string method, string path)
     {
         return role switch

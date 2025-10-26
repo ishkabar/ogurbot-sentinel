@@ -23,4 +23,12 @@
                 return response;
             });
     };
+
+    const token = localStorage.getItem('auth_token');
+    const currentPath = window.location.pathname.toLowerCase();
+    const publicPaths = ['/', '/login', '/privacy', '/download', '/index'];
+
+    if (!token && !publicPaths.includes(currentPath)) {
+        window.location.href = '/Login';
+    }
 })();
