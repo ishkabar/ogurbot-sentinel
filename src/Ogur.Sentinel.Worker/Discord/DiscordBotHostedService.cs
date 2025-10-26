@@ -1,174 +1,177 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Discord;
-using Discord.WebSocket;
 using Microsoft.Extensions.Options;
+using NetCord;
+using NetCord.Gateway;
 using Ogur.Sentinel.Abstractions.Options;
 
 namespace Ogur.Sentinel.Worker.Discord;
 
+/// <summary>
+/// NetCord-based Discord bot hosted service
+/// Replaces Discord.Net DiscordSocketClient with NetCord GatewayClient
+/// </summary>
 public sealed class DiscordBotHostedService : BackgroundService
 {
-    private readonly DiscordSocketClient _client;
+    private readonly GatewayClient _client;
     private readonly ILogger<DiscordBotHostedService> _logger;
     private readonly SettingsOptions _opts;
 
-    private int _started; // simple reentrancy guard
+    private int _started;
+    private CurrentUser? _currentUser;
+
 
     public DiscordBotHostedService(
-        DiscordSocketClient client,
+        GatewayClient client,
         IOptions<SettingsOptions> opts,
         ILogger<DiscordBotHostedService> logger)
     {
-        _client = client;
         _logger = logger;
+        _logger.LogTrace("[DISCORD-HOST] 🏗️ Constructor ENTRY");
+        
+        _client = client;
+        _logger.LogTrace("[DISCORD-HOST]   Client stored");
+        
         _opts = opts.Value;
+        _logger.LogTrace("[DISCORD-HOST]   Options loaded, Token length: {Len}", _opts.DiscordToken?.Length ?? 0);
+        
+        _logger.LogTrace("[DISCORD-HOST] ✅ Constructor COMPLETE");
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
     {
+        _logger.LogDebug("[DISCORD-HOST] 📥 StartAsync ENTRY");
+        
+        _logger.LogTrace("[DISCORD-HOST]   Checking reentrancy guard...");
         if (Interlocked.Exchange(ref _started, 1) == 1)
+        {
+            _logger.LogWarning("[DISCORD-HOST] ⚠️ Already started, returning");
             return;
+        }
+        _logger.LogTrace("[DISCORD-HOST]   Guard passed, first start");
 
+        _logger.LogDebug("[DISCORD-HOST] 🔌 Wiring Discord event handlers...");
         WireHandlers();
+        _logger.LogDebug("[DISCORD-HOST] ✅ Event handlers wired");
 
+        _logger.LogTrace("[DISCORD-HOST] 🔍 Validating Discord token...");
         if (string.IsNullOrWhiteSpace(_opts.DiscordToken))
+        {
+            _logger.LogError("[DISCORD-HOST] ❌ Discord token is missing!");
             throw new InvalidOperationException("Discord token is missing.");
+        }
+        _logger.LogTrace("[DISCORD-HOST]   Token present, length: {Len}", _opts.DiscordToken.Length);
 
-        await _client.LoginAsync(TokenType.Bot, _opts.DiscordToken);
-        await _client.StartAsync();
+        _logger.LogDebug("[DISCORD-HOST] 🚀 Starting NetCord GatewayClient...");
+        //await _client.StartAsync(cancellationToken: cancellationToken);
+        _logger.LogDebug("[DISCORD-HOST] ✅ GatewayClient managed by hosting infrastructure");
+        _logger.LogDebug("[DISCORD-HOST] ✅ NetCord GatewayClient started");
 
+        _logger.LogTrace("[DISCORD-HOST]   Calling base.StartAsync()...");
         await base.StartAsync(cancellationToken);
+        _logger.LogDebug("[DISCORD-HOST] 📤 StartAsync COMPLETE");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _client.Log += msg =>
-        {
-            if (msg.Source?.Contains("Voice", StringComparison.OrdinalIgnoreCase) == true ||
-                msg.Message?.Contains("VOICE", StringComparison.OrdinalIgnoreCase) == true ||
-                msg.Message?.Contains("voice", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                _logger.LogWarning("[GATEWAY-RAW] {Source}: {Message}", msg.Source, msg.Message);
-            }
-            return Task.CompletedTask;
-        };
+        _logger.LogDebug("[DISCORD-HOST] 📥 ExecuteAsync ENTRY");
 
         try
         {
-            // keep the service alive until cancellation
+            _logger.LogDebug("[DISCORD-HOST] ⏳ Keeping service alive (infinite wait)...");
             await Task.Delay(Timeout.InfiniteTimeSpan, stoppingToken);
         }
         catch (OperationCanceledException)
         {
-            // expected on shutdown
+            _logger.LogDebug("[DISCORD-HOST] ✅ Service cancelled (expected on shutdown)");
         }
+        
+        _logger.LogDebug("[DISCORD-HOST] 📤 ExecuteAsync EXIT");
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
+        _logger.LogDebug("[DISCORD-HOST] 📥 StopAsync ENTRY");
+        
+        _logger.LogTrace("[DISCORD-HOST]   Calling base.StopAsync()...");
+    
         try
         {
-            await _client.StopAsync();
-            await _client.LogoutAsync();
+            await base.StopAsync(cancellationToken);
+            _logger.LogDebug("[DISCORD-HOST] ✅ NetCord GatewayClient closed gracefully");
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("Connection not started"))
+        {
+            _logger.LogDebug("[DISCORD-HOST] ⏭️ Connection already closed or never started (expected on quick shutdown)");
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "[Discord] Stop/Logout failed");
+            _logger.LogWarning(ex, "[DISCORD-HOST] ⚠️ Shutdown error (non-critical)");
         }
-
-        await base.StopAsync(cancellationToken);
+    
+        _logger.LogDebug("[DISCORD-HOST] 📤 StopAsync COMPLETE");
     }
+
 
     private void WireHandlers()
-    {
-        _client.Log += OnDiscordLog;
-        _client.Connected += OnConnected;
-        _client.Disconnected += OnDisconnected;
-        _client.Ready += OnReady;
-        
-        _client.UserVoiceStateUpdated += OnUserVoiceStateUpdated;
-        _client.VoiceServerUpdated += OnVoiceServerUpdated;
-        _client.LatencyUpdated += (old, newLatency) => Task.CompletedTask;
-        
-        (_client as DiscordSocketClient)!.Log += msg =>
-        {
-            if (msg.Message?.Contains("\"t\":\"VOICE_SERVER_UPDATE\"") == true)
-            {
-                _logger.LogCritical("[RAW-GATEWAY] VOICE_SERVER_UPDATE payload: {Msg}", msg.Message);
-            }
-            return Task.CompletedTask;
-        };
-    }
-
-    private Task OnUserVoiceStateUpdated(SocketUser user, SocketVoiceState before, SocketVoiceState after)
-    {
-        if (user.Id == _client.CurrentUser?.Id)
-        {
-            var bCh = before.VoiceChannel?.Id.ToString() ?? "-";
-            var aCh = after.VoiceChannel?.Id.ToString() ?? "-";
-            _logger.LogInformation("[VOICE] UserVoiceStateUpdated (bot) {BeforeChannel} -> {AfterChannel}", bCh, aCh);
-        }
-        return Task.CompletedTask;
-    }
-
-    private Task OnVoiceServerUpdated(SocketVoiceServer vsu)
-    {
-        // Endpoint + długość tokena – potwierdza, że dostaliśmy VOICE_SERVER_UPDATE
-        var ep = string.IsNullOrWhiteSpace(vsu.Endpoint) ? "-" : vsu.Endpoint;
-        var tok = vsu.Token is null ? 0 : vsu.Token.Length;
-        _logger.LogInformation("[VOICE] VoiceServerUpdated guild={GuildId} endpoint={Endpoint} tokenLen={TokenLen}",
-            vsu.Guild.Id, ep, tok);
-        _logger.LogWarning("[VOICE] FULL TOKEN: '{Token}'", vsu.Token ?? "NULL");
-        return Task.CompletedTask;
-    }
-
+{
+    _logger.LogTrace("[DISCORD-HOST] 🔌 WireHandlers ENTRY");
     
-    private Task OnReady()
+    _logger.LogTrace("[DISCORD-HOST]   Subscribing to Ready event...");
+    _client.Ready += OnReady;
+    
+    _logger.LogTrace("[DISCORD-HOST]   Subscribing to VoiceStateUpdate event...");
+    _client.VoiceStateUpdate += OnVoiceStateUpdate;
+    
+    _logger.LogTrace("[DISCORD-HOST]   Subscribing to VoiceServerUpdate event...");
+    _client.VoiceServerUpdate += OnVoiceServerUpdate;
+    
+    _logger.LogTrace("[DISCORD-HOST] ✅ WireHandlers COMPLETE");
+}
+
+private ValueTask OnVoiceStateUpdate(VoiceState voiceState)
+{
+    _logger.LogTrace("[DISCORD-HOST] 🔔 VoiceStateUpdate event");
+    _logger.LogTrace("[DISCORD-HOST]   UserId: {Id}", voiceState.UserId);
+
+    var currentUserId = _client.Cache?.User?.Id;
+    if (currentUserId.HasValue && voiceState.UserId == currentUserId.Value)
     {
-        _logger.LogInformation("[Discord] Ready. Guilds={Guilds}, Latency={Latency}ms",
-            _client.Guilds.Count, _client.Latency);
-        return Task.CompletedTask;
+        var channelId = voiceState.ChannelId?.ToString() ?? "-";
+    
+        _logger.LogDebug("[DISCORD-HOST] 🎤 Bot voice state changed");
+        _logger.LogTrace("[DISCORD-HOST]   ChannelId: {Ch}", channelId);
+        _logger.LogTrace("[DISCORD-HOST]   SessionId: '{SessionId}'", voiceState.SessionId ?? "NULL");
+        _logger.LogTrace("[DISCORD-HOST]   IsSelfDeafened: {Deaf}", voiceState.IsSelfDeafened);
+        _logger.LogTrace("[DISCORD-HOST]   IsSelfMuted: {Mute}", voiceState.IsSelfMuted);
     }
 
-    private Task OnConnected()
-    {
-        _logger.LogInformation("[Discord] Connected. Latency={Latency}ms", _client.Latency);
-        return Task.CompletedTask;
-    }
+    return ValueTask.CompletedTask;
+}
 
-    private Task OnDisconnected(Exception? ex)
-    {
-        if (ex is null)
-            _logger.LogWarning("[Discord] Disconnected (no exception). Will auto-reconnect.");
-        else
-            _logger.LogWarning(ex, "[Discord] Disconnected. Will auto-reconnect.");
+private ValueTask OnVoiceServerUpdate(VoiceServerUpdateEventArgs args)
+{
+    _logger.LogDebug("[DISCORD-HOST] 🔔 VoiceServerUpdate event");
+    _logger.LogDebug("[DISCORD-HOST]   GuildId: {GuildId}", args.GuildId);
+    
+    var ep = string.IsNullOrWhiteSpace(args.Endpoint) ? "-" : args.Endpoint;
+    var tok = args.Token is null ? 0 : args.Token.Length;
+    
+    _logger.LogDebug("[DISCORD-HOST]   Endpoint: '{Endpoint}'", ep);
+    _logger.LogDebug("[DISCORD-HOST]   Token length: {Len}", tok);
+    _logger.LogCritical("[DISCORD-HOST] 🚨 FULL TOKEN: '{Token}'", args.Token ?? "NULL");
+    _logger.LogTrace("[DISCORD-HOST]   Token type: {Type}", args.Token?.GetType().Name ?? "NULL");
+    
+    return ValueTask.CompletedTask;
+}
 
-        return Task.CompletedTask;
-    }
-
-    private Task OnDiscordLog(LogMessage msg)
-    {
-        var level = msg.Severity switch
-        {
-            LogSeverity.Critical => LogLevel.Critical,
-            LogSeverity.Error    => LogLevel.Error,
-            LogSeverity.Warning  => LogLevel.Warning,
-            LogSeverity.Info     => LogLevel.Information,
-            LogSeverity.Verbose  => LogLevel.Debug,
-            LogSeverity.Debug    => LogLevel.Trace,
-            _ => LogLevel.Information
-        };
-
-        // ToString() includes Source, Severity, Message, and Exception message.
-        _logger.Log(level, "[Discord] {Text}", msg.ToString());
-
-        if (msg.Exception is not null)
-            _logger.Log(level, msg.Exception, "[Discord] Exception");
-
-        return Task.CompletedTask;
-    }
+private ValueTask OnReady(ReadyEventArgs args)
+{
+    _logger.LogDebug("[DISCORD-HOST] 🔔 Ready event");
+    _logger.LogDebug("[DISCORD-HOST]   Guilds: {Count}", _client.Cache?.Guilds.Count ?? 0);
+    _logger.LogTrace("[DISCORD-HOST]   CurrentUser.Id: {Id}", _client.Cache?.User?.Id);
+    _logger.LogTrace("[DISCORD-HOST]   CurrentUser.Username: {Name}", _client.Cache?.User?.Username);
+    
+    return ValueTask.CompletedTask;
+}
 }

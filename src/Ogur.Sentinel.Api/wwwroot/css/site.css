@@ -335,6 +335,8 @@ footer .container {
     white-space: nowrap;
 }
 
+
+
 /* Category headers in modal */
 .modal-body .category-header {
     color: var(--accent2);

@@ -11,14 +11,14 @@ namespace Ogur.Sentinel.Worker.Services;
 public sealed class RespawnSchedulerService
 {
     private readonly RespawnState _state;
-    private readonly VoiceService2 _voice;
+    private readonly VoiceService3 _voice;
     private readonly ILogger<RespawnSchedulerService> _logger;
     private readonly string _sound10m;
     private readonly string _sound2h;
 
     public RespawnSchedulerService(
         RespawnState state,
-        VoiceService2 voice,
+        VoiceService3 voice,
         IOptions<RespawnOptions> opts,
         ILogger<RespawnSchedulerService> logger)
     {
@@ -54,9 +54,12 @@ public sealed class RespawnSchedulerService
     public async Task PlayAsync(bool is10m, CancellationToken ct)
     {
         var sound = is10m ? _sound10m : _sound2h;
+        
+        var repeatPlays = is10m ? _state.RepeatPlays10m : _state.RepeatPlays2h;
+        var repeatGapMs = is10m ? _state.RepeatGapMs10m : _state.RepeatGapMs2h;
 
-        var repeatPlays = _state.RepeatPlays > 0 ? _state.RepeatPlays : 1;  // default 1
-        var repeatGapMs = _state.RepeatGapMs;  // ← Bez fallbacku, użyj dokładnie tego co w settings
+        _logger.LogInformation("[Respawn] Playing {Sound}: {Repeat}x with {Gap}ms gap", 
+            is10m ? "10m" : "2h", repeatPlays, repeatGapMs);
 
         foreach (var ch in _state.Channels)
         {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using Discord;
-using Discord.WebSocket;
+//using Discord;
+//using Discord.WebSocket;
 using Ogur.Sentinel.Abstractions.Leaves;
 using Ogur.Sentinel.Worker.Services;
 
@@ -8,7 +8,7 @@ namespace Ogur.Sentinel.Worker.Discord.Modules;
 
 
 public sealed class LeaveModule
-{
+{/*
     private readonly LeaveService _service;
     private readonly ILogger<LeaveModule> _logger;
 
@@ -82,5 +82,5 @@ public sealed class LeaveModule
                 await cmd.RespondAsync("Unknown subcommand.", ephemeral: true);
                 break;
         }
-    }
+    }*/
 }

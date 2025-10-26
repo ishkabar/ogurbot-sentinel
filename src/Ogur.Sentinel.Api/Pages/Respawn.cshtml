@@ -107,28 +107,24 @@
                     <div id="sound-upload-section" class="d-none mt-3">
                         <h5 class="title-gradient">🔊 Custom Sounds</h5>
 
-                        <div class="glass p-3 mb-3">
-                            <h6 class="muted mb-3">🔁 Repeat Settings</h6>
-                            <div class="d-flex gap-2 align-items-end">
-                                <div style="flex: 0 0 120px;">
-                                    <label for="repeat-plays" class="form-label small mb-1">Plays</label>
-                                    <input type="number" class="form-control form-control-sm"
-                                           id="repeat-plays" min="1" max="10" value="3">
-                                </div>
-                                <div style="flex: 0 0 140px;">
-                                    <label for="repeat-gap-ms" class="form-label small mb-1">Gap (ms)</label>
-                                    <input type="number" class="form-control form-control-sm"
-                                           id="repeat-gap-ms" min="0" max="5000" value="1000">
-                                </div>
-                                <button type="button" class="btn btn-sm btn-primary d-flex align-items-center"
-                                        onclick="saveRepeatSettings()" style="padding: 0.25rem 0.75rem;">
-                                    💾 Save
-                                </button>
-                            </div>
-                        </div>
-
+                        <!-- 10-minute Sound -->
                         <div class="glass p-3 mb-3">
                             <h6 class="muted">10-minute Sound</h6>
+
+                            <!-- Repeat settings dla 10m -->
+                            <div class="d-flex gap-2 align-items-end mb-2">
+                                <div style="flex: 0 0 100px;">
+                                    <label for="repeat-plays-10m" class="form-label small mb-1">Plays</label>
+                                    <input type="number" class="form-control form-control-sm"
+                                           id="repeat-plays-10m" min="1" max="10" value="3">
+                                </div>
+                                <div style="flex: 0 0 120px;">
+                                    <label for="repeat-gap-ms-10m" class="form-label small mb-1">Gap (ms)</label>
+                                    <input type="number" class="form-control form-control-sm"
+                                           id="repeat-gap-ms-10m" min="0" max="5000" value="1000">
+                                </div>
+                            </div>
+
                             <div class="d-flex gap-2 mb-2">
                                 <button type="button" class="btn btn-sm btn-outline-primary flex-fill"
                                         onclick="playSound('10m', false)">
@@ -139,14 +135,30 @@
                                     🔁 Loop
                                 </button>
                             </div>
-                            <input type="file" class="form-control form-control-sm mb-2" id="upload-10m" accept=".wav">
+                            <input type="file" class="form-control form-control-sm mb-2" id="file-10m" accept=".wav">
                             <button type="button" class="btn btn-sm btn-primary w-100" onclick="uploadSound('10m')">
                                 📤 Upload
                             </button>
                         </div>
 
+                        <!-- 2-hour Sound -->
                         <div class="glass p-3">
                             <h6 class="muted">2-hour Sound</h6>
+
+                            <!-- Repeat settings dla 2h -->
+                            <div class="d-flex gap-2 align-items-end mb-2">
+                                <div style="flex: 0 0 100px;">
+                                    <label for="repeat-plays-2h" class="form-label small mb-1">Plays</label>
+                                    <input type="number" class="form-control form-control-sm"
+                                           id="repeat-plays-2h" min="1" max="10" value="3">
+                                </div>
+                                <div style="flex: 0 0 120px;">
+                                    <label for="repeat-gap-ms-2h" class="form-label small mb-1">Gap (ms)</label>
+                                    <input type="number" class="form-control form-control-sm"
+                                           id="repeat-gap-ms-2h" min="0" max="5000" value="1000">
+                                </div>
+                            </div>
+
                             <div class="d-flex gap-2 mb-2">
                                 <button type="button" class="btn btn-sm btn-outline-primary flex-fill"
                                         onclick="playSound('2h', false)">
@@ -157,7 +169,7 @@
                                     🔁 Loop
                                 </button>
                             </div>
-                            <input type="file" class="form-control form-control-sm mb-2" id="upload-2h" accept=".wav">
+                            <input type="file" class="form-control form-control-sm mb-2" id="file-2h" accept=".wav">
                             <button type="button" class="btn btn-sm btn-primary w-100" onclick="uploadSound('2h')">
                                 📤 Upload
                             </button>
@@ -197,7 +209,10 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveSelectedChannels()">Add Selected</button>
+                <!-- ✅ Zmienione na confirmAddChannels() -->
+                <button type="button" class="btn btn-primary" id="confirmAddChannels" onclick="confirmAddChannels()">
+                    Add Selected
+                </button>
             </div>
         </div>
     </div>
@@ -247,8 +262,13 @@
                 document.getElementById('enabled10m').checked = data.enabled_10m;
                 document.getElementById('enabled2h').checked = data.enabled_2h;
 
-                document.getElementById('repeat-plays').value = data.repeat_plays || 3;
-                document.getElementById('repeat-gap-ms').value = data.repeat_gap_ms || 1000;
+                //document.getElementById('repeat-plays').value = data.repeat_plays || 3;
+                //document.getElementById('repeat-gap-ms').value = data.repeat_gap_ms || 1000;
+                document.getElementById('repeat-plays-10m').value = data.repeat_plays_10m || 3;
+                document.getElementById('repeat-gap-ms-10m').value = data.repeat_gap_ms_10m || 1000;
+
+                document.getElementById('repeat-plays-2h').value = data.repeat_plays_2h || 3;
+                document.getElementById('repeat-gap-ms-2h').value = data.repeat_gap_ms_2h || 1000;
 
 
                 // Wiki sync settings
@@ -263,15 +283,59 @@
 
                 currentChannels = (data.channels || []).map(ch => String(ch));
 
+                window.channelNames = {};
+                window.availableVoiceChannels = [];
+
                 try {
-                    const channelsResp = await fetch('/channels/info');
-                    const channelsData = await channelsResp.json();
-                    window.channelNames = {};
-                    channelsData.forEach(ch => {
-                        window.channelNames[String(ch.id)] = {name: ch.name, guild: ch.guild};
+
+                    const channelsResp = await fetch('/channels/info', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            channel_ids: currentChannels
+                        })
                     });
+
+                    if (channelsResp.ok) {
+                        const channelsData = await channelsResp.json();
+                        console.log('📥 /channels/info response:', channelsData);
+                        console.log('📥 First channel ID from response:', channelsData[0]?.id, typeof channelsData[0]?.id);
+                        console.log('📥 Current channels we sent:', currentChannels);
+
+                        if (Array.isArray(channelsData)) {
+                            channelsData.forEach(ch => {
+                                const idAsString = String(ch.id);
+                                console.log(`  Mapping: "${ch.id}" (${typeof ch.id}) → "${idAsString}"`);
+                                window.channelNames[idAsString] = {name: ch.name, guild: ch.guild};
+                            });
+                        }
+}
+                    
+
                 } catch (e) {
-                    console.warn('Failed to load channel names:', e);
+                    console.warn('Failed to load /channels/info:', e);
+                }
+
+                try {
+                    // Próbuj załadować kanały głosowe
+                    const voiceChannelsResp = await fetch('/channels/voice');
+                    if (voiceChannelsResp.ok) {
+                        const voiceChannelsData = await voiceChannelsResp.json();
+                        window.availableVoiceChannels = voiceChannelsData.channels || [];
+
+                        // Zaktualizuj channelNames o kanały głosowe (jeśli ich tam nie ma)
+                        window.availableVoiceChannels.forEach(ch => {
+                            const id = String(ch.id);
+                            if (!window.channelNames[id]) {
+                                window.channelNames[id] = {
+                                    name: ch.name,
+                                    guild: ch.guildName || ch.guild
+                                };
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Failed to load /channels/voice:', e);
                 }
 
                 renderChannels();
@@ -283,13 +347,17 @@
                 // Load limits
                 try {
                     const limitsResp = await fetch('/settings/limits');
-                    const limitsData = await limitsResp.json();
-                    maxChannels = limitsData.max_channels;
+                    if (limitsResp.ok) {
+                        const limitsData = await limitsResp.json();
+                        if (!limitsData.error) {
+                            maxChannels = limitsData.max_channels;
 
-                    const label = document.querySelector('label[for="channelsList"]')
-                        || document.querySelector('.form-label');
-                    if (label && label.textContent.includes('Voice Channels')) {
-                        label.textContent = `Voice Channels (max ${maxChannels})`;
+                            const label = document.querySelector('label[for="channelsList"]')
+                                || document.querySelector('.form-label');
+                            if (label && label.textContent.includes('Voice Channels')) {
+                                label.textContent = `Voice Channels (max ${maxChannels})`;
+                            }
+                        }
                     }
                 } catch (e) {
                     console.warn('Failed to load limits, using default:', e);
@@ -306,8 +374,10 @@
                     disableIfViewer('baseTime');
                     disableIfViewer('leadSeconds');
                     disableIfViewer('useSyncedTime');
-                    disableIfViewer('enabled10m');
-                    disableIfViewer('enabled2h');
+                    disableIfViewer('repeat-plays-10m');
+                    disableIfViewer('repeat-gap-ms-10m');
+                    disableIfViewer('repeat-plays-2h');
+                    disableIfViewer('repeat-gap-ms-2h');
                     disableIfViewer('repeat-plays');
                     disableIfViewer('repeat-gap-ms');
                     disableIfViewer('saveBtn');
@@ -321,7 +391,6 @@
 
                     // Ukryj przyciski usuwania kanałów
                     document.querySelectorAll('.btn-close').forEach(btn => btn.style.display = 'none');
-
 
                     document.querySelectorAll('button[onclick*="playSound"]').forEach(btn => {
                         btn.disabled = true;
@@ -343,7 +412,6 @@
                         input.disabled = true;
                         input.style.opacity = '0.5';
                     });
-                    
                 }
             } catch (error) {
                 document.getElementById('loading').classList.add('d-none');
@@ -352,101 +420,46 @@
             }
         }
 
-        async function reloadWithFeedback(event) {
-            if (IS_VIEWER) return;
-            const btn = event.target;
-            await loadSettings();
-            showButtonFeedback(btn, '✓ Reloaded!', 2000);
-        }
-
-        async function recalculateWithFeedback(event) {
-            if (IS_VIEWER) return;
-            const btn = event.target;
-
-            try {
-                const response = await fetch('/respawn/recalculate', {
-                    method: 'POST'
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    document.getElementById('next10m').textContent = new Date(data.next10m).toLocaleString();
-                    document.getElementById('next2h').textContent = new Date(data.next2h).toLocaleString();
-
-                    showButtonFeedback(btn, '✓ Recalculated!', 2000);
-                } else {
-                    throw new Error('Recalculation failed');
-                }
-            } catch (error) {
-                console.error('Recalculate failed:', error);
-                showButtonFeedback(btn, '✗ Failed', 2000);
-            }
-        }
-
-        async function manualSync() {
-            if (IS_VIEWER) return;
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-
-            btn.disabled = true;
-            btn.innerHTML = '🔄 Syncing...';
-
-            try {
-                const response = await fetch('/respawn/sync', {method: 'POST'});
-                const data = await response.json();
-
-                if (data.success) {
-                    document.getElementById('syncedTime').textContent = data.synced_time;
-                    document.getElementById('lastSync').textContent = new Date(data.last_sync).toLocaleString();
-                    document.getElementById('syncedTimeInfo').classList.remove('d-none');
-
-                    btn.innerHTML = '✓ Synced!';
-
-                    await recalculateWithFeedback({target: document.getElementById('recalculateBtn')});
-                } else {
-                    btn.innerHTML = '✗ Failed';
-                }
-            } catch (error) {
-                console.error('Manual sync failed:', error);
-                btn.innerHTML = '✗ Error';
-            } finally {
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.disabled = IS_VIEWER;
-                }, 2000);
-            }
-        }
-
         function renderChannels() {
             const container = document.getElementById('channelsList');
             container.innerHTML = '';
-
             if (currentChannels.length === 0) {
-                container.innerHTML = '<p class="text-muted">No  channels configured</p>';
+                container.innerHTML = '<p class="text-muted">No channels configured</p>';
                 return;
             }
-
-            currentChannels.forEach((ch, idx) => {
+            currentChannels.forEach((ch) => {
                 const info = window.channelNames?.[ch];
-                const displayName = info ? `#${info.name}` : `Channel`;
+                const displayName = info ? `#${info.name}` : `#Channel`;
                 const displayId = `<code style="color: var(--muted); font-size: 0.75em;">${ch}</code>`;
-
                 const pill = document.createElement('span');
                 pill.className = 'pill me-2 mb-2 d-inline-flex align-items-center';
-
                 const closeBtn = IS_VIEWER ? '' : `
-                <button class="btn-close btn-close-white ms-2" type="button" onclick="removeChannel(${idx})" 
-                        style="font-size: 0.7em; opacity: 0.7;" 
-                        aria-label="Remove"></button>
-            `;
-
+            <button class="btn-close btn-close-white ms-2" type="button" 
+                    style="font-size: 0.7em; opacity: 0.7;" 
+                    aria-label="Remove"></button>
+        `;
                 pill.innerHTML = `
-                <span style="color: var(--accent);">${displayName}</span>
-                <span class="ms-2">${displayId}</span>
-                ${closeBtn}
-            `;
+            <span style="color: var(--accent);">${displayName}</span>
+            <span class="ms-2">${displayId}</span>
+            ${closeBtn}
+        `;
+
+                // ✅ Dodaj event listener tutaj, nie inline
+                if (!IS_VIEWER) {
+                    const btn = pill.querySelector('.btn-close');
+                    if (btn) {
+                        btn.addEventListener('click', () => removeChannel(ch));
+                    }
+                }
+
                 container.appendChild(pill);
             });
+        }
+
+        function removeChannel(channelId) {
+            if (IS_VIEWER) return;
+            currentChannels = currentChannels.filter(id => id !== channelId);
+            renderChannels();
         }
 
         async function addChannel() {
@@ -457,338 +470,323 @@
             const modal = new bootstrap.Modal(document.getElementById('addChannelModal'));
             modal.show();
 
-            await loadVoiceChannels();
+            // Jeśli kanały są już załadowane, użyj ich, w przeciwnym razie załaduj ponownie
+            if (!window.availableVoiceChannels || window.availableVoiceChannels.length === 0) {
+                await loadVoiceChannels();
+            } else {
+                // Użyj już załadowanych kanałów
+                renderVoiceChannelsList(window.availableVoiceChannels);
+            }
         }
 
         async function loadVoiceChannels() {
-            const container = document.getElementById('voiceChannelsList');
+            const list = document.getElementById('voiceChannelsList');
+            list.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm"></div> Loading...</div>';
 
             try {
                 const response = await fetch('/channels/voice');
-                if (!response.ok) throw new Error('Failed to load channels');
-
                 const data = await response.json();
 
-                if (data.error) {
-                    container.innerHTML = `<p class="text-danger text-center">${data.error}</p>`;
-                    return;
-                }
-
                 availableVoiceChannels = data.channels || [];
-
-                if (availableVoiceChannels.length === 0) {
-                    container.innerHTML = '<p class="text-muted text-center">No voice channels found</p>';
-                    return;
-                }
-
-                renderVoiceChannelsList();
-
+                renderVoiceChannelsList(availableVoiceChannels);
             } catch (error) {
-                console.error('Error loading voice channels:', error);
-                container.innerHTML = '<p class="text-danger text-center">Error loading channels</p>';
+                list.innerHTML = '<div class="text-danger">Failed to load channels</div>';
             }
-
-
         }
 
+        function renderVoiceChannelsList(channels) {
+            const list = document.getElementById('voiceChannelsList');
+            list.innerHTML = '';
 
-        function saveSelectedChannels() {
-            if (selectedChannelsForAdd.size === 0) {
-                alert('No channels selected');
+            if (channels.length === 0) {
+                list.innerHTML = '<div class="text-muted text-center py-3">No voice channels found</div>';
                 return;
             }
 
-            const available = maxChannels - currentChannels.length;
-            if (selectedChannelsForAdd.size > available) {
-                alert(`Can only add ${available} more channel(s)`);
+            const alreadyAdded = new Set(currentChannels);
+
+            // Grupuj kanały po kategoriach
+            const byCategory = {};
+            channels.forEach(ch => {
+                const category = ch.categoryName || 'Uncategorized';
+                if (!byCategory[category]) {
+                    byCategory[category] = [];
+                }
+                byCategory[category].push(ch);
+            });
+
+            // Renderuj każdą kategorię
+            Object.entries(byCategory).forEach(([categoryName, categoryChannels]) => {
+                // Nagłówek kategorii - używamy twojej klasy .category-header
+                const categoryHeader = document.createElement('div');
+                categoryHeader.className = 'category-header';
+
+                // Dodaj emoji dla niektórych kategorii
+                let displayName = categoryName;
+                if (categoryName.toLowerCase().includes('lider')) {
+                    displayName = `🏆 ${categoryName}`;
+                } else if (categoryName.toLowerCase().includes('glevia')) {
+                    displayName = `⭐ ${categoryName} ⭐`;
+                }
+
+                categoryHeader.textContent = displayName;
+                list.appendChild(categoryHeader);
+
+                // Kanały w kategorii - używamy twoich klas
+                categoryChannels.forEach(ch => {
+                    const channelId = String(ch.id);
+                    const isAlreadyAdded = alreadyAdded.has(channelId);
+
+                    const item = document.createElement('div');
+                    item.className = `channel-list-item ${isAlreadyAdded ? 'disabled' : ''}`;
+
+                    // Badge z liczbą użytkowników
+                    const userBadge = ch.userCount > 0
+                        ? `<span class="badge bg-success ms-1" style="font-size: 0.7rem;">${ch.userCount} 👤</span>`
+                        : '';
+
+                    // Badge "Already added"
+                    const alreadyAddedBadge = isAlreadyAdded
+                        ? '<span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Already added</span>'
+                        : '';
+
+                    item.innerHTML = `
+                <input class="channel-checkbox" type="checkbox" value="${channelId}" 
+                       id="ch_${channelId}" ${isAlreadyAdded ? 'disabled' : ''}>
+                <label class="channel-label" for="ch_${channelId}">
+                    <div class="channel-info">
+                        <span style="font-size: 1.1rem;">🔊</span>
+                        <span class="channel-name">${ch.name}</span>
+                        ${userBadge}
+                        ${alreadyAddedBadge}
+                    </div>
+                    <span class="channel-id">${channelId}</span>
+                </label>
+            `;
+
+                    if (!isAlreadyAdded) {
+                        const checkbox = item.querySelector('input');
+                        checkbox.addEventListener('change', (e) => {
+                            if (e.target.checked) {
+                                selectedChannelsForAdd.add(channelId);
+                            } else {
+                                selectedChannelsForAdd.delete(channelId);
+                            }
+                            updateAddButtonState();
+                        });
+                    }
+
+                    list.appendChild(item);
+                });
+            });
+
+            updateAddButtonState();
+        }
+
+        function updateAddButtonState() {
+            const btn = document.getElementById('confirmAddChannels');
+            const textSpan = document.getElementById('addButtonText');
+
+            if (!btn) {
+                console.warn('⚠️ confirmAddChannels button not found!');
                 return;
             }
 
-            // Add selected channels
-            currentChannels.push(...Array.from(selectedChannelsForAdd));
+            const count = selectedChannelsForAdd.size;
+            const wouldExceedLimit = currentChannels.length + count > maxChannels;
 
-            if (!window.channelNames) {
-                window.channelNames = {};
+            btn.disabled = count === 0 || wouldExceedLimit;
+
+            let text;
+            if (wouldExceedLimit) {
+                text = `Cannot add (max ${maxChannels})`;
+
+                // Pokaż alert w modalu
+                let alert = document.querySelector('#voiceChannelsList .alert');
+                if (!alert) {
+                    alert = document.createElement('div');
+                    alert.className = 'alert mb-3';
+                    alert.innerHTML = `⚠️ Maximum ${maxChannels} channels allowed. Remove some channels first.`;
+                    document.getElementById('voiceChannelsList').prepend(alert);
+                }
+            } else {
+                // Usuń alert jeśli istnieje
+                const alert = document.querySelector('#voiceChannelsList .alert');
+                if (alert) alert.remove();
+
+                if (count > 0) {
+                    text = `Add ${count} channel${count > 1 ? 's' : ''}`;
+                } else {
+                    text = 'Select channels';
+                }
             }
+
+            if (textSpan) {
+                textSpan.textContent = text;
+            } else {
+                btn.textContent = text;
+            }
+}
+
+        function confirmAddChannels() {
+            if (IS_VIEWER) return;
 
             selectedChannelsForAdd.forEach(channelId => {
-                const channelData = availableVoiceChannels.find(ch => ch.id === channelId);
-                if (channelData) {
-                    window.channelNames[channelId] = {
-                        name: channelData.name,
-                        guild: channelData.guildName
-                    };
+                if (!currentChannels.includes(channelId)) {
+                    currentChannels.push(channelId);
                 }
             });
 
             renderChannels();
 
-            const body = {
-                channels: currentChannels.map(ch => String(ch))
-            };
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addChannelModal'));
+            modal.hide();
 
-            fetch('/settings', {
-                method: 'PATCH',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
-            })
-                .then(response => {
-                    if (response.ok) {
-                        showToast('✅ Channels saved!', 'success');
-                    } else {
-                        showToast('❌ Failed to save channels', 'danger');
-                    }
-                })
-                .catch(err => {
-                    showToast('❌ Error: ' + err.message, 'danger');
-                });
-
-
-            // Close modal
-            bootstrap.Modal.getInstance(document.getElementById('addChannelModal')).hide();
-
-            // Reset selection
             selectedChannelsForAdd.clear();
         }
 
-
-        function renderVoiceChannelsList() {
-            const container = document.getElementById('voiceChannelsList');
-            container.innerHTML = '';
-
-            // Group by guild
-            const byGuild = {};
-            availableVoiceChannels.forEach(ch => {
-                if (!byGuild[ch.guildId]) {
-                    byGuild[ch.guildId] = {
-                        name: ch.guildName,
-                        channels: []
-                    };
-                }
-                byGuild[ch.guildId].channels.push(ch);
-            });
-
-            Object.entries(byGuild).forEach(([guildId, guild]) => {
-                // Guild header (if multiple guilds)
-                if (Object.keys(byGuild).length > 1) {
-                    const guildHeader = document.createElement('h6');
-                    guildHeader.className = 'text-muted mt-3 mb-2';
-                    guildHeader.style.fontWeight = '700';
-                    guildHeader.textContent = guild.name;
-                    container.appendChild(guildHeader);
-                }
-
-                // Group channels by category
-                const byCategory = {};
-                const uncategorized = [];
-
-                guild.channels.forEach(channel => {
-                    if (channel.categoryName) {
-                        if (!byCategory[channel.categoryId]) {
-                            byCategory[channel.categoryId] = {
-                                name: channel.categoryName,
-                                channels: []
-                            };
-                        }
-                        byCategory[channel.categoryId].channels.push(channel);
-                    } else {
-                        uncategorized.push(channel);
-                    }
-                });
-
-                // Render categorized channels
-                Object.entries(byCategory).forEach(([categoryId, category]) => {
-                    const categoryHeader = document.createElement('div');
-                    categoryHeader.className = 'category-header';
-                    categoryHeader.textContent = category.name;
-                    container.appendChild(categoryHeader);
-
-                    category.channels.forEach(channel => {
-                        renderChannelCheckbox(container, channel);
-                    });
-                });
-
-                // Render uncategorized channels
-                if (uncategorized.length > 0) {
-                    if (Object.keys(byCategory).length > 0) {
-                        const categoryHeader = document.createElement('div');
-                        categoryHeader.className = 'category-header';
-                        categoryHeader.textContent = 'Uncategorized';
-                        container.appendChild(categoryHeader);
-                    }
-
-                    uncategorized.forEach(channel => {
-                        renderChannelCheckbox(container, channel);
-                    });
-                }
-            });
-
-            // Info about limit
-            if (currentChannels.length >= maxChannels) {
-                const warning = document.createElement('div');
-                warning.className = 'alert alert-warning mt-3';
-                warning.innerHTML = `<small>⚠️ Maximum ${maxChannels} channels reached. Remove existing channels to add new ones.</small>`;
-                container.appendChild(warning);
+        async function recalculateWithFeedback(e) {
+            if (IS_VIEWER) {
+                alert('You have read-only access');
+                return;
             }
 
-
-        }
-
-        function renderChannelCheckbox(container, channel) {
-            const isAlreadyAdded = currentChannels.includes(channel.id);
-            const isDisabled = isAlreadyAdded || (currentChannels.length >= maxChannels && !selectedChannelsForAdd.has(channel.id));
-
-            const itemHtml = `
-        <div class="channel-list-item ${isDisabled ? 'disabled' : ''}">
-            <input 
-                class="channel-checkbox form-check-input" 
-                type="checkbox" 
-                id="channel_${channel.id}" 
-                value="${channel.id}"
-                ${isDisabled ? 'disabled' : ''}
-                ${selectedChannelsForAdd.has(channel.id) ? 'checked' : ''}
-            >
-            <label class="channel-label" for="channel_${channel.id}">
-                <div class="channel-info">
-                    <span class="channel-name">🔊 ${channel.name}</span>
-                    ${channel.userCount > 0 ? `<span class="badge bg-success">${channel.userCount} 👤</span>` : ''}
-                    ${isAlreadyAdded ? '<span class="badge bg-secondary">Added</span>' : ''}
-                </div>
-                <code class="channel-id">${channel.id}</code>
-            </label>
-        </div>
-    `;
-
-            const temp = document.createElement('div');
-            temp.innerHTML = itemHtml;
-            const item = temp.firstElementChild;
-
-            if (!isDisabled) {
-                const checkbox = item.querySelector('input');
-                checkbox.addEventListener('change', (e) => {
-                    if (e.target.checked) {
-                        const available = maxChannels - currentChannels.length;
-                        if (selectedChannelsForAdd.size >= available) {
-                            e.target.checked = false;
-                            alert(`Maximum ${maxChannels} channels allowed`);
-                            return;
-                        }
-                        selectedChannelsForAdd.add(channel.id);
-                    } else {
-                        selectedChannelsForAdd.delete(channel.id);
-                    }
-                });
-            }
-
-            container.appendChild(item);
-        }
-
-        function removeChannel(idx) {
-            if (IS_VIEWER) return;
-            currentChannels.splice(idx, 1);
-            renderChannels();
-        }
-
-        async function playSound(soundType, useSettings) {
-            const btn = event.target;
+            const btn = e.target;
             const originalText = btn.innerHTML;
+
             btn.disabled = true;
-            btn.innerHTML = '🔊...';
+            btn.innerHTML = '⏳ Recalculating...';
 
             try {
-                const url = `/respawn/test-sound?sound=${soundType}&use_settings=${useSettings}`;
-                console.log('🔊 Calling:', url);
+                const response = await fetch('/respawn/recalculate', {method: 'POST'});
+                if (response.ok) {
+                    btn.innerHTML = '✓ Done!';
 
-                const response = await fetch(url, {method: 'POST'});
-                console.log('📡 Response status:', response.status);
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 2000);
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    console.error('Error response:', error);
-                    throw new Error(error.error || `Server returned ${response.status}`);
+                    setTimeout(() => loadSettings(), 500);
+                } else {
+                    throw new Error('Recalculate failed');
                 }
-
-                const result = await response.json();
-                console.log('Success:', result);
-
-                btn.innerHTML = '✓';
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.disabled = IS_VIEWER;
-                }, 2000);
-
             } catch (error) {
-                console.error('Exception:', error);
-                alert('Failed to play sound: ' + error.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('Failed to recalculate: ' + error.message);
+            }
+        }
 
-                btn.innerHTML = '✗';
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.disabled = IS_VIEWER;
-                }, 2000);
+        async function manualSync() {
+            if (IS_VIEWER) {
+                alert('You have read-only access');
+                return;
             }
 
+            const btn = event.target;
+            const originalText = btn.innerHTML;
 
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Syncing with Wiki...';
+
+            try {
+                const response = await fetch('/respawn/sync', {method: 'POST'});
+                if (response.ok) {
+                    const data = await response.json();
+
+                    btn.innerHTML = '✓ Synced!';
+
+                    document.getElementById('syncedTime').textContent = data.synced_base_time;
+                    document.getElementById('lastSync').textContent = new Date(data.last_sync_at).toLocaleString();
+                    document.getElementById('syncedTimeInfo').classList.remove('d-none');
+
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 2000);
+
+                    if (document.getElementById('useSyncedTime').checked) {
+                        await recalculateWithFeedback({target: document.getElementById('recalculateBtn')});
+                    }
+                } else {
+                    throw new Error('Sync failed');
+                }
+            } catch (error) {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('Failed to sync: ' + error.message);
+            }
+        }
+
+        async function playSound(soundType, useSettings = false) {
+            if (IS_VIEWER) {
+                alert('You have read-only access');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/respawn/test-sound?sound=${soundType}&use_settings=${useSettings}`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    console.log('Sound played successfully');
+                } else {
+                    const error = await response.json();
+                    alert('Failed to play sound: ' + (error.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Failed to play sound: ' + error.message);
+            }
         }
 
         async function saveRepeatSettings() {
-            const repeatPlays = parseInt(document.getElementById('repeat-plays').value);
-            const repeatGapMs = parseInt(document.getElementById('repeat-gap-ms').value);
+            if (IS_VIEWER) return;
 
-            const body = {
-                repeat_plays: repeatPlays,
-                repeat_gap_ms: repeatGapMs
+            const payload = {
+                repeat_plays_10m: parseInt(document.getElementById('repeat-plays-10m').value),
+                repeat_gap_ms_10m: parseInt(document.getElementById('repeat-gap-ms-10m').value),
+                repeat_plays_2h: parseInt(document.getElementById('repeat-plays-2h').value),
+                repeat_gap_ms_2h: parseInt(document.getElementById('repeat-gap-ms-2h').value)
             };
 
             try {
                 const response = await fetch('/settings', {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(body)
+                    body: JSON.stringify(payload)
                 });
 
-                if (response.ok) {
-                    document.getElementById('success').textContent = '✅ Repeat settings saved!';
-                    document.getElementById('success').classList.remove('d-none');
-                    document.getElementById('error').classList.add('d-none');
-                    await loadSettings();
-                } else {
-                    document.getElementById('error').textContent = '❌ Failed to save repeat settings';
-                    document.getElementById('error').classList.remove('d-none');
-                    document.getElementById('success').classList.add('d-none');
-                }
-            } catch (err) {
-                document.getElementById('error').textContent = '❌ Error: ' + err.message;
-                document.getElementById('error').classList.remove('d-none');
-                document.getElementById('success').classList.add('d-none');
+                if (!response.ok) throw new Error('Save failed');
+
+                console.log('✓ Repeat settings saved');
+            } catch (error) {
+                console.error('Failed to save repeat settings:', error);
+                alert('Failed to save: ' + error.message);
             }
 }
+        
 
         async function uploadSound(soundType) {
-            if (IS_VIEWER) return;
+            if (IS_VIEWER) {
+                alert('You have read-only access');
+                return;
+            }
 
-            const fileInput = document.getElementById(`upload-${soundType}`);
+            const fileInput = document.getElementById(`file-${soundType}`);
             const file = fileInput.files[0];
 
             if (!file) {
-                alert('Select a file first');
-                return;
-            }
-
-            if (!file.name.toLowerCase().endsWith('.wav')) {
-                alert('Only .wav files');
-                return;
-            }
-
-            if (file.size > 5 * 1024 * 1024) {
-                alert('File too large (max 5MB)');
+                alert('Please select a file first');
                 return;
             }
 
             const btn = event.target;
             const originalText = btn.innerHTML;
+
             btn.disabled = true;
-            btn.innerHTML = '📤...';
+            btn.innerHTML = '⏳ Uploading...';
 
             try {
                 const formData = new FormData();
@@ -801,7 +799,7 @@
                 });
 
                 if (response.ok) {
-                    btn.innerHTML = '✓ Done!';
+                    btn.innerHTML = '✓ Uploaded!';
                     fileInput.value = '';
 
                     setTimeout(() => {
@@ -841,9 +839,7 @@
                 lead_seconds: parseInt(document.getElementById('leadSeconds').value),
                 channels: currentChannels,
                 roles_allowed: [],
-                use_synced_time: document.getElementById('useSyncedTime').checked,
-                repeat_plays: parseInt(document.getElementById('repeat-plays').value), 
-                repeat_gap_ms: parseInt(document.getElementById('repeat-gap-ms').value)
+                use_synced_time: document.getElementById('useSyncedTime').checked
             };
 
             console.log('Sending payload:', payload);
@@ -989,6 +985,17 @@
 
         document.getElementById('sound-upload-section').classList.remove('d-none');
 
+        ['repeat-plays-10m', 'repeat-gap-ms-10m', 'repeat-plays-2h', 'repeat-gap-ms-2h'].forEach(id => {
+            document.getElementById(id).addEventListener('change', async (e) => {
+                if (IS_VIEWER) {
+                    e.target.value = e.target.defaultValue;
+                    return;
+                }
+
+                await saveRepeatSettings();
+            });
+        });
+        
         loadSettings();
     </script>
 }

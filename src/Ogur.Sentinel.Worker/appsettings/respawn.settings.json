@@ -1,10 +1,14 @@
 ﻿{
   "roles_allowed": [],
-  "channels": [],
+  "channels": [
+    "1414307209210368105"
+  ],
   "base_hhmm": "01:10:00",
   "lead_seconds": 20,
   "enabled_10m": false,
   "enabled_2h": false,
-  "repeat_plays": 3,
-  "repeat_gap_ms": 1000
+  "repeat_plays_10m": 2,
+  "repeat_gap_ms_10m": 222,
+  "repeat_plays_2h": 4,
+  "repeat_gap_ms_2h": 444
 }

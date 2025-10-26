@@ -67,13 +67,17 @@ public sealed class SettingsStore
                 
                 Enabled2h = doc.TryGetProperty("enabled_2h", out var e2h) && e2h.ValueKind is JsonValueKind.True,
 
-                RepeatPlays = doc.TryGetProperty("repeat_plays", out var rp) && rp.ValueKind is JsonValueKind.Number
-                    ? rp.GetInt32()
-                    : 3,
-
-                RepeatGapMs = doc.TryGetProperty("repeat_gap_ms", out var rg) && rg.ValueKind is JsonValueKind.Number
-                    ? rg.GetInt32()
-                    : 1000
+                RepeatPlays10m = doc.TryGetProperty("repeat_plays_10m", out var rp10m) && rp10m.ValueKind is JsonValueKind.Number
+                    ? rp10m.GetInt32() : 3,
+                
+                RepeatGapMs10m = doc.TryGetProperty("repeat_gap_ms_10m", out var rg10m) && rg10m.ValueKind is JsonValueKind.Number
+                    ? rg10m.GetInt32() : 1000,
+                
+                RepeatPlays2h = doc.TryGetProperty("repeat_plays_2h", out var rp2h) && rp2h.ValueKind is JsonValueKind.Number
+                    ? rp2h.GetInt32() : 3,
+                
+                RepeatGapMs2h = doc.TryGetProperty("repeat_gap_ms_2h", out var rg2h) && rg2h.ValueKind is JsonValueKind.Number
+                    ? rg2h.GetInt32() : 1000
             };
 
             _logger.LogInformation("[SettingsStore] Loaded: Channels={ChCount}, Base={Base}, Lead={Lead}s", 
@@ -102,20 +106,25 @@ public sealed class SettingsStore
             var payload = new
             {
                 roles_allowed = settings.RolesAllowed.Select(r => r.ToString()).ToArray(),
-                channels = settings.Channels.Select(c => c.ToString()).ToArray(),  // ← STRING!
+                channels = settings.Channels.Select(c => c.ToString()).ToArray(),
                 base_hhmm = settings.BaseHhmm,
                 lead_seconds = settings.LeadSeconds,
                 enabled_10m = settings.Enabled10m,
                 enabled_2h = settings.Enabled2h,
-                repeat_plays = settings.RepeatPlays,  
-                repeat_gap_ms = settings.RepeatGapMs 
+                repeat_plays_10m = settings.RepeatPlays10m,
+                repeat_gap_ms_10m = settings.RepeatGapMs10m,
+                repeat_plays_2h = settings.RepeatPlays2h,
+                repeat_gap_ms_2h = settings.RepeatGapMs2h
             };
 
+ 
+
             var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
-            await File.WriteAllTextAsync(_filePath, json, ct);
+            
+            _logger.LogDebug("[SettingsStore] JSON to save: {Json}", json);
         
-            _logger.LogInformation("[SettingsStore] ✓ Saved to {Path}: Channels={ChCount}, Base={Base}, Lead={Lead}s", 
-                _filePath, settings.Channels.Count, settings.BaseHhmm, settings.LeadSeconds);
+            await File.WriteAllTextAsync(_filePath, json, ct);
+    
         }
         catch (Exception ex)
         {

@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Reflection;
 using System.Text.Json;
-using Discord;
-using Discord.WebSocket;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -15,6 +13,13 @@ using Ogur.Sentinel.Abstractions.Respawn;
 using Ogur.Sentinel.Core.Respawn;
 using Ogur.Sentinel.Worker.Services;
 using Ogur.Sentinel.Abstractions;
+using Microsoft.Extensions.Logging;
+using NetCord.Gateway;
+using Ogur.Sentinel.Worker.Discord;
+using NetCord;
+using System.Linq;
+using NetCord.Gateway.Voice;
+
 
 namespace Ogur.Sentinel.Worker.Http;
 
@@ -24,10 +29,10 @@ public sealed class InternalEndpoints
     private readonly RespawnSchedulerService _scheduler;
     private readonly SettingsStore _store;
     private readonly SettingsOptions _opts;
-    private readonly DiscordSocketClient _discord;
+    private readonly GatewayClient _client;
     private readonly RespawnOptions _respawnOpts;
     private readonly WikiSyncService _wikiSync;
-    private readonly VoiceService2 _voice;
+    private readonly VoiceService3 _voice;
     private readonly IVersionHelper _versionHelper;
 
 
@@ -36,17 +41,17 @@ public sealed class InternalEndpoints
         RespawnSchedulerService scheduler,
         SettingsStore store,
         IOptions<SettingsOptions> opts,
-        DiscordSocketClient discord,
+        GatewayClient client,
         IOptions<RespawnOptions> respawnOpts,
         WikiSyncService wikiSync,
-        VoiceService2 voice,
+        VoiceService3 voice,
         IVersionHelper versionHelper)
     {
         _state = state;
         _scheduler = scheduler;
         _store = store;
         _opts = opts.Value;
-        _discord = discord;
+        _client = client;
         _respawnOpts = respawnOpts.Value;
         _wikiSync = wikiSync;
         _voice = voice;
@@ -65,23 +70,38 @@ public sealed class InternalEndpoints
 
         webapp.MapGet("/health", () => Results.Ok(new { status = "ok", time = DateTimeOffset.UtcNow }));
 
-        webapp.MapGet("/settings", () => Results.Ok(new
+        webapp.MapGet("/settings", (ILogger<InternalEndpoints> logger) =>
         {
-            base_hhmm = _state.BaseHhmm,
-            lead_seconds = _state.LeadSeconds,
-            channels = _state.Channels.Select(c => c.ToString()).ToArray(),
-            enabled_10m = _state.Enabled10m,
-            enabled_2h = _state.Enabled2h,
-            use_synced_time = _state.UseSyncedTime,
-            synced_base_time = _state.SyncedBaseTime,
-            last_sync_at = _state.LastSyncAt, 
-            repeat_gap_ms = _state.RepeatGapMs 
-        }));
+            var result = new
+            {
+                roles_allowed = _state.RolesAllowed,
+                channels = _state.Channels.Select(c => c.ToString()).ToArray(),//_state.Channels,
+                base_hhmm = _state.BaseHhmm,
+                lead_seconds = _state.LeadSeconds,
+                enabled_10m = _state.Enabled10m,
+                enabled_2h = _state.Enabled2h,
+                use_synced_time = _state.UseSyncedTime,
+                synced_base_time = _state.SyncedBaseTime,
+                last_sync_at = _state.LastSyncAt,
+                repeat_plays_10m = _state.RepeatPlays10m,
+                repeat_gap_ms_10m = _state.RepeatGapMs10m,
+                repeat_plays_2h = _state.RepeatPlays2h,
+                repeat_gap_ms_2h = _state.RepeatGapMs2h
+            };
 
-        webapp.MapPost("/settings", async (HttpContext ctx) =>
+            logger.LogInformation("📤 GET /settings: RepeatPlays10m={RepeatPlays10m}, RepeatPlays2h={RepeatPlays2h}",
+                _state.RepeatPlays10m, _state.RepeatPlays2h);
+
+            return Results.Ok(result);
+        });
+
+        webapp.MapPost("/settings", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
         {
             using var reader = new StreamReader(ctx.Request.Body);
             var json = await reader.ReadToEndAsync();
+
+            logger.LogInformation("📝 POST /settings received: {Json}", json);
+
             var doc = JsonDocument.Parse(json);
 
             var channels = doc.RootElement.GetProperty("channels").EnumerateArray()
@@ -103,21 +123,33 @@ public sealed class InternalEndpoints
                     : _state.UseSyncedTime,
                 SyncedBaseTime = _state.SyncedBaseTime,
                 LastSyncAt = _state.LastSyncAt,
-                RepeatPlays = doc.RootElement.TryGetProperty("repeat_plays", out var rp) 
-                    ? rp.GetInt32() 
-                    : _state.RepeatPlays,
-                RepeatGapMs = doc.RootElement.TryGetProperty("repeat_gap_ms", out var rg) 
-                    ? rg.GetInt32() 
-                    : _state.RepeatGapMs
+
+                // ✅ Nowe pola zamiast starych
+                RepeatPlays10m = doc.RootElement.TryGetProperty("repeat_plays_10m", out var rp10m)
+                    ? rp10m.GetInt32()
+                    : _state.RepeatPlays10m,
+                RepeatGapMs10m = doc.RootElement.TryGetProperty("repeat_gap_ms_10m", out var rg10m)
+                    ? rg10m.GetInt32()
+                    : _state.RepeatGapMs10m,
+                RepeatPlays2h = doc.RootElement.TryGetProperty("repeat_plays_2h", out var rp2h)
+                    ? rp2h.GetInt32()
+                    : _state.RepeatPlays2h,
+                RepeatGapMs2h = doc.RootElement.TryGetProperty("repeat_gap_ms_2h", out var rg2h)
+                    ? rg2h.GetInt32()
+                    : _state.RepeatGapMs2h
             };
 
             _state.ApplyPersisted(settings);
             await _store.SaveAsync(_state.ToPersisted());
             _state.NotifySettingsChanged();
+
+            logger.LogInformation("✅ Settings saved: RepeatPlays10m={RepeatPlays10m}, RepeatPlays2h={RepeatPlays2h}",
+                settings.RepeatPlays10m, settings.RepeatPlays2h);
+
             return Results.Ok();
         });
-        
-        webapp.MapPatch("/settings", async (HttpContext ctx) =>
+
+        webapp.MapPatch("/settings", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
         {
             using var reader = new StreamReader(ctx.Request.Body);
             var json = await reader.ReadToEndAsync();
@@ -148,12 +180,18 @@ public sealed class InternalEndpoints
 
             if (doc.RootElement.TryGetProperty("use_synced_time", out var useSynced))
                 _state.UseSyncedTime = useSynced.GetBoolean();
-    
-            if (doc.RootElement.TryGetProperty("repeat_plays", out var repeatPlays))
-                _state.RepeatPlays = repeatPlays.GetInt32();
-    
-            if (doc.RootElement.TryGetProperty("repeat_gap_ms", out var repeatGap))
-                _state.RepeatGapMs = repeatGap.GetInt32();
+
+            if (doc.RootElement.TryGetProperty("repeat_plays_10m", out var rp10m))
+                _state.RepeatPlays10m = rp10m.GetInt32();
+
+            if (doc.RootElement.TryGetProperty("repeat_gap_ms_10m", out var rg10m))
+                _state.RepeatGapMs10m = rg10m.GetInt32();
+
+            if (doc.RootElement.TryGetProperty("repeat_plays_2h", out var rp2h))
+                _state.RepeatPlays2h = rp2h.GetInt32();
+
+            if (doc.RootElement.TryGetProperty("repeat_gap_ms_2h", out var rg2h))
+                _state.RepeatGapMs2h = rg2h.GetInt32();
 
             await _store.SaveAsync(_state.ToPersisted());
             _state.NotifySettingsChanged();
@@ -204,44 +242,58 @@ public sealed class InternalEndpoints
                 _state.Enabled2h = e2h.GetBoolean();
 
             await _store.SaveAsync(_state.ToPersisted());
-
-            return Results.Ok(new { _state.Enabled10m, _state.Enabled2h });
+            _state.NotifySettingsChanged();
+            return Results.Ok(new { enabled10m = _state.Enabled10m, enabled2h = _state.Enabled2h });
         });
 
-        webapp.MapGet("/settings/limits", () => Results.Ok(new
-        {
-            max_channels = _respawnOpts.MaxChannels
-        }));
+        // GET /channels/info - Informacje o skonfigurowanych kanałach respawn
 
-        webapp.MapGet("/channels/info", () =>
+
+        webapp.MapPost("/channels/info", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
         {
-            if (_discord.LoginState != LoginState.LoggedIn || _discord.CurrentUser is null)
+            if (_client.Cache?.User is null)
             {
-                return Results.Ok(new[]
-                {
-                    new { id = 0UL, name = "Bot not connected", guild = "" }
-                });
+                return Results.Json(new { error = "Bot not connected" }, statusCode: 503);
             }
 
-            var infos = _state.Channels.Select(chId =>
-            {
-                var channel = _discord.GetChannel(chId) as SocketVoiceChannel;
+            using var reader = new StreamReader(ctx.Request.Body);
+            var json = await reader.ReadToEndAsync();
+            var doc = JsonDocument.Parse(json);
 
-                if (channel == null)
+            var channelIds = doc.RootElement.GetProperty("channel_ids").EnumerateArray()
+                .Select(x => ulong.Parse(x.GetString()!))
+                .ToList();
+
+            logger.LogInformation("📥 /channels/info requested for: {Channels}", string.Join(", ", channelIds));
+
+
+            var infos = channelIds.Select(chId =>
+            {
+                IGuildChannel? channel = null;
+
+                foreach (var guild in _client.Cache.Guilds.Values)
                 {
-                    foreach (var guild in _discord.Guilds)
+                    if (guild.Channels.TryGetValue(chId, out var ch) && ch is VoiceGuildChannel)
                     {
-                        channel = guild.GetVoiceChannel(chId);
-                        if (channel != null) break;
+                        channel = ch;
+                        break;
                     }
                 }
 
-                return new
+                var guildName = channel != null && _client.Cache.Guilds.TryGetValue(channel.GuildId, out var g)
+                    ? g.Name
+                    : "Unknown Guild";
+
+                var result = new
                 {
                     id = chId.ToString(),
                     name = channel?.Name ?? "Unknown Channel",
-                    guild = channel?.Guild?.Name ?? "Unknown Guild"
+                    guild = guildName
                 };
+
+                logger.LogInformation("  ➡️ Channel {Id}: {Name} ({Guild})", result.id, result.name, result.guild);
+
+                return result;
             }).ToList();
 
             return Results.Ok(infos);
@@ -249,32 +301,44 @@ public sealed class InternalEndpoints
 
         webapp.MapGet("/channels/voice", () =>
         {
-            if (_discord.LoginState != LoginState.LoggedIn || _discord.CurrentUser is null)
+            if (_client.Cache?.User is null)
             {
                 return Results.Json(new { error = "Bot not connected" }, statusCode: 503);
             }
 
             var channels = new List<object>();
 
-            foreach (var guild in _discord.Guilds)
+            foreach (var guild in _client.Cache.Guilds.Values)
             {
-                var voiceChannels = guild.VoiceChannels
-                    .OrderBy(c => c.Position)
-                    .Select(c => {
-                     
-                        var usersInChannel = guild.Users.Count(u => u.VoiceChannel?.Id == c.Id);
-                
+                var voiceChannels = guild.Channels.Values
+                    .OfType<VoiceGuildChannel>()
+                    .OrderBy(c => c.Position ?? 0)
+                    .Select(c =>
+                    {
+                        // Policz użytkowników w kanale
+                        var usersInChannel = guild.VoiceStates.Values.Count(vs => vs.ChannelId == c.Id);
+
+                        // Znajdź kategorię
+                        string? categoryName = null;
+                        if (c.ParentId.HasValue && guild.Channels.TryGetValue(c.ParentId.Value, out var parent))
+                        {
+                            // Kategoria to kanał który nie jest ani Voice ani Text
+                            if (parent is not VoiceGuildChannel && parent is not TextGuildChannel)
+                            {
+                                categoryName = parent.Name;
+                            }
+                        }
+
                         return new
                         {
                             id = c.Id.ToString(),
                             name = c.Name,
                             guildId = guild.Id.ToString(),
                             guildName = guild.Name,
-                            categoryId = c.CategoryId?.ToString(),
-                            categoryName = guild.CategoryChannels
-                                .FirstOrDefault(cat => cat.Id == c.CategoryId)?.Name,
-                            userCount = usersInChannel, 
-                            position = c.Position
+                            categoryId = c.ParentId?.ToString(),
+                            categoryName = categoryName,
+                            userCount = usersInChannel,
+                            position = c.Position ?? 0
                         };
                     });
 
@@ -343,16 +407,26 @@ public sealed class InternalEndpoints
             }
         });
 
-        webapp.MapPost("/respawn/test-sound", async (HttpContext ctx) =>
+        webapp.MapGet("/settings/limits", () => Results.Ok(new
+        {
+            max_channels = _respawnOpts.MaxChannels
+        }));
+
+        webapp.MapPost("/respawn/test-sound", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
         {
             var sound = ctx.Request.Query["sound"].ToString();
             var useSettings = ctx.Request.Query["use_settings"].ToString() == "true";
 
+            logger.LogDebug("[TEST-SOUND] 📥 Request: sound={Sound}, useSettings={UseSettings}", sound, useSettings);
+
             var channelId = _state.Channels.FirstOrDefault();
             if (channelId == 0)
             {
+                logger.LogWarning("[TEST-SOUND] ❌ No channels configured");
                 return Results.BadRequest(new { error = "No channels configured" });
             }
+
+            logger.LogDebug("[TEST-SOUND] Channel: {ChannelId}", channelId);
 
             var soundPath = sound == "2h" ? _respawnOpts.Sound2h : _respawnOpts.Sound10m;
             if (!Path.IsPathRooted(soundPath))
@@ -360,29 +434,49 @@ public sealed class InternalEndpoints
                 soundPath = Path.Combine(AppContext.BaseDirectory, soundPath);
             }
 
+            logger.LogDebug("[TEST-SOUND] Sound path: {Path}", soundPath);
+
             if (!File.Exists(soundPath))
             {
+                logger.LogWarning("[TEST-SOUND] ❌ File not found: {Path}", soundPath);
                 return Results.NotFound(new { error = "Sound file not found" });
             }
 
             try
             {
-                var repeatPlays = useSettings && _state.RepeatPlays > 0 ? _state.RepeatPlays : 1;
-                var repeatGapMs = useSettings ? _state.RepeatGapMs : 0;  // ← Jeśli nie useSettings to 0, inaczej z settings
+                // ✅ Użyj odpowiednich settings dla danego dźwięku
+                var repeatPlays = useSettings
+                    ? (sound == "2h" ? _state.RepeatPlays2h : _state.RepeatPlays10m)
+                    : 1;
+                var repeatGapMs = useSettings
+                    ? (sound == "2h" ? _state.RepeatGapMs2h : _state.RepeatGapMs10m)
+                    : 0;
 
-                _ = Task.Run(async () => 
+                logger.LogDebug("[TEST-SOUND] Params: sound={Sound}, repeat={Repeat}, gap={Gap}ms", sound, repeatPlays,
+                    repeatGapMs);
+
+                // Fire-and-forget with logging
+                _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await _voice.JoinAndPlayAsync(channelId, soundPath, repeatPlays, repeatGapMs, CancellationToken.None);
+                        logger.LogInformation("[TEST-SOUND] 🎵 Starting voice playback...");
+                        await _voice.JoinAndPlayAsync(channelId, soundPath, repeatPlays, repeatGapMs,
+                            CancellationToken.None);
+                        logger.LogInformation("[TEST-SOUND] ✅ Voice playback complete");
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        logger.LogError(ex, "[TEST-SOUND] ❌ Voice playback failed: {Message}", ex.Message);
+                    }
                 });
 
+                logger.LogDebug("[TEST-SOUND] 📤 Returning OK (voice task started in background)");
                 return Results.Ok(new { success = true });
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "[TEST-SOUND] ❌ Endpoint failed: {Message}", ex.Message);
                 return Results.Problem(ex.Message, statusCode: 500);
             }
         });

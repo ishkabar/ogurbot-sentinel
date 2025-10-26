@@ -1,11 +1,11 @@
-﻿using Discord;
-using Discord.WebSocket;
+﻿//using Discord;
+//using Discord.WebSocket;
 
 namespace Ogur.Sentinel.Worker.Discord.Modules;
 
 
 public sealed class AdminBreakModule
-{
+{/*
     public SlashCommandBuilder Build() =>
         new SlashCommandBuilder()
             .WithName("admin")
@@ -21,5 +21,5 @@ public sealed class AdminBreakModule
         return sub == "ping"
             ? cmd.RespondAsync("pong", ephemeral: true)
             : cmd.RespondAsync("Unknown subcommand.", ephemeral: true);
-    }
+    }*/
 }

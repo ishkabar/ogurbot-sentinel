@@ -28,8 +28,11 @@ public sealed class RespawnState
     public DateTimeOffset? LastSyncAt { get; set; }
     
     public HashSet<ulong> RolesAllowed { get; } = new();
-    public int RepeatPlays { get; set; } = 3;
-    public int RepeatGapMs { get; set; } = 250;
+    
+    public int RepeatPlays10m { get; set; } = 3;
+    public int RepeatGapMs10m { get; set; } = 1000;
+    public int RepeatPlays2h { get; set; } = 3;
+    public int RepeatGapMs2h { get; set; } = 1000;
 
     public void SetChannels(IEnumerable<ulong> ids)
     {
@@ -60,8 +63,10 @@ public sealed class RespawnState
         UseSyncedTime = p.UseSyncedTime;
         SyncedBaseTime = p.SyncedBaseTime;
         LastSyncAt = p.LastSyncAt;
-        RepeatPlays = p.RepeatPlays; 
-        RepeatGapMs = p.RepeatGapMs;
+        RepeatPlays10m = p.RepeatPlays10m;
+        RepeatGapMs10m = p.RepeatGapMs10m;
+        RepeatPlays2h = p.RepeatPlays2h;
+        RepeatGapMs2h = p.RepeatGapMs2h;
         RolesAllowed.Clear();
         foreach (var r in p.RolesAllowed) RolesAllowed.Add((ulong)r);
     }
@@ -76,8 +81,10 @@ public sealed class RespawnState
         UseSyncedTime = UseSyncedTime,
         SyncedBaseTime = SyncedBaseTime,
         LastSyncAt = LastSyncAt,
-        RepeatPlays = RepeatPlays,  
-        RepeatGapMs = RepeatGapMs,  
+        RepeatPlays10m = RepeatPlays10m,
+        RepeatGapMs10m = RepeatGapMs10m,
+        RepeatPlays2h = RepeatPlays2h,
+        RepeatGapMs2h = RepeatGapMs2h,
         RolesAllowed = RolesAllowed.Select(x => (ulong)x).ToList()
     };
 }
