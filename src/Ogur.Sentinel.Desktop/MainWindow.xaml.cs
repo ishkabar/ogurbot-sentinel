@@ -9,7 +9,8 @@ namespace Ogur.Sentinel.Desktop;
 
 public partial class MainWindow : Window
 {
-    private const string API_BASE_URL = "http://localhost:5205";
+    //private const string API_BASE_URL = "http://localhost:5205";
+    private const string API_BASE_URL = "https://respy.ogur.dev";
     private static readonly DateTime LICENSE_EXPIRATION = new DateTime(2025, 11, 8);
 
 
