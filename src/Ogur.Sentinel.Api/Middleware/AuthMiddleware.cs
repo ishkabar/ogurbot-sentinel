@@ -84,6 +84,7 @@ public class AuthMiddleware
                path.StartsWith("/api/auth/login") ||
                path.StartsWith("/health") ||
                path.StartsWith("/version") ||
+               path.StartsWith("/worker") ||
                path.StartsWith("/error") ||
                path.StartsWith("/css") ||
                path.StartsWith("/js") ||
