@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 
 RUN apt-get update && \
@@ -8,7 +8,7 @@ RUN apt-get update && \
 ENV ASPNETCORE_URLS=http://0.0.0.0:9090
 EXPOSE 9090
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG VERSION=1.0.0-dev
 WORKDIR /src
 
