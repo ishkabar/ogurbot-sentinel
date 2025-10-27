@@ -1,8 +1,8 @@
 ﻿<!-- Pages/Shared/_Layout.cshtml -->
 @{
-    var username = Context.Items["Username"] as string;
-    var role = Context.Items["Role"] as string;
-    var isAuthenticated = !string.IsNullOrEmpty(username);
+var username = Context.Items["Username"] as string;
+var role = Context.Items["Role"] as string;
+var isAuthenticated = !string.IsNullOrEmpty(username);
 }
 
 <!DOCTYPE html>
@@ -11,16 +11,33 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <meta name="color-scheme" content="dark">
-    <title>@ViewData["Title"] - Ogur.Sentinel.Api</title>
+    <title>@ViewData["Title"] - Sentinel</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css"/>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true"/>
     <link rel="stylesheet" href="~/Ogur.Sentinel.Api.styles.css" asp-append-version="true"/>
+    <style>
+        /* Fix navbar text cutoff */
+        .navbar-brand {
+            overflow: visible !important;
+            line-height: normal !important;
+        }
+        .glass-nav {
+            overflow: visible !important;
+        }
+        .navbar {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+        }
+    </style>
 </head>
 <body>
 <header>
     <nav class="navbar navbar-expand-sm navbar-dark glass-nav mb-3">
         <div class="container">
-            <a class="navbar-brand" asp-area="" asp-page="/Index">Ogur.Sentinel.Api</a>
+            <a href="https://ogur.dev" class="btn btn-sm btn-outline-light me-3" style="font-size: 0.85rem;">
+                ← ogur.dev
+            </a>
+            <a class="navbar-brand" asp-area="" asp-page="/Index" style="overflow: visible; display: inline-block;">Ogur.Sentinel.Api</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                     aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -40,7 +57,7 @@
                         <a class="nav-link" asp-area="" asp-page="/Privacy">Privacy</a>
                     </li>
                 </ul>
-    
+
                 <div id="user-info" class="user-info" style="display: none;">
                     👤 <span id="username-display"></span>
                     <span id="role-badge"></span>
@@ -74,20 +91,33 @@
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
 <script src="~/js/auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 
-<!-- ✅ Wypełnij user info z localStorage -->
+
+<!-- ✅ Wypełnij user info z cookie -->
 <script>
     (function() {
-        const username = localStorage.getItem('username');
-        const role = localStorage.getItem('role');
-        
+        function getCookie(name) {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [cookieName, cookieValue] = cookie.trim().split('=');
+                if (cookieName === name) return cookieValue;
+            }
+            return null;
+        }
+
+        const username = getCookie('username');
+        const role = getCookie('role');
+
         if (username && role) {
             document.getElementById('username-display').textContent = username;
             document.getElementById('user-info').style.display = 'block';
-            
-            // Pokaż badge tylko dla niektórych ról
+
+            // Pokaż badge dla wszystkich ról
             const roleBadge = document.getElementById('role-badge');
-            if (role === 'Operator') {
+            if (role === 'Admin') {
+                roleBadge.innerHTML = '<span class="badge bg-danger">Admin</span>';
+            } else if (role === 'Operator') {
                 roleBadge.innerHTML = '<span class="badge bg-info">Operator</span>';
             } else if (role === 'Timer') {
                 roleBadge.innerHTML = '<span class="badge bg-secondary">Timer</span>';
@@ -104,7 +134,7 @@
         try {
             const apiRes = await fetch('/version');
             const apiData = await apiRes.json();
-            document.getElementById('api-version').textContent = 
+            document.getElementById('api-version').textContent =
                 `API: ${apiData.version} (${apiData.build_time})`;
         } catch (e) {
             document.getElementById('api-version').textContent = 'API: error';
@@ -113,7 +143,7 @@
         try {
             const workerRes = await fetch('/worker/version');
             const workerData = await workerRes.json();
-            document.getElementById('worker-version').textContent = 
+            document.getElementById('worker-version').textContent =
                 `Worker: ${workerData.version} (${workerData.build_time})`;
         } catch (e) {
             document.getElementById('worker-version').textContent = 'Worker: disconnected';

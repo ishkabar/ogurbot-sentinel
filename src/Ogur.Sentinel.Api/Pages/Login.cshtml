@@ -68,11 +68,23 @@ Layout = null;
                     🔓 Login
                 </button>
             </div>
+
+            <div class="text-center mt-3">
+                <a href="/" class="text-muted">← Powrót na stronę główną</a>
+            </div>
         </form>
     </div>
 </div>
 
 <script>
+    // Helper function to set cookie
+    function setCookie(name, value, hours) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + hours * 60 * 60 * 1000);
+        const cookieString = name + '=' + value + ';expires=' + expires.toUTCString() + ';path=/;SameSite=Lax';
+        document.cookie = cookieString;
+    }
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -95,11 +107,10 @@ Layout = null;
             if (response.ok) {
                 const data = await response.json();
 
-                // ✅ Zapisz token, role i username
-                localStorage.setItem('auth_token', data.token);
-                localStorage.setItem('token_expires', data.expiresAt);
-                localStorage.setItem('username', username);
-                localStorage.setItem('role', data.role);  // ✅ Zapisz role!
+                // Zapisz token w cookie
+                setCookie('auth_token', data.token, 24);
+                setCookie('username', username, 24);
+                setCookie('role', data.role, 24);
 
                 window.location.href = '/';
             } else {
@@ -116,7 +127,17 @@ Layout = null;
         }
     });
 
-    if (localStorage.getItem('auth_token')) {
+    // Sprawdź czy już zalogowany (przez cookie)
+    function getCookie(name) {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            const [cookieName, cookieValue] = cookie.trim().split('=');
+            if (cookieName === name) return cookieValue;
+        }
+        return null;
+    }
+
+    if (getCookie('auth_token')) {
         window.location.href = '/';
     }
 </script>

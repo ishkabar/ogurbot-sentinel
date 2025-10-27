@@ -121,6 +121,10 @@ try
             {
                 ctx.Context.Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{ctx.File.Name}\"");
             }
+            if (ctx.File.Name.EndsWith(".js") || ctx.File.Name.EndsWith(".css"))
+            {
+                ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store");
+            }
         }
     });
 

@@ -46,7 +46,7 @@ public partial class MainWindow : Window
             Height = _settings.WindowHeight;
         }
         
-        ContentFrame.Navigate(new LoginView(_apiClient, this));
+        ContentFrame.Navigate(new LoginView(_apiClient, this, _settings));
     }
 
     protected override void OnClosed(EventArgs e)
@@ -87,7 +87,8 @@ public partial class MainWindow : Window
     {
         ContentFrame.Navigate(new TimerView(_apiClient, this, _settings));
         UpdateUserInfo();
-        UpdateSettingsButton();
+        LogoutButton.Visibility = Visibility.Visible;
+        //UpdateSettingsButton();
         _isOnSettingsPage = false;
         UpdateSettingsButtonHighlight();
 
@@ -99,7 +100,8 @@ public partial class MainWindow : Window
     {
         ContentFrame.Navigate(new SettingsView(_apiClient, this, _settings));
         UpdateUserInfo();
-        UpdateSettingsButton();
+        LogoutButton.Visibility = Visibility.Visible;
+        //UpdateSettingsButton();
         _isOnSettingsPage = true;
         UpdateSettingsButtonHighlight();
 
@@ -108,17 +110,24 @@ public partial class MainWindow : Window
         MinHeight = 400;
     }
 
-    public void NavigateToLogin()
+    public void NavigateToLogin(bool tryAutoLogin = true)
     {
-        _apiClient.Logout();
         UserInfoText.Visibility = Visibility.Collapsed;
         SettingsButton.Visibility = Visibility.Collapsed;
+        LogoutButton.Visibility = Visibility.Collapsed;
         _isOnSettingsPage = false;
-        ContentFrame.Navigate(new LoginView(_apiClient, this));
+        ContentFrame.Navigate(new LoginView(_apiClient, this, _settings,tryAutoLogin));
 
-        // ✅ Login też potrzebuje więcej miejsca
         MinWidth = 300;
-        MinHeight = 400;
+        MinHeight = 500;
+    }
+    
+    private async void Logout_Click(object sender, RoutedEventArgs e)
+    {
+        await _apiClient.LogoutAsync();
+    
+
+        NavigateToLogin(false);
     }
 
     private void UpdateUserInfo()
@@ -131,18 +140,6 @@ public partial class MainWindow : Window
         else
         {
             UserInfoText.Visibility = Visibility.Collapsed;
-        }
-    }
-
-    private void UpdateSettingsButton()
-    {
-        if (_apiClient.CurrentRole == "Timer")
-        {
-            SettingsButton.Visibility = Visibility.Collapsed;
-        }
-        else
-        {
-            SettingsButton.Visibility = Visibility.Visible;
         }
     }
 

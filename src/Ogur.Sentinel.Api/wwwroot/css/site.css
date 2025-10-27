@@ -408,6 +408,165 @@ input[type="file"].form-control:disabled::file-selector-button {
     opacity: 0.6;
 }
 
+/* ✅ ZASTĄP te style w site.css: */
+
+.sortable-list {
+    min-height: 50px;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 12px;
+    background: rgba(15,18,32,.92);
+    box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+
+.channel-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: move;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+}
+
+.channel-item:hover {
+    background: rgba(255,255,255,.08);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+
+.channel-item.sortable-ghost {
+    opacity: 0.4;
+    background: var(--accent) !important;
+}
+
+.drag-handle {
+    cursor: grab;
+    font-size: 18px;
+    color: var(--muted);
+    user-select: none;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.channel-input {
+    flex: 1;
+    background: rgba(255,255,255,.06);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+.btn-remove {
+    background: transparent;
+    border: none;
+    color: #f48771;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 0 8px;
+    transition: color 0.2s;
+}
+
+.btn-remove:hover {
+    color: #ff6b6b;
+}
+
+
+
+.channel-checkbox-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    background: #2d2d30;
+    border: 1px solid #3e3e42;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.channel-checkbox-item:hover {
+    background: #3e3e42;
+}
+
+.channel-checkbox-item input[type="checkbox"] {
+    margin-right: 12px;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.channel-checkbox-item.already-selected {
+ 
+}
+
+.channel-name {
+    flex: 1;
+    color: white;
+}
+
+.channel-id {
+    font-size: 0.85em;
+    color: #999;
+    margin-left: 10px;
+}
+
+/* === Sortable Drag & Drop === */
+.sortable-ghost {
+    opacity: 0.4;
+    background: var(--accent) !important;
+}
+
+.pill {
+    cursor: move;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(107, 213, 255, 0.3);
+}
+
+.pill:active {
+    cursor: grabbing;
+}
+
+.pill.first-channel {
+    background: linear-gradient(135deg, rgba(107, 213, 255, 0.15), rgba(179, 136, 255, 0.1));
+    border-color: rgba(107, 213, 255, 0.4);
+    box-shadow: 0 0 12px rgba(107, 213, 255, 0.3);
+    position: relative; 
+}
+
+
+.pill.first-channel::before {
+    content: "1st";
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    background: var(--accent);
+    color: #000;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 999px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+}
+
+.pill.first-channel:hover {
+    background: linear-gradient(135deg, rgba(107, 213, 255, 0.25), rgba(179, 136, 255, 0.18));
+    border-color: rgba(107, 213, 255, 0.5);
+    box-shadow: 0 4px 16px rgba(107, 213, 255, 0.4);
+    transform: translateY(-2px);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     body, html, .navbar, .card, .form-control,

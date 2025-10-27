@@ -1,20 +1,28 @@
 ﻿@page
 @{
-    Layout = null;
+ViewData["Title"] = "Logout";
+Layout = null;
 }
 
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Logging out...</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
 </head>
 <body>
 <script>
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('token_expires');
-        localStorage.removeItem('username');
+    (async function() {
+
+        document.cookie = 'auth_token=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
+        document.cookie = 'username=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
+        document.cookie = 'role=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
+
         window.location.href = '/';
-    </script>
+    })();
+</script>
 </body>
 </html>

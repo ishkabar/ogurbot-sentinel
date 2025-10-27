@@ -4,11 +4,6 @@
     ViewData["Title"] = "Respawn Settings";
 }
 
-<script>
-    if (!localStorage.getItem('auth_token')) {
-        window.location.href = '/Login';
-    }
-</script>
 
 @if (Model.IsViewer)
 {
@@ -60,10 +55,18 @@
                         <input type="number" class="form-control" id="leadSeconds" min="0" max="300" required>
                         <small class="text-muted">Play sound X seconds before actual respawn</small>
                     </div>
-
+                    <!--
                     <div class="mb-3">
                         <label class="form-label">Voice Channels</label>
                         <div id="channelsList"></div>
+                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addChannel()">+ Add
+                            Channel
+                        </button>
+                    </div>
+                    -->
+                    <div class="mb-3">
+                        <label class="form-label">Voice Channels</label>
+                        <div id="channelsList" class="sortable-list"></div>
                         <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addChannel()">+ Add
                             Channel
                         </button>
@@ -181,11 +184,8 @@
                             </button>
                         </div>
                     </div>
-
                 </div>
             </div>
-
-
             <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
                 <button type="button" id="reloadBtn" class="btn" onclick="reloadWithFeedback(event)">🔄 Reload</button>
                 <button type="button" id="recalculateBtn" class="btn btn-secondary"
@@ -196,6 +196,7 @@
         </form>
     </div>
 </div>
+
 <div class="modal fade" id="addChannelModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-scrollable">
         <div class="modal-content">
@@ -215,7 +216,6 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <!-- ✅ Zmienione na confirmAddChannels() -->
                 <button type="button" class="btn btn-primary" id="confirmAddChannels" onclick="confirmAddChannels()">
                     Add Selected
                 </button>
@@ -231,6 +231,7 @@
         let maxChannels = 3;
         let availableVoiceChannels = [];
         let selectedChannelsForAdd = new Set();
+        let sortable;
 
 
         // Helper function for button feedback
@@ -315,8 +316,10 @@
                                 window.channelNames[idAsString] = {name: ch.name, guild: ch.guild};
                             });
                         }
-}
-                    
+                        
+
+                    }
+
 
                 } catch (e) {
                     console.warn('Failed to load /channels/info:', e);
@@ -328,8 +331,7 @@
                     if (voiceChannelsResp.ok) {
                         const voiceChannelsData = await voiceChannelsResp.json();
                         window.availableVoiceChannels = voiceChannelsData.channels || [];
-
-                        // Zaktualizuj channelNames o kanały głosowe (jeśli ich tam nie ma)
+                        
                         window.availableVoiceChannels.forEach(ch => {
                             const id = String(ch.id);
                             if (!window.channelNames[id]) {
@@ -426,6 +428,7 @@
             }
         }
 
+
         function renderChannels() {
             const container = document.getElementById('channelsList');
             container.innerHTML = '';
@@ -433,24 +436,27 @@
                 container.innerHTML = '<p class="text-muted">No channels configured</p>';
                 return;
             }
-            currentChannels.forEach((ch) => {
+
+            currentChannels.forEach((ch, index) => {  // ✅ Dodaj index
                 const info = window.channelNames?.[ch];
                 const displayName = info ? `#${info.name}` : `#Channel`;
                 const displayId = `<code style="color: var(--muted); font-size: 0.75em;">${ch}</code>`;
                 const pill = document.createElement('span');
-                pill.className = 'pill me-2 mb-2 d-inline-flex align-items-center';
+
+                pill.className = `pill me-2 mb-2 d-inline-flex align-items-center ${index === 0 ? 'first-channel' : ''}`;
+
                 const closeBtn = IS_VIEWER ? '' : `
             <button class="btn-close btn-close-white ms-2" type="button" 
                     style="font-size: 0.7em; opacity: 0.7;" 
                     aria-label="Remove"></button>
         `;
+
                 pill.innerHTML = `
             <span style="color: var(--accent);">${displayName}</span>
             <span class="ms-2">${displayId}</span>
             ${closeBtn}
         `;
-
-                // ✅ Dodaj event listener tutaj, nie inline
+                
                 if (!IS_VIEWER) {
                     const btn = pill.querySelector('.btn-close');
                     if (btn) {
@@ -461,6 +467,7 @@
                 container.appendChild(pill);
             });
         }
+
 
         function removeChannel(channelId) {
             if (IS_VIEWER) return;
@@ -476,14 +483,13 @@
             const modal = new bootstrap.Modal(document.getElementById('addChannelModal'));
             modal.show();
 
-            // Jeśli kanały są już załadowane, użyj ich, w przeciwnym razie załaduj ponownie
             if (!window.availableVoiceChannels || window.availableVoiceChannels.length === 0) {
                 await loadVoiceChannels();
             } else {
-                // Użyj już załadowanych kanałów
+
                 renderVoiceChannelsList(window.availableVoiceChannels);
             }
-        }
+}
 
         async function loadVoiceChannels() {
             const list = document.getElementById('voiceChannelsList');
@@ -523,7 +529,7 @@
 
             // Renderuj każdą kategorię
             Object.entries(byCategory).forEach(([categoryName, categoryChannels]) => {
-                // Nagłówek kategorii - używamy twojej klasy .category-header
+                // Nagłówek kategorii
                 const categoryHeader = document.createElement('div');
                 categoryHeader.className = 'category-header';
 
@@ -538,48 +544,53 @@
                 categoryHeader.textContent = displayName;
                 list.appendChild(categoryHeader);
 
-                // Kanały w kategorii - używamy twoich klas
+                // Kanały w kategorii
                 categoryChannels.forEach(ch => {
                     const channelId = String(ch.id);
                     const isAlreadyAdded = alreadyAdded.has(channelId);
 
                     const item = document.createElement('div');
-                    item.className = `channel-list-item ${isAlreadyAdded ? 'disabled' : ''}`;
+                    item.className = 'channel-list-item';  // ✅ Usuń 'disabled' class całkowicie
 
                     // Badge z liczbą użytkowników
                     const userBadge = ch.userCount > 0
                         ? `<span class="badge bg-success ms-1" style="font-size: 0.7rem;">${ch.userCount} 👤</span>`
                         : '';
 
-                    // Badge "Already added"
+                    // ✅ Badge zmieniony z "Already added" na "✓ Selected"
                     const alreadyAddedBadge = isAlreadyAdded
-                        ? '<span class="badge bg-secondary ms-1" style="font-size: 0.7rem;">Already added</span>'
+                        ? '<span class="badge bg-info ms-1" style="font-size: 0.7rem;">✓ Selected</span>'
                         : '';
 
+                    // ✅ Checkbox ZAWSZE aktywny (bez disabled), ale checked jeśli już dodany
                     item.innerHTML = `
-                <input class="channel-checkbox" type="checkbox" value="${channelId}" 
-                       id="ch_${channelId}" ${isAlreadyAdded ? 'disabled' : ''}>
-                <label class="channel-label" for="ch_${channelId}">
-                    <div class="channel-info">
-                        <span style="font-size: 1.1rem;">🔊</span>
-                        <span class="channel-name">${ch.name}</span>
-                        ${userBadge}
-                        ${alreadyAddedBadge}
-                    </div>
-                    <span class="channel-id">${channelId}</span>
-                </label>
-            `;
+        <input class="channel-checkbox" type="checkbox" value="${channelId}" 
+               id="ch_${channelId}" ${isAlreadyAdded ? 'checked' : ''}>
+        <label class="channel-label" for="ch_${channelId}">
+            <div class="channel-info">
+                <span style="font-size: 1.1rem;">🔊</span>
+                <span class="channel-name">${ch.name}</span>
+                ${userBadge}
+                ${alreadyAddedBadge}
+            </div>
+            <span class="channel-id">${channelId}</span>
+        </label>
+    `;
 
-                    if (!isAlreadyAdded) {
-                        const checkbox = item.querySelector('input');
-                        checkbox.addEventListener('change', (e) => {
-                            if (e.target.checked) {
-                                selectedChannelsForAdd.add(channelId);
-                            } else {
-                                selectedChannelsForAdd.delete(channelId);
-                            }
-                            updateAddButtonState();
-                        });
+                    // ✅ WSZYSTKIE checkboxy mają event listener (nie tylko nie-dodane)
+                    const checkbox = item.querySelector('input');
+                    checkbox.addEventListener('change', (e) => {
+                        if (e.target.checked) {
+                            selectedChannelsForAdd.add(channelId);
+                        } else {
+                            selectedChannelsForAdd.delete(channelId);
+                        }
+                        updateAddButtonState();
+                    });
+
+                    // ✅ Jeśli już jest dodany, dodaj go też do selectedChannelsForAdd
+                    if (isAlreadyAdded) {
+                        selectedChannelsForAdd.add(channelId);
                     }
 
                     list.appendChild(item);
@@ -588,6 +599,7 @@
 
             updateAddButtonState();
         }
+
 
         function updateAddButtonState() {
             const btn = document.getElementById('confirmAddChannels');
@@ -599,7 +611,9 @@
             }
 
             const count = selectedChannelsForAdd.size;
-            const wouldExceedLimit = currentChannels.length + count > maxChannels;
+
+            // ✅ ZMIANA: Sprawdź total count (nie dodawanie do istniejących)
+            const wouldExceedLimit = count > maxChannels;
 
             btn.disabled = count === 0 || wouldExceedLimit;
 
@@ -612,7 +626,7 @@
                 if (!alert) {
                     alert = document.createElement('div');
                     alert.className = 'alert mb-3';
-                    alert.innerHTML = `⚠️ Maximum ${maxChannels} channels allowed. Remove some channels first.`;
+                    alert.innerHTML = `⚠️ Maximum ${maxChannels} channels allowed. You have ${count} selected.`;
                     document.getElementById('voiceChannelsList').prepend(alert);
                 }
             } else {
@@ -621,7 +635,7 @@
                 if (alert) alert.remove();
 
                 if (count > 0) {
-                    text = `Add ${count} channel${count > 1 ? 's' : ''}`;
+                    text = `Update Selection (${count})`;  // ✅ Zmieniony tekst
                 } else {
                     text = 'Select channels';
                 }
@@ -633,23 +647,33 @@
                 btn.textContent = text;
             }
 }
-
         function confirmAddChannels() {
-            if (IS_VIEWER) return;
+            
+            const selectedIds = Array.from(selectedChannelsForAdd);
 
-            selectedChannelsForAdd.forEach(channelId => {
-                if (!currentChannels.includes(channelId)) {
-                    currentChannels.push(channelId);
-                }
-            });
+            console.log('Selected channels from modal:', selectedIds);
+            console.log('Previous channels:', currentChannels);
+
+            currentChannels = selectedIds;
+
+            console.log('New channels list:', currentChannels);
 
             renderChannels();
 
             const modal = bootstrap.Modal.getInstance(document.getElementById('addChannelModal'));
-            modal.hide();
+            if (modal) {
+                modal.hide();
+            }
 
             selectedChannelsForAdd.clear();
-        }
+
+            const saveBtn = document.getElementById('saveBtn');
+            if (saveBtn && !saveBtn.classList.contains('btn-warning')) {
+                saveBtn.classList.add('btn-warning');
+                saveBtn.innerHTML = '💾 Save Settings (unsaved changes)';
+            }
+}
+
 
         async function recalculateWithFeedback(e) {
             if (IS_VIEWER) {
@@ -771,8 +795,10 @@
                 console.error('Failed to save repeat settings:', error);
                 alert('Failed to save: ' + error.message);
             }
-}
-        
+            
+
+        }
+
 
         async function uploadSound(soundType) {
             if (IS_VIEWER) {
@@ -825,6 +851,113 @@
 
         }
 
+
+
+
+        function initializeSortable() {
+            const channelsList = document.getElementById('channelsList');
+
+            if (!channelsList) {
+                console.error('❌ channelsList not found!');
+                return;
+            }
+
+            // Jeśli już istnieje, nie twórz nowego
+            if (sortable) {
+                console.log('⚠️ Sortable already initialized');
+                return;
+            }
+
+            console.log('✅ Initializing Sortable...');
+
+            sortable = new Sortable(channelsList, {
+                animation: 150,
+                handle: '.pill',
+                ghostClass: 'sortable-ghost',
+                onEnd: function(evt) {
+                    console.log('📦 Drag ended. Old index:', evt.oldIndex, 'New index:', evt.newIndex);
+
+                    // Zaktualizuj tablicę currentChannels z DOM
+                    const pills = channelsList.querySelectorAll('.pill');
+                    const newOrder = [];
+
+                    pills.forEach((pill, idx) => {
+                        const codeEl = pill.querySelector('code');
+                        if (codeEl) {
+                            const channelId = codeEl.textContent.trim();
+                            newOrder.push(channelId);
+                            console.log(`  [${idx}] ${channelId}`);
+                        }
+                    });
+
+                    console.log('📋 OLD currentChannels:', currentChannels);
+                    currentChannels = newOrder;
+                    console.log('📋 NEW currentChannels:', currentChannels);
+
+                    // Zaktualizuj podświetlenie
+                    updateFirstChannelHighlight();
+
+                    // Pokaż że są niezapisane zmiany
+                    const saveBtn = document.getElementById('saveBtn');
+                    if (saveBtn && !saveBtn.classList.contains('btn-warning')) {
+                        saveBtn.classList.add('btn-warning');
+                        saveBtn.innerHTML = '💾 Save Settings (unsaved changes)';
+                    }
+                }
+            });
+
+            console.log('✅ Sortable initialized!');
+        }
+        function updateFirstChannelHighlight() {
+            const pills = document.querySelectorAll('#channelsList .pill');
+
+            console.log('🎨 Updating first-channel highlight...');
+
+            pills.forEach((pill, index) => {
+                const hadClass = pill.classList.contains('first-channel');
+
+                if (index === 0) {
+                    pill.classList.add('first-channel');
+                    if (!hadClass) console.log(`  ✅ Added first-channel to index ${index}`);
+                } else {
+                    pill.classList.remove('first-channel');
+                    if (hadClass) console.log(`  ❌ Removed first-channel from index ${index}`);
+                }
+            });
+        }
+
+        // ✅ Pomocnicza funkcja do pokazywania toastów
+        function showToast(message, type = 'info') {
+            // Prosta notyfikacja (możesz użyć lepszej biblioteki jak toastify)
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        background: ${type === 'success' ? 'var(--ok)' : '#f48771'};
+        color: #000;
+        border-radius: 8px;
+        font-weight: 600;
+        z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.transition = 'opacity 0.3s';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+    
+        // ✅ ZMODYFIKUJ istniejący DOMContentLoaded (dodaj wywołanie initializeSortable):
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings().then(() => {
+                initializeSortable();  // ✅ Dodaj to
+            });
+        });
 
         document.getElementById('respawnForm').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1001,7 +1134,7 @@
                 await saveRepeatSettings();
             });
         });
-        
+
         loadSettings();
     </script>
 }

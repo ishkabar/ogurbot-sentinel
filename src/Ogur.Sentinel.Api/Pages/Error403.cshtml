@@ -1,0 +1,69 @@
+﻿@page
+@model Ogur.Sentinel.Api.Pages.Error403Model
+@{
+ViewData["Title"] = "Brak dostępu";
+Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>403 - Brak dostępu</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .error-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div style="width: 100%; max-width: 500px; padding: 20px; text-align: center;">
+    <div class="main-block card">
+        <div class="error-icon">🚫</div>
+        <h1 class="text-center mb-3">Brak dostępu</h1>
+
+        @if (!string.IsNullOrEmpty(Model.Message))
+        {
+        <div class="alert alert-warning">
+            @Model.Message
+        </div>
+        }
+        else
+        {
+        <p class="text-muted">Nie masz uprawnień do tej strony.</p>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Role))
+        {
+        <div class="glass p-3 mb-3">
+            <small class="text-muted">Twoja rola:</small>
+            <div><strong>@Model.Role</strong></div>
+        </div>
+        }
+
+        @if (!string.IsNullOrEmpty(Model.Suggestion))
+        {
+        <div class="alert alert-info">
+            💡 <strong>@Model.Suggestion</strong>
+        </div>
+        }
+
+        <div class="d-grid gap-2">
+            <a href="/" class="btn btn-primary">🏠 Strona główna</a>
+            <a href="/logout" class="btn btn-outline-secondary">🚪 Wyloguj</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

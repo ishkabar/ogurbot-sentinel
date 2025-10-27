@@ -104,7 +104,7 @@ public partial class SettingsView : Page
 
     private void Logout_Click(object sender, RoutedEventArgs e)
     {
-        _mainWindow.NavigateToLogin();
+        _mainWindow.NavigateToLogin(false);
     }
 
     private void ShowStatus(string message, Color color)

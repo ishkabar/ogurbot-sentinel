@@ -40,8 +40,41 @@
                          Foreground="White"
                          BorderBrush="#3e3e42"
                          BorderThickness="1"
-                         Margin="0,0,0,20"
+                         Margin="0,0,0,15"
                          KeyDown="PasswordBox_KeyDown"/>
+            
+            <!-- Remember Options -->
+            <Border Background="#252526" 
+                    BorderBrush="#3e3e42" 
+                    BorderThickness="1" 
+                    CornerRadius="6"
+                    Padding="12"
+                    Margin="0,0,0,20">
+                <StackPanel>
+                    <TextBlock Text="Zapamiętaj:" 
+                               Foreground="#999999" 
+                               FontSize="11"
+                               Margin="0,0,0,8"/>
+                    
+                    <RadioButton x:Name="RememberNothingRadio"
+                                 Content="Nic nie zapamiętuj"
+                                 Foreground="White"
+                                 FontSize="13"
+                                 Margin="0,0,0,6"
+                                 IsChecked="True"/>
+                    
+                    <RadioButton x:Name="RememberUsernameRadio"
+                                 Content="Tylko login"
+                                 Foreground="White"
+                                 FontSize="13"
+                                 Margin="0,0,0,6"/>
+                    
+                    <RadioButton x:Name="RememberBothRadio"
+                                 Content="Login i hasło"
+                                 Foreground="White"
+                                 FontSize="13"/>
+                </StackPanel>
+            </Border>
             
             <!-- Error Message -->
             <TextBlock x:Name="ErrorText"

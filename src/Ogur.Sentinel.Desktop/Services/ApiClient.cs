@@ -90,9 +90,18 @@ public class ApiClient
             return false;
         }
     }
-
-    public void Logout()
+    
+    public async Task LogoutAsync() 
     {
+        if (!string.IsNullOrEmpty(_token))
+        {
+            try
+            {
+                await _http.PostAsync("/api/auth/logout", null);
+            }
+            catch { }
+        }
+    
         _token = null;
         CurrentRole = null;
         CurrentUsername = null;
