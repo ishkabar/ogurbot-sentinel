@@ -33,6 +33,7 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
             _apiClient = apiClient;
             _settings = settings;
 
+
             _countdownTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(1)
@@ -47,7 +48,6 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
             _syncTimer.Tick += async (s, e) => await SyncWithApi();
             _syncTimer.Start();
 
-            // Initial sync
             _ = SyncWithApi();
         }
 
@@ -106,73 +106,73 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
         #region Methods
 
         private void UpdateCountdowns()
+{
+    var now = DateTime.Now;
+    
+    // 10m timer
+    if (_actualNext10m.HasValue)
+    {
+        var remaining = _actualNext10m.Value - now;
+
+        if (remaining.TotalSeconds > 10)
         {
-            var now = DateTime.Now;
-
-            // 10m timer
-            if (_actualNext10m.HasValue)
-            {
-                var remaining = _actualNext10m.Value - now;
-
-                if (remaining.TotalSeconds > 10)
-                {
-                    Countdown10mText = FormatTimeSpan(remaining);
-                    Countdown10mForeground = GetColorForTimeRemaining(remaining);
-                }
-                else if (remaining.TotalSeconds > 0)
-                {
-                    Countdown10mText = FormatTimeSpan(remaining);
-                    Countdown10mForeground = Brushes.Red;
-                }
-                else if (remaining.TotalSeconds > -10)
-                {
-                    Countdown10mText = "RESPAWN!";
-                    Countdown10mForeground = Brushes.Red;
-                }
-                else
-                {
-                    Countdown10mText = "Syncing...";
-                    Countdown10mForeground = Brushes.Orange;
-                }
-            }
-            else
-            {
-                Countdown10mText = "--:--:--";
-                Countdown10mForeground = Brushes.White;
-            }
-
-            // 2h timer
-            if (_actualNext2h.HasValue)
-            {
-                var remaining = _actualNext2h.Value - now;
-
-                if (remaining.TotalSeconds > 10)
-                {
-                    Countdown2hText = FormatTimeSpan(remaining);
-                    Countdown2hForeground = GetColorForTimeRemaining(remaining);
-                }
-                else if (remaining.TotalSeconds > 0)
-                {
-                    Countdown2hText = FormatTimeSpan(remaining);
-                    Countdown2hForeground = Brushes.Red;
-                }
-                else if (remaining.TotalSeconds > -10)
-                {
-                    Countdown2hText = "RESPAWN!";
-                    Countdown2hForeground = Brushes.Red;
-                }
-                else
-                {
-                    Countdown2hText = "Syncing...";
-                    Countdown2hForeground = Brushes.Orange;
-                }
-            }
-            else
-            {
-                Countdown2hText = "--:--:--";
-                Countdown2hForeground = Brushes.White;
-            }
+            Countdown10mText = FormatTimeSpan(remaining);
+            Countdown10mForeground = GetColorForTimeRemaining(remaining);
         }
+        else if (remaining.TotalSeconds > 0)
+        {
+            Countdown10mText = FormatTimeSpan(remaining);
+            Countdown10mForeground = Brushes.Red;
+        }
+        else if (remaining.TotalSeconds > -10)
+        {
+            Countdown10mText = "RESPAWN!";
+            Countdown10mForeground = Brushes.Red;
+        }
+        else
+        {
+            Countdown10mText = "Syncing...";
+            Countdown10mForeground = Brushes.Orange;
+        }
+    }
+    else
+    {
+        Countdown10mText = "--:--:--";
+        Countdown10mForeground = Brushes.White;
+    }
+
+    // 2h timer - DODAJ LOGI!
+    if (_actualNext2h.HasValue)
+    {
+        var remaining = _actualNext2h.Value - now;
+
+        if (remaining.TotalSeconds > 10)
+        {
+            Countdown2hText = FormatTimeSpan(remaining);
+            Countdown2hForeground = GetColorForTimeRemaining(remaining);
+        }
+        else if (remaining.TotalSeconds > 0)
+        {
+            Countdown2hText = FormatTimeSpan(remaining);
+            Countdown2hForeground = Brushes.Red;
+        }
+        else if (remaining.TotalSeconds > -10)
+        {
+            Countdown2hText = "RESPAWN!";
+            Countdown2hForeground = Brushes.Red;
+        }
+        else
+        {
+            Countdown2hText = "Syncing...";
+            Countdown2hForeground = Brushes.Orange;
+        }
+    }
+    else
+    {
+        Countdown2hText = "--:--:--";
+        Countdown2hForeground = Brushes.White;
+    }
+}
 
         private async Task SyncWithApi()
         {
@@ -202,7 +202,7 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
                     StatusForeground = Brushes.Red;
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 StatusText = "Error";
                 StatusForeground = Brushes.Red;

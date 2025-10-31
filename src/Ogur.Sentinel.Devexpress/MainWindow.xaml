@@ -42,6 +42,10 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
+                <Grid.RenderTransform>
+                    <TranslateTransform x:Name="HeaderTransform" Y="0"/>
+                </Grid.RenderTransform>
+                
                 <!-- Left side - Logo and Title -->
                 <StackPanel Grid.Column="0" 
                             Orientation="Horizontal"
@@ -84,7 +88,7 @@
                                     Style="{StaticResource HeaderButton}"
                                     ToolTip="Settings"/>
                     
-                    <dx:SimpleButton Content="Pin"
+                    <dx:SimpleButton Content="📌"
                                     Command="{Binding PinCommand}"
                                     Style="{StaticResource HeaderButton}"
                                     ToolTip="Pin on top"/>

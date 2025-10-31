@@ -6,14 +6,14 @@
       SizeChanged="Page_SizeChanged"
       Unloaded="Page_Unloaded">
 
-    <Grid Margin="20">
+    <Grid x:Name="MainGrid" Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
+        <!-- Header - z animacją -->
         <TextBlock x:Name="HeaderText"
                   Grid.Row="0"
                   Text="Next Respawns"
@@ -21,7 +21,12 @@
                   FontWeight="Bold"
                   Foreground="White"
                   HorizontalAlignment="Center"
-                  Margin="0,0,0,20"/>
+                  Margin="0,0,0,20"
+                  RenderTransformOrigin="0.5,0">
+            <TextBlock.RenderTransform>
+                <ScaleTransform x:Name="HeaderScale" ScaleY="1"/>
+            </TextBlock.RenderTransform>
+        </TextBlock>
 
         <!-- Timers Container -->
         <Grid x:Name="TimersContainer" 
@@ -34,14 +39,15 @@
                    BorderBrush="#4CAF50"
                    BorderThickness="2"
                    Margin="5"
-                   Padding="20">
+                   Padding="5">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition x:Name="Label10mRow" Height="Auto"/>
                         <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition x:Name="NextTime10mRow" Height="Auto"/>
                     </Grid.RowDefinitions>
                     
+                    <!-- Label z animacją -->
                     <TextBlock x:Name="Label10m"
                               Grid.Row="0"
                               Text="10 Minutes"
@@ -49,24 +55,36 @@
                               FontWeight="SemiBold"
                               Foreground="#4CAF50"
                               HorizontalAlignment="Center"
-                              Margin="0,0,0,15"/>
+                              Margin="0,0,0,5"
+                              RenderTransformOrigin="0.5,0">
+                        <TextBlock.RenderTransform>
+                            <ScaleTransform x:Name="Label10mScale" ScaleY="1"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
                     
                     <TextBlock x:Name="Countdown10mText"
-                              Grid.Row="1"
-                              Text="--:--:--"
-                              FontSize="48"
-                              FontWeight="Bold"
-                              Foreground="White"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"/>
+                               Grid.Row="1"
+                               Text="{Binding Countdown10mText}"
+                               Foreground="{Binding Countdown10mForeground}"
+                               FontSize="48"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="2"/>
                     
+                    <!-- Next Time z animacją -->
                     <TextBlock x:Name="NextTime10mText"
-                              Grid.Row="2"
-                              Text="Next: --:--:--"
-                              FontSize="14"
-                              Foreground="#999"
-                              HorizontalAlignment="Center"
-                              Margin="0,15,0,0"/>
+                               Grid.Row="2"
+                               Text="{Binding NextTime10mText}"
+                               FontSize="14"
+                               Foreground="#999"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"
+                               RenderTransformOrigin="0.5,1">
+                        <TextBlock.RenderTransform>
+                            <ScaleTransform x:Name="NextTime10mScale" ScaleY="1"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
                 </Grid>
             </Border>
             
@@ -77,14 +95,15 @@
                    BorderBrush="#2196F3"
                    BorderThickness="2"
                    Margin="5"
-                   Padding="20">
+                   Padding="5">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition x:Name="Label2hRow" Height="Auto"/>
                         <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
+                        <RowDefinition x:Name="NextTime2hRow" Height="Auto"/>
                     </Grid.RowDefinitions>
                     
+                    <!-- Label z animacją -->
                     <TextBlock x:Name="Label2h"
                               Grid.Row="0"
                               Text="2 Hours"
@@ -92,24 +111,36 @@
                               FontWeight="SemiBold"
                               Foreground="#2196F3"
                               HorizontalAlignment="Center"
-                              Margin="0,0,0,15"/>
+                              Margin="0,0,0,5"
+                              RenderTransformOrigin="0.5,0">
+                        <TextBlock.RenderTransform>
+                            <ScaleTransform x:Name="Label2hScale" ScaleY="1"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
                     
                     <TextBlock x:Name="Countdown2hText"
-                              Grid.Row="1"
-                              Text="--:--:--"
-                              FontSize="48"
-                              FontWeight="Bold"
-                              Foreground="White"
-                              HorizontalAlignment="Center"
-                              VerticalAlignment="Center"/>
-                    
+                               Grid.Row="1"
+                               Text="{Binding Countdown2hText}"
+                               Foreground="{Binding Countdown2hForeground}"
+                               FontSize="48"
+                               FontWeight="Bold"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Margin="2"/>
+        
+                    <!-- Next Time z animacją -->
                     <TextBlock x:Name="NextTime2hText"
-                              Grid.Row="2"
-                              Text="Next: --:--:--"
-                              FontSize="14"
-                              Foreground="#999"
-                              HorizontalAlignment="Center"
-                              Margin="0,15,0,0"/>
+                               Grid.Row="2"
+                               Text="{Binding NextTime2hText}"
+                               FontSize="14"
+                               Foreground="#999"
+                               HorizontalAlignment="Center"
+                               Margin="0,5,0,0"
+                               RenderTransformOrigin="0.5,1">
+                        <TextBlock.RenderTransform>
+                            <ScaleTransform x:Name="NextTime2hScale" ScaleY="1"/>
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
                 </Grid>
             </Border>
         </Grid>
@@ -117,9 +148,9 @@
         <!-- Status -->
         <TextBlock x:Name="StatusText"
                   Grid.Row="2"
-                  Text="Last synced: Never"
+                  Text="{Binding StatusText}"
+                  Foreground="{Binding StatusForeground}"
                   FontSize="12"
-                  Foreground="#666"
                   HorizontalAlignment="Center"
                   Margin="0,20,0,0"/>
     </Grid>

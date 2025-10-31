@@ -12,11 +12,12 @@ public class DesktopSettings
     private static string AppDataFolder => 
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OgurSentinel");
     
-    private static string SettingsFilePath => 
+    private static string SettingsFilePath =>  
         Path.Combine(AppDataFolder, "appsettings.json");
 
     // ✅ Ustawienia API i logowania
-    public string ApiUrl { get; set; } = "http://localhost:5205";
+    //public string ApiUrl { get; set; } = "http://localhost:5205";
+    public string ApiUrl { get; set; } = "https://respy.ogur.dev";
     public string Username { get; set; } = "";
     public string HashedPassword { get; set; } = ""; // SHA256 hash
 
@@ -72,23 +73,45 @@ public class DesktopSettings
     {
         try
         {
+            Console.WriteLine($"📂 [Settings] AppDataFolder: {AppDataFolder}");
+            Console.WriteLine($"📄 [Settings] SettingsFilePath: {SettingsFilePath}");
+        
             if (!Directory.Exists(AppDataFolder))
             {
+                Console.WriteLine($"📁 [Settings] Folder doesn't exist, creating...");
                 Directory.CreateDirectory(AppDataFolder);
             }
 
             if (File.Exists(SettingsFilePath))
             {
+                Console.WriteLine($"✅ [Settings] File exists, reading...");
                 var json = File.ReadAllText(SettingsFilePath);
+                Console.WriteLine($"📝 [Settings] JSON content:\n{json}");
+            
                 var settings = JsonSerializer.Deserialize<DesktopSettings>(json);
-                return settings ?? new DesktopSettings();
+            
+                if (settings != null)
+                {
+                    Console.WriteLine($"✅ [Settings] Loaded: ApiUrl={settings.ApiUrl}, SyncInterval={settings.SyncIntervalSeconds}");
+                    return settings;
+                }
+                else
+                {
+                    Console.WriteLine($"⚠️ [Settings] Deserialization returned null");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"⚠️ [Settings] File doesn't exist at: {SettingsFilePath}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Failed to load settings: {ex.Message}");
+            Console.WriteLine($"❌ [Settings] Load failed: {ex.Message}");
+            Console.WriteLine($"Stack: {ex.StackTrace}");
         }
 
+        Console.WriteLine($"🆕 [Settings] Creating default settings");
         var defaultSettings = new DesktopSettings();
         defaultSettings.Save();
         return defaultSettings;
