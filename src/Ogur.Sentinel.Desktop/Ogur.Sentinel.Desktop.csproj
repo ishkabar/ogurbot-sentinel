@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net9.0-windows</TargetFramework>
+        <LangVersion>latestmajor</LangVersion>
+        <ApplicationIcon>Assets\ogur.ico</ApplicationIcon>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <ApplicationIcon />
+        <StartupObject />
+    </PropertyGroup>
+    
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+        <DebugType>none</DebugType>
+        <DebugSymbols>false</DebugSymbols>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="System.Net.Http.Json" Version="8.0.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Resource Include="Assets\ogur.ico" />
+    </ItemGroup>
+
+</Project>

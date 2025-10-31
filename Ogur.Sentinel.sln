@@ -18,14 +18,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ogur.Sentinel.Abstractions"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ogur.Sentinel.Api", "src\Ogur.Sentinel.Api\Ogur.Sentinel.Api.csproj", "{3A8AD1CF-9286-4F31-9926-631CF7852B85}"
 EndProject
-<<<<<<< Updated upstream
-
-=======
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ogur.Sentinel.Desktop", "src\Ogur.Sentinel.Desktop\Ogur.Sentinel.Desktop.csproj", "{E958C7AC-2535-4504-8F50-1B4F85718A6D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ogur.Sentinel.Devexpress", "src\Ogur.Sentinel.Devexpress\Ogur.Sentinel.Devexpress.csproj", "{144670CB-6396-488C-A76D-2E03A3B69E78}"
 EndProject
->>>>>>> Stashed changes
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,8 +44,6 @@ Global
 		{3A8AD1CF-9286-4F31-9926-631CF7852B85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3A8AD1CF-9286-4F31-9926-631CF7852B85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3A8AD1CF-9286-4F31-9926-631CF7852B85}.Release|Any CPU.Build.0 = Release|Any CPU
-<<<<<<< Updated upstream
-=======
 		{E958C7AC-2535-4504-8F50-1B4F85718A6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E958C7AC-2535-4504-8F50-1B4F85718A6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E958C7AC-2535-4504-8F50-1B4F85718A6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -61,20 +55,16 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
->>>>>>> Stashed changes
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{3B078492-75B1-45AC-BDF7-98BE078170B2} = {11111111-1111-1111-1111-111111111111}
 		{9CDC9EB4-30F1-4BF3-96B6-1551D7EED018} = {11111111-1111-1111-1111-111111111111}
 		{56CE6BEC-3714-4330-A18C-0AC92A2115BF} = {11111111-1111-1111-1111-111111111111}
 		{3A8AD1CF-9286-4F31-9926-631CF7852B85} = {11111111-1111-1111-1111-111111111111}
-<<<<<<< Updated upstream
-=======
 		{E958C7AC-2535-4504-8F50-1B4F85718A6D} = {11111111-1111-1111-1111-111111111111}
 		{144670CB-6396-488C-A76D-2E03A3B69E78} = {11111111-1111-1111-1111-111111111111}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C3A91A8F-A4E9-4FFE-83E6-C3677F8BC41B}
->>>>>>> Stashed changes
 	EndGlobalSection
 EndGlobal
