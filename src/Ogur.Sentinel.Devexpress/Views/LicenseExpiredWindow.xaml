@@ -1,0 +1,130 @@
+﻿<!-- DevExpress LicenseExpiredWindow.xaml - Ogur Sentinel -->
+<dx:ThemedWindow x:Class="Ogur.Sentinel.Devexpress.Views.LicenseExpiredWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+        xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+        Title="Ogur Sentinel - Licencja"
+        Height="350"
+        Width="500"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        AllowsTransparency="True"
+        Background="Transparent">
+    
+    <Border BorderBrush="#ff6600" 
+            BorderThickness="3" 
+            CornerRadius="10"
+            Background="#1e1e1e">
+        <Border.Effect>
+            <DropShadowEffect Color="#ff6600" 
+                             BlurRadius="20" 
+                             ShadowDepth="0" 
+                             Opacity="0.5"/>
+        </Border.Effect>
+        
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            
+            <!-- Header -->
+            <Border Grid.Row="0" 
+                    Background="#2d2d30" 
+                    CornerRadius="7,7,0,0"
+                    Padding="20,15">
+                <StackPanel Orientation="Horizontal" 
+                           HorizontalAlignment="Center">
+                    <TextBlock Text="🔒" 
+                              FontSize="28"
+                              VerticalAlignment="Center"
+                              Margin="0,0,10,0"/>
+                    <TextBlock Text="Ogur Sentinel" 
+                              FontSize="24" 
+                              FontWeight="Bold"
+                              Foreground="#ff6600"
+                              VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Content -->
+            <dxlc:LayoutControl Grid.Row="1" 
+                               Orientation="Vertical"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Center"
+                               Margin="40">
+                
+                <!-- Lizard Emoji -->
+                <dxlc:LayoutItem HorizontalAlignment="Center" 
+                                Margin="0,0,0,20">
+                    <TextBlock Text="🦎" 
+                              FontSize="72"
+                              HorizontalAlignment="Center">
+                        <TextBlock.Effect>
+                            <DropShadowEffect Color="#ff6600" 
+                                             BlurRadius="10" 
+                                             ShadowDepth="0" 
+                                             Opacity="0.6"/>
+                        </TextBlock.Effect>
+                    </TextBlock>
+                </dxlc:LayoutItem>
+                
+                <!-- Main Title -->
+                <dxlc:LayoutItem HorizontalAlignment="Center" 
+                                Margin="0,0,0,10">
+                    <TextBlock Text="Licencja wygasła!" 
+                              FontSize="28" 
+                              FontWeight="Bold"
+                              Foreground="White"
+                              HorizontalAlignment="Center"/>
+                </dxlc:LayoutItem>
+                
+                <!-- Subtitle -->
+                <dxlc:LayoutItem HorizontalAlignment="Center" 
+                                Margin="0,0,0,20">
+                    <TextBlock Text="Spytaj Ogura o nową wersję" 
+                              FontSize="18" 
+                              Foreground="#cccccc"
+                              HorizontalAlignment="Center"/>
+                </dxlc:LayoutItem>
+                
+                <!-- Expiration Date -->
+                <dxlc:LayoutItem HorizontalAlignment="Center">
+                    <TextBlock x:Name="ExpirationDateText"
+                              FontSize="14" 
+                              Foreground="#999999"
+                              HorizontalAlignment="Center"/>
+                </dxlc:LayoutItem>
+                
+            </dxlc:LayoutControl>
+            
+            <!-- Footer Button -->
+            <Border Grid.Row="2" 
+                    Background="#2d2d30" 
+                    CornerRadius="0,0,7,7"
+                    Padding="20,15">
+                <dx:SimpleButton Content="Zamknij"
+                                Click="Close_Click"
+                                Height="45"
+                                MinWidth="150"
+                                FontSize="16"
+                                FontWeight="Bold"
+                                Background="#ff6600"
+                                Foreground="White"
+                                BorderThickness="0"
+                                Cursor="Hand"
+                                HorizontalAlignment="Center">
+                    <dx:SimpleButton.Effect>
+                        <DropShadowEffect Color="#ff6600" 
+                                         BlurRadius="10" 
+                                         ShadowDepth="0" 
+                                         Opacity="0.4"/>
+                    </dx:SimpleButton.Effect>
+                </dx:SimpleButton>
+            </Border>
+        </Grid>
+    </Border>
+</dx:ThemedWindow>

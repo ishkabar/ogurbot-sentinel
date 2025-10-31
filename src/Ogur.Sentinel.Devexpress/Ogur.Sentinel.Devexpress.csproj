@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DevExpress.Images" Version="23.2.14" />
+    <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.14" />
+    <PackageReference Include="DevExpress.Wpf.ThemesLW" Version="23.2.14" />
+    <PackageReference Include="DevExpress.Wpf.LayoutControl" Version="23.2.14" />
+    <PackageReference Include="DevExpress.Mvvm.CodeGenerators" Version="22.1.*-*" />
+    <PackageReference Include="DevExpress.Wpf.Themes.Office2019Colorful" Version="23.2.14" />
+    <PackageReference Include="DevExpress.Wpf.Themes.VS2019Dark" Version="23.2.14" />
+    <PackageReference Include="DevExpress.Data" Version="23.2.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Styles\" />
+  </ItemGroup>
+
+<ItemGroup>
+    <Resource Include="Assets\ogur.ico" />
+</ItemGroup>
+
+</Project>
