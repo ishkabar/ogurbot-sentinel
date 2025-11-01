@@ -1,0 +1,124 @@
+name: build-and-release-windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write   
+  packages: read
+
+env:
+  APP_PROJECT: src/Ogur.Sentinel.Devexpress/Ogur.Sentinel.Devexpress.csproj
+  WIX_PROJECT: installer/Ogur.Sentinel.Installer.wixproj
+  OUT_ROOT: out
+  APP_NAME: Ogur.Sentinel.Devexpress
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Get version
+        id: version
+        shell: pwsh
+        run: |
+          dotnet tool install --global minver-cli
+          $env:PATH += ";$env:USERPROFILE\.dotnet\tools"
+          Push-Location src
+          $v = minver -t v -m 1.0 -d preview
+          Pop-Location
+          $ver = $v.Split('-')[0]
+          echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $ver"
+
+      - name: Publish framework-dependent
+        shell: pwsh
+        run: |
+          dotnet publish $env:APP_PROJECT -c Release -r win-x64 `
+            -p:PublishSingleFile=true --self-contained false `
+            -p:FileVersion=${{ steps.version.outputs.VERSION }} `
+            -o $env:OUT_ROOT/win-x64
+
+      - name: Publish self-contained
+        shell: pwsh
+        run: |
+          dotnet publish $env:APP_PROJECT -c Release -r win-x64 `
+            -p:PublishSingleFile=true --self-contained true `
+            -p:FileVersion=${{ steps.version.outputs.VERSION }} `
+            -o $env:OUT_ROOT/win-x64-self
+
+      - name: Publish for MSI
+        shell: pwsh
+        run: |
+          dotnet publish $env:APP_PROJECT -c Release -r win-x64 `
+            -p:PublishSingleFile=true --self-contained true `
+            -p:FileVersion=${{ steps.version.outputs.VERSION }}
+
+      - name: Install WiX
+        shell: pwsh
+        run: choco install wixtoolset --version=3.14.1 -y
+
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          
+          msbuild $env:WIX_PROJECT /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:ProductVersion=${{ steps.version.outputs.VERSION }}
+          
+          $msi = Get-ChildItem installer\bin\x64\Release\*.msi | Select-Object -First 1
+          if (-not $msi) { throw "MSI not found" }
+          
+          New-Item -ItemType Directory -Force -Path "$env:OUT_ROOT/release" | Out-Null
+          Copy-Item $msi.FullName "$env:OUT_ROOT/release/${{ env.APP_NAME }}-Setup-${{ steps.version.outputs.VERSION }}.msi"
+
+      - name: Package ZIPs
+        shell: pwsh
+        run: |
+          Compress-Archive $env:OUT_ROOT/win-x64/* "$env:OUT_ROOT/release/${{ env.APP_NAME }}-win-x64-${{ steps.version.outputs.VERSION }}.zip"
+          Compress-Archive $env:OUT_ROOT/win-x64-self/* "$env:OUT_ROOT/release/${{ env.APP_NAME }}-selfcontained-${{ steps.version.outputs.VERSION }}.zip"
+
+      - name: Generate checksums
+        shell: pwsh
+        run: |
+          Set-Location "$env:OUT_ROOT/release"
+          Get-ChildItem *.* | ForEach-Object {
+            $hash = Get-FileHash $_.FullName -Algorithm SHA256
+            "$($hash.Hash)  $($_.Name)" | Out-File SHA256SUMS.txt -Append -Encoding ascii
+          }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: out/release/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows-release
+          path: release
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

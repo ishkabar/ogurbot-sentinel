@@ -1,101 +1,93 @@
-# Build results
+# Build artifacts
 bin/
 obj/
+out/
+/packages/
+*.wixpdb
+*.wixobj
+
+# Rider
+riderModule.iml
+/_ReSharper.Caches/
+.idea/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
 [Bb]in/
 [Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
 [Dd]ebug/
 [Rr]elease/
 x64/
 x86/
-[Aa]rm/
-[Aa]rm64/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
 bld/
-[Bb]uild/
 
-# NuGet Packages
+# NuGet
 *.nupkg
 *.snupkg
 **/packages/*
 !**/packages/build/
 *.nuget.props
 *.nuget.targets
-project.lock.json
-project.fragment.lock.json
-artifacts/
-
-# .NET Core
-project.assets.json
-project.nuget.cache
-*.csproj.nuget.dgspec.json
-*.csproj.nuget.g.props
-*.csproj.nuget.g.targets
-
-# Rider
-.idea/
-*.sln.iml
-riderModule.iml
-/_ReSharper.Caches/
-*.DotSettings.user
-
-# Visual Studio
-.vs/
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-*.userprefs
-
-# Logs
-logs/
-*.log
-nlog-internal-*.log
 
 # Test Results
-TestResults/
 [Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
 *.trx
 *.coverage
 *.coveragexml
 
-# User-specific files
-*.rsuser
-appsettings.Development.json
-appsettings.Local.json
+# Windows artifacts
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*:Zone.Identifier
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Installer artifacts
+installer/bin/
+installer/obj/
 
 # Temporary files
 *.tmp
 *.temp
-*.cache
+*.log
 *.swp
+*.swo
 *~
-
-# OS files
-.DS_Store
-Thumbs.db
-Desktop.ini
-
-# Docker
-.dockerignore
-
-# Backup files
-*.bak
-*.backup
-
-# Database files (if any)
-*.db
-*.sqlite
-*.sqlite3
-
-# Environment files
-.env
-.env.local
-.env.production
-
-# Tag messages
-tag_message.txt
-
-# Installation scripts (optional - uncomment if not needed in repo)
-# dotnet-install.shsrc/Ogur.Sentinel.Api/wwwroot/files/*.exe
-src/Ogur.Sentinel.Api/wwwroot/files/*.zip
-src/Ogur.Sentinel.Api/wwwroot/files/*.rar
-src/Ogur.Sentinel.Api/appsettings/users.json

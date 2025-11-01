@@ -1,0 +1,290 @@
+﻿<Page x:Class="Ogur.Sentinel.Devexpress.Views.SettingsView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
+      xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
+      xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:vm="clr-namespace:Ogur.Sentinel.Devexpress.ViewModels"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel, IsDesignTimeCreatable=False}"
+      Background="#1e1e1e">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" 
+                Background="#2d2d30" 
+                Padding="20,15"
+                BorderBrush="#3e3e42"
+                BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="⚙️" 
+                          FontSize="24"
+                          VerticalAlignment="Center"
+                          Margin="0,0,10,0"/>
+                <TextBlock Text="Settings" 
+                          FontSize="24" 
+                          FontWeight="Bold"
+                          Foreground="White"
+                          VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Content -->
+        <ScrollViewer Grid.Row="1" 
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="20">
+            
+            <dxlc:LayoutControl Orientation="Vertical" 
+                               MaxWidth="600">
+                
+                <!-- Sync Interval Section -->
+                <dxlc:LayoutGroup Header="Sync Interval" 
+                                 Orientation="Vertical"
+                                 Margin="0,0,0,20">
+                    <dxlc:LayoutGroup.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" 
+                                      Foreground="White" 
+                                      FontSize="16"
+                                      FontWeight="Bold"
+                                      Margin="0,0,0,10"/>
+                        </DataTemplate>
+                    </dxlc:LayoutGroup.HeaderTemplate>
+                    
+                    <dxlc:LayoutItem Label="Refresh timers every:" 
+                                    LabelPosition="Left"
+                                    Margin="0,0,0,5">
+                        <dxlc:LayoutItem.LabelTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" 
+                                          Foreground="#cccccc" 
+                                          FontSize="14"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </dxlc:LayoutItem.LabelTemplate>
+                        
+                        <StackPanel Orientation="Horizontal">
+                            <dxe:SpinEdit Value="{Binding SyncInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Width="80"
+                                          MinValue="5"
+                                          MaxValue="300"
+                                          Increment="5"
+                                          IsFloatValue="False"
+                                          FontSize="14"
+                                          Background="#2d2d30"
+                                          Foreground="White"
+                                          BorderBrush="#3e3e42"/>
+                            <TextBlock Text="seconds" 
+                                      Foreground="#cccccc" 
+                                      FontSize="14"
+                                      VerticalAlignment="Center"
+                                      Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </dxlc:LayoutItem>
+                    
+                    <dxlc:LayoutItem>
+                        <TextBlock Text="(minimum: 5 seconds)" 
+                                  Foreground="#666666" 
+                                  FontSize="11"/>
+                    </dxlc:LayoutItem>
+                </dxlc:LayoutGroup>
+                
+                <!-- Time Offset Section -->
+                <dxlc:LayoutGroup Header="Time Offset" 
+                                 Orientation="Vertical"
+                                 Margin="0,0,0,20">
+                    <dxlc:LayoutGroup.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" 
+                                      Foreground="White" 
+                                      FontSize="16"
+                                      FontWeight="Bold"
+                                      Margin="0,0,0,10"/>
+                        </DataTemplate>
+                    </dxlc:LayoutGroup.HeaderTemplate>
+                    
+                    <dxlc:LayoutItem Label="Adjust timer by:" 
+                                    LabelPosition="Left"
+                                    Margin="0,0,0,5">
+                        <dxlc:LayoutItem.LabelTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" 
+                                          Foreground="#cccccc" 
+                                          FontSize="14"
+                                          VerticalAlignment="Center"
+                                          Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </dxlc:LayoutItem.LabelTemplate>
+                        
+                        <StackPanel Orientation="Horizontal">
+                            <dxe:SpinEdit x:Name="TimeOffsetBox"
+                                         Value="{Binding TimeOffset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="80"
+                                         MinValue="-180"
+                                         MaxValue="180"
+                                         Increment="5"
+                                         IsFloatValue="False"
+                                         FontSize="14"
+                                         Background="#2d2d30"
+                                         Foreground="White"
+                                         BorderBrush="#3e3e42"/>
+                            <TextBlock Text="seconds" 
+                                      Foreground="#cccccc" 
+                                      FontSize="14"
+                                      VerticalAlignment="Center"
+                                      Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </dxlc:LayoutItem>
+                    
+                    <dxlc:LayoutItem>
+                        <TextBlock Foreground="#666666" 
+                                  FontSize="11"
+                                  TextWrapping="Wrap">
+                            <Run Text="Negative values make timers show LESS time remaining."/><LineBreak/>
+                            <Run Text="Example: -30 means timer shows 30 seconds less than actual."/>
+                        </TextBlock>
+                    </dxlc:LayoutItem>
+                </dxlc:LayoutGroup>
+                
+                <!-- Timer Warnings Section -->
+                <dxlc:LayoutGroup Header="Timer Warnings" 
+                                 Orientation="Vertical"
+                                 Margin="0,0,0,20">
+                    <dxlc:LayoutGroup.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" 
+                                      Foreground="White" 
+                                      FontSize="16"
+                                      FontWeight="Bold"
+                                      Margin="0,0,0,10"/>
+                        </DataTemplate>
+                    </dxlc:LayoutGroup.HeaderTemplate>
+                    
+                    <dxlc:LayoutItem Label="Red warning at:" 
+                                    LabelPosition="Left"
+                                    Margin="0,0,0,10">
+                        <dxlc:LayoutItem.LabelTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" 
+                                          Foreground="#cccccc" 
+                                          FontSize="14"
+                                          VerticalAlignment="Center"
+                                          Width="150"
+                                          Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </dxlc:LayoutItem.LabelTemplate>
+                        
+                        <StackPanel Orientation="Horizontal">
+                            <dxe:SpinEdit x:Name="WarningRedBox"
+                                         Value="{Binding WarningRed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="80"
+                                         MinValue="0"
+                                         MaxValue="60"
+                                         Increment="1"
+                                         IsFloatValue="False"
+                                         FontSize="14"
+                                         Background="#2d2d30"
+                                         Foreground="White"
+                                         BorderBrush="#3e3e42"/>
+                            <TextBlock Text="minutes" 
+                                      Foreground="#cccccc" 
+                                      FontSize="14"
+                                      VerticalAlignment="Center"
+                                      Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </dxlc:LayoutItem>
+                    
+                    <dxlc:LayoutItem Label="Orange warning at:" 
+                                    LabelPosition="Left"
+                                    Margin="0,0,0,5">
+                        <dxlc:LayoutItem.LabelTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" 
+                                          Foreground="#cccccc" 
+                                          FontSize="14"
+                                          VerticalAlignment="Center"
+                                          Width="150"
+                                          Margin="0,0,10,0"/>
+                            </DataTemplate>
+                        </dxlc:LayoutItem.LabelTemplate>
+                        
+                        <StackPanel Orientation="Horizontal">
+                            <dxe:SpinEdit x:Name="WarningOrangeBox"
+                                         Value="{Binding WarningOrange, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                         Width="80"
+                                         MinValue="0"
+                                         MaxValue="120"
+                                         Increment="5"
+                                         IsFloatValue="False"
+                                         FontSize="14"
+                                         Background="#2d2d30"
+                                         Foreground="White"
+                                         BorderBrush="#3e3e42"/>
+                            <TextBlock Text="minutes" 
+                                      Foreground="#cccccc" 
+                                      FontSize="14"
+                                      VerticalAlignment="Center"
+                                      Margin="10,0,0,0"/>
+                        </StackPanel>
+                    </dxlc:LayoutItem>
+                    
+                    <dxlc:LayoutItem>
+                        <TextBlock Text="(orange must be greater than red)" 
+                                  Foreground="#666666" 
+                                  FontSize="11"/>
+                    </dxlc:LayoutItem>
+                </dxlc:LayoutGroup>
+                
+                <!-- Status Message -->
+                <dxlc:LayoutItem>
+                    <TextBlock x:Name="StatusText"
+                              Text="{Binding StatusText}"
+                              Foreground="{Binding StatusForeground}"
+                              Visibility="{Binding StatusVisibility}"
+                              FontSize="14"
+                              TextWrapping="Wrap"/>
+                </dxlc:LayoutItem>
+                
+            </dxlc:LayoutControl>
+        </ScrollViewer>
+        
+        <!-- Footer Buttons -->
+        <Border Grid.Row="2" 
+                Background="#2d2d30" 
+                Padding="20,15"
+                BorderBrush="#3e3e42"
+                BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" 
+                       HorizontalAlignment="Right">
+                
+                <dx:SimpleButton Content="Reset to Defaults"
+                                 Command="{Binding ResetCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Margin="0,0,10,0"/>
+                
+                <dx:SimpleButton Content="💾 Save"
+                                 Command="{Binding SaveCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                Margin="0,0,10,0"/>
+                
+                <dx:SimpleButton Content="🔙 Back to Timers"
+                                 Command="{Binding BackToTimersCommand}"
+                                Style="{StaticResource SecondaryButton}"
+                                Margin="0,0,10,0"/>
+                
+                <dx:SimpleButton Content="🚪 Logout"
+                                 Command="{Binding LogoutCommand}"
+                                Style="{StaticResource DangerButton}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>
