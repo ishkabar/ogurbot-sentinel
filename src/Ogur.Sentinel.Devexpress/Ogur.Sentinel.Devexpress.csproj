@@ -1,15 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
   </PropertyGroup>
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    
+    <Version Condition="'$(Version)' == ''">1.0.0</Version>
+    <InformationalVersion>$(Version)+$(Configuration)</InformationalVersion>
   </PropertyGroup>
-
+  
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildTime</_Parameter1>
+      <_Parameter2>$([System.DateTime]::UtcNow.ToString("yyyyMMdd-HHmmss"))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+  
   <ItemGroup>
     <PackageReference Include="DevExpress.Images" Version="23.2.14" />
     <PackageReference Include="DevExpress.Wpf.Core" Version="23.2.14" />
@@ -20,13 +28,10 @@
     <PackageReference Include="DevExpress.Wpf.Themes.VS2019Dark" Version="23.2.14" />
     <PackageReference Include="DevExpress.Data" Version="23.2.14" />
   </ItemGroup>
-
   <ItemGroup>
     <Folder Include="Styles\" />
   </ItemGroup>
-
-<ItemGroup>
+  <ItemGroup>
     <Resource Include="Assets\ogur.ico" />
-</ItemGroup>
-
+  </ItemGroup>
 </Project>

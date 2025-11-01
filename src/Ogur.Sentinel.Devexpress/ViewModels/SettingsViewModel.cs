@@ -2,9 +2,11 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Reflection;
 using DevExpress.Mvvm;
 using Ogur.Sentinel.Devexpress.Services;
 using Ogur.Sentinel.Devexpress.Config;
+using System.Linq;
 
 namespace Ogur.Sentinel.Devexpress.ViewModels
 {
@@ -12,6 +14,9 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
     {
         private readonly ApiClient _apiClient;
         private readonly DesktopSettings _settings;
+        
+        public string AppVersion { get; }
+        public string BuildInfo { get; }
 
         private int _syncInterval;
         private int _timeOffset;
@@ -25,6 +30,19 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
         {
             _apiClient = apiClient;
             _settings = settings;
+            
+            var assembly = Assembly.GetExecutingAssembly();
+            var version = assembly.GetName().Version;
+            AppVersion = $"{version?.Major}.{version?.Minor}.{version?.Build}";
+        
+            // Pobierz BuildTime z metadata
+            var buildTimeAttr = assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+                .FirstOrDefault(a => a.Key == "BuildTime");
+            var informationalVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        
+            BuildInfo = buildTimeAttr != null 
+                ? $"Build: {buildTimeAttr.Value} | {informationalVersion}" 
+                : informationalVersion ?? "Development Build";
 
             // Commands
             SaveCommand = new DelegateCommand(OnSave);

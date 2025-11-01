@@ -253,7 +253,16 @@
                               FontSize="14"
                               TextWrapping="Wrap"/>
                 </dxlc:LayoutItem>
-                
+                <dxlc:LayoutItem Margin="0,0,0,0">
+                    <TextBlock Foreground="#666666" 
+                               FontSize="11"
+                               HorizontalAlignment="Center">
+                        <Run Text="Version "/>
+                        <Run Text="{Binding AppVersion}"/>
+                        <Run Text=" • "/>
+                        <Run Text="{Binding BuildInfo}"/>
+                    </TextBlock>
+                </dxlc:LayoutItem>
             </dxlc:LayoutControl>
         </ScrollViewer>
         

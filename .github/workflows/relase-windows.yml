@@ -25,6 +25,12 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Fetch all tags
+        shell: pwsh
+        run: |
+          git fetch --tags --force
+          git tag --list
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -44,14 +50,27 @@ jobs:
           Pop-Location
           $ver = $v.Split('-')[0]
           echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
-          Write-Host "Version: $ver"
+          Write-Host "✅ Using version: $ver"
+          Write-Host "📋 Git tags:"
+          git tag --list
+
+      - name: Meta
+        id: meta
+        shell: pwsh
+        run: |
+          $sha = git rev-parse --short HEAD
+          $date = Get-Date -Format "yyyyMMdd-HHmmss"
+          echo "SHA_SHORT=$sha" >> $env:GITHUB_OUTPUT
+          echo "DATE_TAG=$date" >> $env:GITHUB_OUTPUT
 
       - name: Publish framework-dependent
         shell: pwsh
         run: |
           dotnet publish $env:APP_PROJECT -c Release -r win-x64 `
             -p:PublishSingleFile=true --self-contained false `
+            -p:Version=${{ steps.version.outputs.VERSION }} `
             -p:FileVersion=${{ steps.version.outputs.VERSION }} `
+            -p:InformationalVersion="${{ steps.version.outputs.VERSION }}+Release" `
             -o $env:OUT_ROOT/win-x64
 
       - name: Publish self-contained
@@ -59,7 +78,9 @@ jobs:
         run: |
           dotnet publish $env:APP_PROJECT -c Release -r win-x64 `
             -p:PublishSingleFile=true --self-contained true `
+            -p:Version=${{ steps.version.outputs.VERSION }} `
             -p:FileVersion=${{ steps.version.outputs.VERSION }} `
+            -p:InformationalVersion="${{ steps.version.outputs.VERSION }}+Release" `
             -o $env:OUT_ROOT/win-x64-self
 
       - name: Publish for MSI
@@ -67,7 +88,9 @@ jobs:
         run: |
           dotnet publish $env:APP_PROJECT -c Release -r win-x64 `
             -p:PublishSingleFile=true --self-contained true `
-            -p:FileVersion=${{ steps.version.outputs.VERSION }}
+            -p:Version=${{ steps.version.outputs.VERSION }} `
+            -p:FileVersion=${{ steps.version.outputs.VERSION }} `
+            -p:InformationalVersion="${{ steps.version.outputs.VERSION }}+Release"
 
       - name: Ensure WiX in PATH
         shell: pwsh
@@ -121,14 +144,48 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ishkabar/ogurbot-sentinel-releases
+          token: ${{ secrets.RELEASES_TOKEN }}
+          fetch-depth: 0
+      
+      - name: Get version
+        id: version
+        run: |
+          # Pobierz wersję z tagu z prywatnego repo
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
+            VERSION="manual-$(date +%Y%m%d-%H%M%S)"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Release version: $VERSION"
+      
+      - name: Create tag in releases repo
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          TAG="v${{ steps.version.outputs.VERSION }}"
+          
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "⚠️ Tag $TAG already exists"
+          else
+            git tag $TAG
+            git push origin $TAG
+            echo "✅ Created tag $TAG in releases repo"
+          fi
+      
       - uses: actions/download-artifact@v4
         with:
           name: windows-release
           path: release
 
-      - name: Create Release
+      - name: Create Release in public repo
         uses: softprops/action-gh-release@v2
         with:
           files: release/*
+          tag_name: v${{ steps.version.outputs.VERSION }}
+          name: Windows Release ${{ steps.version.outputs.VERSION }}
+          repository: ishkabar/ogurbot-sentinel-releases
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}

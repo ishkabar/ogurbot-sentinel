@@ -1,188 +1,213 @@
-# Instalator MSI - Setup
+# Ogur Sentinel Desktop
 
-## Struktura projektu
+A Windows desktop application for tracking and displaying respawn timers with real-time synchronization.
 
+## System Requirements
+
+- Windows 10 or Windows 11 (64-bit)
+- .NET 8.0 Runtime (for portable version) or included in installer
+- Minimum display resolution: 1920x1080
+- Internet connection for timer synchronization
+
+## Installation
+
+### MSI Installer (Recommended)
+
+1. Download `OgurSentinelSetup.msi` from the latest release
+2. Double-click the installer file
+3. Follow the installation wizard
+4. Launch from Start Menu or Desktop shortcut
+
+The installer will:
+- Install the application to Program Files
+- Create Start Menu shortcuts
+- Create Desktop shortcut
+- Register for easy uninstallation
+
+### Portable Version
+
+**Framework-dependent** (requires .NET 8.0 Runtime):
+1. Download `Ogur.Sentinel.Devexpress-win-x64-*.zip`
+2. Extract to any folder
+3. Run `Ogur.Sentinel.Devexpress.exe`
+
+**Self-contained** (no additional requirements):
+1. Download `Ogur.Sentinel.Devexpress-selfcontained-*.zip`
+2. Extract to any folder
+3. Run `Ogur.Sentinel.Devexpress.exe`
+
+## First Time Setup
+
+1. Launch the application
+2. Enter your username and password
+3. Click Login
+4. Configure your preferences in Settings (gear icon)
+
+## Features
+
+### Real-time Timer Display
+
+Monitor multiple respawn timers with color-coded warnings:
+- **Green border** - Safe time remaining
+- **Orange border** - Warning threshold reached
+- **Red border** - Critical time remaining
+
+### Settings Configuration
+
+Access settings via the gear icon in the header bar:
+
+**Sync Interval** (5-300 seconds)
+- Controls how often the application checks for timer updates
+- Default: 30 seconds
+- Lower values = more frequent updates, higher server load
+
+**Time Offset** (-180 to +180 seconds)
+- Adjusts the displayed time relative to server time
+- Negative values show less time remaining
+- Example: -30 means timer displays 30 seconds less than actual
+- Default: 0 seconds
+
+**Warning Thresholds**
+- **Red warning** (0-60 minutes) - When timer shows critical state
+- **Orange warning** (0-120 minutes) - When timer shows warning state
+- Orange threshold must be greater than red threshold
+
+### Window Controls
+
+**Pin on top** - Keeps the application window above all other windows
+**Minimize** - Minimize to taskbar
+**Close** - Exit application
+
+**Drag to move** - Click and drag anywhere in the window to reposition it
+
+### Authentication
+
+**Logout** - Available via the door icon in the header bar
+**Automatic login** - Application remembers your credentials for convenience
+
+## Usage
+
+### Normal Operation
+
+1. After login, timers automatically sync at the configured interval
+2. Timers display countdown in MM:SS format
+3. Next respawn time is shown below each timer
+4. Status bar at bottom shows sync status and errors
+
+### Changing Settings
+
+1. Click the gear icon
+2. Adjust any settings as needed
+3. Click Save
+4. Restart the application for changes to take effect
+
+### Uninstallation
+
+**MSI Installer version:**
+1. Open Windows Settings
+2. Go to Apps > Installed apps
+3. Find "Ogur Sentinel Desktop"
+4. Click Uninstall
+
+**Portable version:**
+- Simply delete the application folder
+
+## Configuration Files
+
+Settings are stored in:
 ```
-repo/
-├── src/
-│   └── Ogur.Sentinel.Devexpress/
-│       └── Ogur.Sentinel.Devexpress.csproj
-├── installer/
-│   ├── Ogur.Sentinel.Installer.wxs      # Definicja instalatora
-│   ├── Ogur.Sentinel.Installer.wixproj  # Projekt WiX
-│   └── License.rtf                       # Licencja (wyświetlana w instalatorze)
-└── .github/
-    └── workflows/
-        └── release-windows.yml
-```
-
-## Instalacja WiX Toolset (lokalnie)
-
-### Opcja 1: Chocolatey (zalecane)
-```powershell
-choco install wixtoolset --version=3.14.1 -y
-```
-
-### Opcja 2: Ręczna instalacja
-1. Pobierz z https://github.com/wixtoolset/wix3/releases
-2. Zainstaluj `wix314.exe`
-3. Dodaj do PATH: `C:\Program Files (x86)\WiX Toolset v3.14\bin`
-
-## Budowanie MSI lokalnie
-
-### 1. Publish aplikacji
-```powershell
-dotnet publish src/Ogur.Sentinel.Devexpress/Ogur.Sentinel.Devexpress.csproj `
-  -c Release -r win-x64 `
-  -p:PublishSingleFile=false `
-  --self-contained true `
-  -o out/msi-publish
-```
-
-### 2. Build MSI
-```powershell
-msbuild installer/Ogur.Sentinel.Installer.wixproj `
-  /t:Rebuild `
-  /p:Configuration=Release `
-  /p:Platform=x64 `
-  /p:ProductVersion=1.0.0
-```
-
-MSI będzie w: `installer/bin/x64/Release/OgurSentinelSetup.msi`
-
-## Funkcje instalatora
-
-### Pierwsza instalacja
-- Wybór katalogu instalacji
-- Tworzenie skrótów (Start Menu + Desktop)
-- Rejestracja w Programs & Features
-
-### Aktualizacja
-Gdy uruchomisz nowszą wersję MSI:
-- ✅ Automatycznie wykrywa zainstalowaną wersję
-- ✅ Pokazuje aktualną i nową wersję
-- ✅ Usuwa starą wersję przed instalacją nowej
-- ✅ Zachowuje ustawienia użytkownika
-
-### Maintenance Mode
-Gdy uruchomisz tę samą lub starszą wersję MSI:
-- **Modify** - zmień komponenty instalacji
-- **Repair** - napraw uszkodzone pliki
-- **Remove** - odinstaluj aplikację
-- **Update** - zaktualizuj (jeśli dostępna nowsza wersja)
-
-### Wykrywanie wersji
-Instalator zapisuje wersję w rejestrze:
-```
-HKLM\Software\Ogur\Sentinel
-  - Version (string)
-  - InstallPath (string)
-```
-
-## Customizacja instalatora
-
-### Zmiana nazwy produktu
-W `Ogur.Sentinel.Installer.wxs`:
-```xml
-<?define ProductName = "Twoja Nazwa" ?>
-```
-
-### Zmiana UpgradeCode
-**UWAGA:** Zmień tylko raz przed pierwszym releasem!
-```xml
-<?define UpgradeCode = "TWOJ-NOWY-GUID" ?>
-```
-
-Wygeneruj nowy GUID: https://www.guidgenerator.com/
-
-### Dodanie ikony
-1. Dodaj `icon.ico` do folderu `installer/`
-2. Odkomentuj w `.wxs`:
-```xml
-<Icon Id="icon.ico" SourceFile="icon.ico"/>
-<Property Id="ARPPRODUCTICON" Value="icon.ico" />
-```
-
-### Zmiana licencji
-Edytuj `License.rtf` - musi być w formacie RTF!
-
-## GitHub Actions
-
-Workflow automatycznie:
-1. Buduje 3 wersje:
-   - Framework-dependent (wymaga .NET 8)
-   - Self-contained (wszystko w jednym)
-   - MSI installer
-2. Tworzy checksumy SHA256
-3. Publikuje release na GitHub
-
-### Triggery
-- **Tag**: `git tag v1.0.0 && git push --tags`
-- **Manual**: GitHub Actions → workflow → "Run workflow"
-
-### Versioning
-Używa MinVer - wersja z tagów git:
-- Tag `v1.2.3` → wersja `1.2.3`
-- Bez tagu → `1.0.0-preview.X`
-
-## Testowanie instalatora
-
-### Instalacja
-```powershell
-msiexec /i OgurSentinelSetup.msi /l*v install.log
+%APPDATA%\Ogur.Sentinel.Desktop\settings.json
 ```
 
-### Odinstalowanie
-```powershell
-msiexec /x OgurSentinelSetup.msi /l*v uninstall.log
-```
-
-### Upgrade
-Po zbudowaniu nowej wersji, po prostu zainstaluj - stara zostanie automatycznie usunięta.
+To reset to defaults, delete this file and restart the application.
 
 ## Troubleshooting
 
-### "WiX Toolset not found"
-```powershell
-$env:PATH += ";C:\Program Files (x86)\WiX Toolset v3.14\bin"
-```
+### Application won't start
 
-### "File not found" podczas budowania MSI
-Sprawdź ścieżkę w `.wxs`:
-```xml
-<?define PublishDir = "..\Ogur.Sentinel.Devexpress\bin\Release\net8.0-windows\win-x64\publish" ?>
-```
+- Verify you have .NET 8.0 Runtime installed (portable version only)
+- Try running as Administrator
+- Check Windows Event Viewer for error details
 
-### MSI nie instaluje wszystkich plików
-Użyj `heat.exe` do automatycznego generowania listy plików:
-```powershell
-heat dir out/msi-publish -cg ProductComponents -gg -sfrag -srd -dr INSTALLFOLDER -out installer/Files.wxs
-```
+### Cannot connect to server
 
-Potem include w projekcie.
+- Verify your internet connection
+- Check that the server is online
+- Ensure firewall is not blocking the application
+- Try logging out and back in
 
-## Publiczna dystrybucja
+### Timers not updating
 
-### Code signing (opcjonalnie)
-Dla produkcji warto podpisać instalator:
-```powershell
-signtool sign /f certificate.pfx /p password /t http://timestamp.digicert.com OgurSentinelSetup.msi
-```
+- Check your Sync Interval setting
+- Verify status bar shows "Connected" or recent sync time
+- Ensure you have an active internet connection
+- Try clicking Logout and logging back in
 
-### Windows SmartScreen
-Niepodpisane aplikacje będą miały warning. Rozwiązania:
-1. Kup certyfikat code signing (~$200/rok)
-2. Poczekaj aż Microsoft zbuduje reputację (tysiące instalacji)
-3. Użytkownik: "More info" → "Run anyway"
+### Login fails
 
-## CI/CD Notes
+- Verify username and password are correct
+- Check that your account is active
+- Ensure the server is accessible
+- Contact your administrator if issues persist
 
-GitHub Actions:
-- ✅ Automatyczny build na tag
-- ✅ 3 formaty dystrybucji
-- ✅ Checksumy SHA256
-- ✅ Release notes
+### Display issues
 
-Brakuje:
-- ❌ Code signing (wymaga certyfikatu)
-- ❌ Auto-update (wymaga dodatkowej infrastruktury)
+- Recommended display scaling: 100%
+- Minimum window size: 450x850 pixels
+- Try adjusting Windows display scaling settings
+- Restart the application after changing display settings
+
+### Installer problems
+
+**"A newer version is already installed"**
+- Uninstall the current version first
+- Then run the installer again
+
+**Installation fails**
+- Run installer as Administrator
+- Ensure Windows Installer service is running
+- Check that you have sufficient disk space
+
+**Cannot uninstall**
+- Use Windows Settings > Apps to remove
+- If that fails, run installer again and choose Repair, then Uninstall
+
+## Updates
+
+### MSI Installer
+
+When a new version is released:
+1. Download the new installer
+2. Run it - it will automatically remove the old version
+3. Complete the installation
+
+### Portable Version
+
+1. Download the new version
+2. Extract to a new folder or replace existing files
+3. Your settings will be preserved
+
+## Support
+
+For issues, questions, or feedback:
+- Check this README for common solutions
+- Review the Troubleshooting section
+- Contact your system administrator
+- Report bugs via the issue tracker
+
+## Security
+
+- Credentials are stored securely on your local machine
+- All communication with the server uses encrypted connections
+- Authentication tokens expire after a period of inactivity
+- No sensitive data is logged or transmitted to third parties
+
+## Version Information
+
+Check the About section in the application or the installer properties to see the current version number.
+
+## Legal
+
+Copyright (c) 2025 Ogur. All rights reserved.
+
+This software is provided "as is" without warranty of any kind. See the license agreement for full terms and conditions.

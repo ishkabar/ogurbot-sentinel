@@ -23,13 +23,11 @@ public partial class SettingsView : Page
         _mainWindow.MinWidth = 300;
         _mainWindow.MinHeight = 400;
         
-        // ✅ Załaduj aktualne ustawienia
         LoadSettings();
     }
 
     private void LoadSettings()
     {
-        // ✅ Załaduj tylko sync interval
         SyncIntervalBox.Text = _settings.SyncIntervalSeconds.ToString();
         TimeOffsetBox.Text = _settings.TimeOffsetSeconds.ToString();
         WarningRedBox.Text = _settings.WarningMinutesRed.ToString();
