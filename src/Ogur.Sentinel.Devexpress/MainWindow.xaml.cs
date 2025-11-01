@@ -194,9 +194,16 @@ namespace Ogur.Sentinel.Devexpress
         
         private void Border_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
+            if (e.ChangedButton == MouseButton.Left && e.ButtonState == MouseButtonState.Pressed)
             {
-                DragMove();
+                try
+                {
+                    DragMove();
+                }
+                catch (InvalidOperationException)
+                {
+                    // Ignore if DragMove fails (can happen during rapid clicks)
+                }
             }
         }
 

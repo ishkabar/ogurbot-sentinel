@@ -14,16 +14,18 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
-    <DefineConstants>Debug</DefineConstants>
+    <DefineConstants>Debug;PublishDir=..\src\Ogur.Sentinel.Devexpress\bin\Debug\net8.0-windows\win-x64\publish</DefineConstants>
   </PropertyGroup>
   
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>PublishDir=..\src\Ogur.Sentinel.Devexpress\bin\Release\net8.0-windows\win-x64\publish</DefineConstants>
   </PropertyGroup>
   
   <ItemGroup>
     <Compile Include="Ogur.Sentinel.Installer.wxs" />
+    <Compile Include="HarvestedFiles.wxs" />
   </ItemGroup>
   
   <ItemGroup>

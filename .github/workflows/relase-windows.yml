@@ -100,17 +100,32 @@ jobs:
             echo $wixPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           }
 
+      - name: Harvest files with Heat
+        shell: pwsh
+        run: |
+          $publishDir = "src\Ogur.Sentinel.Devexpress\bin\Release\net8.0-windows\win-x64\publish"
+          $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          
+          & "$wixPath\heat.exe" dir "$publishDir" `
+            -cg HarvestedFiles `
+            -gg `
+            -sfrag `
+            -srd `
+            -dr INSTALLFOLDER `
+            -var var.PublishDir `
+            -out "installer\HarvestedFiles.wxs"
+          
+          if ($LASTEXITCODE -ne 0) { throw "Heat failed" }
+          Write-Host "✅ Heat completed - HarvestedFiles.wxs created"
+
       - name: Build MSI
         shell: pwsh
         run: |
-          # Odśwież PATH aby uwzględnić MSBuild i WiX
           $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           
-          # Znajdź MSBuild
           $msbuildPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | Select-Object -First 1
           if (-not $msbuildPath) { throw "MSBuild not found" }
           
-          # Uruchom MSBuild
           & $msbuildPath $env:WIX_PROJECT /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:ProductVersion=${{ steps.version.outputs.VERSION }}
           
           $msi = Get-ChildItem installer\bin\x64\Release\*.msi | Select-Object -First 1
@@ -153,7 +168,6 @@ jobs:
       - name: Get version
         id: version
         run: |
-          # Pobierz wersję z tagu z prywatnego repo
           VERSION="${GITHUB_REF_NAME#v}"
           if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
             VERSION="manual-$(date +%Y%m%d-%H%M%S)"
@@ -203,11 +217,9 @@ jobs:
           if [ "$RELEASE_ID" != "null" ] && [ -n "$RELEASE_ID" ]; then
             echo "✅ Found release ID: $RELEASE_ID"
             
-            # Get all assets
             ASSETS=$(curl -s -H "Authorization: token ${{ secrets.RELEASES_TOKEN }}" \
               "https://api.github.com/repos/ishkabar/ogurbot-sentinel-releases/releases/$RELEASE_ID/assets")
             
-            # Delete source code assets (zip and tar.gz with version pattern)
             echo "$ASSETS" | jq -r '.[] | select(.name | test("\\.(zip|tar\\.gz)$")) | select(.name | test("^(v[0-9]|[0-9])")) | .id' | while read asset_id; do
               if [ -n "$asset_id" ]; then
                 echo "🗑️ Deleting source code asset ID: $asset_id"

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   
   <!-- Zmienne -->
   <?define ProductName = "Ogur Sentinel Desktop" ?>
@@ -12,28 +13,46 @@
   <Product Id="*" 
            Name="$(var.ProductName)" 
            Language="1033" 
-           Version="!(bind.FileVersion.MainExecutable)" 
+           Version="1.0.0" 
            Manufacturer="$(var.Manufacturer)" 
-           UpgradeCode="$(var.UpgradeCode)">
+           UpgradeCode="$(var.UpgradeCode)"
+           Codepage="1250">
     
-    <Package InstallerVersion="500" 
-             Compressed="yes" 
-             InstallScope="perMachine" 
-             Description="$(var.ProductName) Installer"
-             Comments="Timer desktop application for Ogur Sentinel"
-             Manufacturer="$(var.Manufacturer)" />
+     <Package InstallerVersion="500" 
+           Compressed="yes" 
+           InstallScope="perMachine" 
+           Description="$(var.ProductName) Installer"
+           Comments="Timer desktop application for Ogur Sentinel"
+           Manufacturer="$(var.Manufacturer)"
+           SummaryCodepage="1250"/>
 
     <!-- Medium dla instalacji -->
     <MediaTemplate EmbedCab="yes" />
 
-<!-- Upgrade logic -->
-  <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." 
-                AllowSameVersionUpgrades="yes"
-                Schedule="afterInstallInitialize" />
+    <!-- Upgrade logic -->
+    <Upgrade Id="$(var.UpgradeCode)">
+      <UpgradeVersion OnlyDetect="yes" 
+                      Minimum="0.0.0" 
+                      IncludeMinimum="yes"
+                      Property="PREVIOUSVERSIONFOUND" />
+    </Upgrade>
 
-  <Property Id="ARPURLINFOABOUT" Value="https://github.com/ishkabar/ogur-sentinel" />
-  <Property Id="ARPNOREPAIR" Value="no" />
-  <Property Id="ARPNOMODIFY" Value="no" />
+<CustomAction Id="PreventDowngrade" 
+              Error="Ogur Sentinel Desktop is already installed. Use 'Programs and Features' to repair, modify or uninstall the application." />
+
+    <InstallExecuteSequence>
+      <Custom Action="PreventDowngrade" After="FindRelatedProducts">PREVIOUSVERSIONFOUND</Custom>
+      <RemoveExistingProducts After="InstallInitialize" />
+    </InstallExecuteSequence>
+
+    <Property Id="ARPURLINFOABOUT" Value="https://respy.ogur.dev" />
+    
+    <!-- Properties dla checkboxów -->
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch Ogur Sentinel Desktop" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    
+    <Property Id="ADDTOAUTOSTART" Value="0" />
+    <Property Id="OPENWEBSITE" Value="1" />
     
     <Property Id="INSTALLEDVERSION">
       <RegistrySearch Id="FindInstalledVersion" 
@@ -43,26 +62,62 @@
                       Type="raw" />
     </Property>
 
+    <!-- Features -->
     <Feature Id="ProductFeature" Title="Ogur Sentinel Desktop" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="HarvestedFiles" />
       <ComponentRef Id="ApplicationShortcut" />
       <ComponentRef Id="ApplicationShortcutDesktop" />
     </Feature>
+    
+    <Feature Id="AutoStartFeature" Title="Add to Startup" Level="1000">
+      <ComponentRef Id="AutoStartComponent" />
+    </Feature>
 
+    <!-- Custom UI -->
     <UI>
-      <UIRef Id="WixUI_Advanced" />
+      <UIRef Id="WixUI_InstallDir" />
       <UIRef Id="WixUI_ErrorProgressText" />
+      
+      <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+      
+      <!-- Custom exit dialog -->
+      <Publish Dialog="ExitDialog"
+               Control="Finish" 
+               Event="DoAction" 
+               Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
+               
+      <Publish Dialog="ExitDialog"
+               Control="Finish"
+               Event="DoAction"
+               Value="OpenWebsite">OPENWEBSITE = 1 and NOT Installed</Publish>
     </UI>
+    
+    <!-- Custom Actions -->
+    <CustomAction Id="LaunchApplication"
+                  Execute="immediate"
+                  Impersonate="yes"
+                  Return="asyncNoWait"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="[INSTALLFOLDER]Ogur.Sentinel.Devexpress.exe" />
+                  
+    <CustomAction Id="OpenWebsite"
+                  Execute="immediate"
+                  Impersonate="yes"
+                  Return="asyncNoWait"
+                  Directory="INSTALLFOLDER"
+                  ExeCommand="cmd.exe /c start https://respy.ogur.dev" />
     
     <Property Id="ApplicationFolderName" Value="Ogur Sentinel Desktop" />
     <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
     
     <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
     <WixVariable Id="WixUIBannerBmp" Value="Banner.bmp" />
-<WixVariable Id="WixUIDialogBmp" Value="Dialog.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="Dialog.bmp" />
 
   </Product>
 
+  <!-- Directory Structure -->
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
@@ -72,21 +127,20 @@
         <Directory Id="ApplicationProgramsFolder" Name="Ogur Sentinel Desktop"/>
       </Directory>
       <Directory Id="DesktopFolder" Name="Desktop" />
+      <Directory Id="StartupFolder" Name="Startup" />
     </Directory>
   </Fragment>
 
+  <!-- Components -->
   <Fragment>
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
-      <Component Id="MainExecutable" Guid="*">
-        <File Id="MainExecutable" 
-              Source="$(var.PublishDir)\Ogur.Sentinel.Devexpress.exe" 
-              KeyPath="yes" 
-              Checksum="yes" />
+      <Component Id="RegistryEntries" Guid="*">
         <RegistryValue Root="HKLM" 
                        Key="Software\Ogur\Sentinel" 
                        Name="Version" 
                        Type="string" 
-                       Value="[ProductVersion]" />
+                       Value="[ProductVersion]" 
+                       KeyPath="yes" />
         <RegistryValue Root="HKLM" 
                        Key="Software\Ogur\Sentinel" 
                        Name="InstallPath" 
@@ -95,12 +149,13 @@
       </Component>
     </ComponentGroup>
 
+    <!-- Start Menu Shortcut -->
     <DirectoryRef Id="ApplicationProgramsFolder">
       <Component Id="ApplicationShortcut" Guid="*">
         <Shortcut Id="ApplicationStartMenuShortcut"
                   Name="Ogur Sentinel Desktop"
                   Description="Timer desktop application"
-                  Target="[#MainExecutable]"
+                  Target="[INSTALLFOLDER]Ogur.Sentinel.Devexpress.exe"
                   WorkingDirectory="INSTALLFOLDER"/>
         <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
         <RegistryValue Root="HKCU" 
@@ -112,12 +167,13 @@
       </Component>
     </DirectoryRef>
 
+    <!-- Desktop Shortcut -->
     <DirectoryRef Id="DesktopFolder">
       <Component Id="ApplicationShortcutDesktop" Guid="*">
         <Shortcut Id="ApplicationDesktopShortcut"
                   Name="Ogur Sentinel"
                   Description="Timer desktop application"
-                  Target="[#MainExecutable]"
+                  Target="[INSTALLFOLDER]Ogur.Sentinel.Devexpress.exe"
                   WorkingDirectory="INSTALLFOLDER"/>
         <RegistryValue Root="HKCU" 
                        Key="Software\Ogur\Sentinel" 
@@ -125,6 +181,24 @@
                        Type="integer" 
                        Value="1" 
                        KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+    
+    <!-- Autostart -->
+    <DirectoryRef Id="StartupFolder">
+      <Component Id="AutoStartComponent" Guid="*">
+        <Shortcut Id="AutoStartShortcut"
+                  Name="Ogur Sentinel"
+                  Description="Timer desktop application"
+                  Target="[INSTALLFOLDER]Ogur.Sentinel.Devexpress.exe"
+                  WorkingDirectory="INSTALLFOLDER"/>
+        <RegistryValue Root="HKCU"
+                       Key="Software\Ogur\Sentinel"
+                       Name="autostart"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes"/>
+        <Condition>ADDTOAUTOSTART = 1</Condition>
       </Component>
     </DirectoryRef>
   </Fragment>

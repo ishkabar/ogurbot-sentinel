@@ -226,9 +226,15 @@ namespace Ogur.Sentinel.Devexpress.Views
         
         private void Page_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
+            if (e.ChangedButton == MouseButton.Left && e.ButtonState == MouseButtonState.Pressed)
             {
-                Window.GetWindow(this)?.DragMove();
+                try
+                {
+                    Window.GetWindow(this)?.DragMove();
+                }
+                catch (InvalidOperationException)
+                {
+                }
             }
         }
 
