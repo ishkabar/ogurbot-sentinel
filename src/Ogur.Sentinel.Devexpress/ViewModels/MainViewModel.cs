@@ -11,21 +11,23 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
     {
         private readonly ApiClient _apiClient;
         private readonly DesktopSettings _settings;
-        
+
         private bool _isPinned;
         private string _userInfoText;
         private Visibility _userInfoVisibility = Visibility.Collapsed;
         private Visibility _logoutButtonVisibility = Visibility.Collapsed;
         private Visibility _settingsButtonVisibility = Visibility.Collapsed;
 
+        public event EventHandler<bool> AlwaysOnTopChanged;
+
         public MainViewModel(ApiClient apiClient, DesktopSettings settings)
         {
             _apiClient = apiClient;
             _settings = settings;
-            
+
             _isPinned = _settings.AlwaysOnTop;
             PinButtonContent = _isPinned ? "📌" : "📍";
-            
+
             // Commands
             PinCommand = new DelegateCommand(OnPin);
             SettingsCommand = new DelegateCommand(OnSettings);
@@ -44,17 +46,27 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
                 if (SetProperty(ref _isPinned, value, nameof(IsPinned)))
                 {
                     PinButtonContent = value ? "📌" : "📍";
+
                     _settings.AlwaysOnTop = value;
                     _settings.Save();
+
+                    AlwaysOnTopChanged?.Invoke(this, value);
                 }
             }
         }
 
         private string _pinButtonContent;
+
         public string PinButtonContent
         {
             get => _pinButtonContent;
-            set => SetProperty(ref _pinButtonContent, value, nameof(PinButtonContent));
+            set
+            {
+                if (SetProperty(ref _pinButtonContent, value, nameof(PinButtonContent)))
+                {
+                    //Console.WriteLine($"📌 [MainViewModel] PinButtonContent property changed to: {value}");
+                }
+            }
         }
 
         public string UserInfoText
@@ -98,7 +110,6 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
 
         private void OnSettings()
         {
-            // Wysłanie komunikatu do MainWindow
             Messenger.Default.Send(new NavigateMessage { Target = "Settings" });
         }
 
@@ -130,12 +141,16 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
                 UserInfoVisibility = Visibility.Visible;
                 LogoutButtonVisibility = Visibility.Visible;
                 SettingsButtonVisibility = Visibility.Visible;
+
+                Console.WriteLine($"ℹ️ [MainViewModel] User info updated: {UserInfoText}");
             }
             else
             {
                 UserInfoVisibility = Visibility.Collapsed;
                 LogoutButtonVisibility = Visibility.Collapsed;
                 SettingsButtonVisibility = Visibility.Collapsed;
+
+                Console.WriteLine("ℹ️ [MainViewModel] User info hidden (not authenticated)");
             }
         }
 
@@ -144,12 +159,13 @@ namespace Ogur.Sentinel.Devexpress.ViewModels
             UserInfoVisibility = Visibility.Collapsed;
             LogoutButtonVisibility = Visibility.Collapsed;
             SettingsButtonVisibility = Visibility.Collapsed;
+
+            Console.WriteLine("ℹ️ [MainViewModel] User info hidden (manual)");
         }
 
         #endregion
     }
 
-    // Messages dla komunikacji między ViewModels
     public class NavigateMessage
     {
         public string Target { get; set; }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using DevExpress.Xpf.Core;
@@ -8,7 +9,7 @@ namespace Ogur.Sentinel.Devexpress
 {
     public partial class App : Application
     {
-        private const bool SHOW_CONSOLE = true;
+        public static bool DebugMode { get; private set; }
 
         [DllImport("kernel32.dll")]
         private static extern bool AllocConsole();
@@ -20,10 +21,23 @@ namespace Ogur.Sentinel.Devexpress
         {
             base.OnStartup(e);
 
-            if (SHOW_CONSOLE)
+            // Sprawdź argumenty wiersza poleceń
+            var args = e.Args.Select(a => a.ToLower()).ToArray();
+            DebugMode = args.Contains("--console") || 
+                       args.Contains("-console") || 
+                       args.Contains("--debug") || 
+                       args.Contains("-debug");
+
+            if (DebugMode)
             {
                 AllocConsole();
-                Console.WriteLine("🚀 Sentinel Desktop Console");
+                Console.WriteLine("🚀 Sentinel Desktop Console (Debug Mode)");
+                Console.WriteLine("📋 Command line arguments:");
+                foreach (var arg in e.Args)
+                {
+                    Console.WriteLine($"   - {arg}");
+                }
+                Console.WriteLine();
             }
             
             DispatcherUnhandledException += (s, args) =>
@@ -36,7 +50,10 @@ namespace Ogur.Sentinel.Devexpress
                     errorMessage += $"\n\nInner Exception:\n{ex.InnerException.Message}\n{ex.InnerException.StackTrace}";
                 }
     
-                Console.WriteLine(errorMessage);
+                if (DebugMode)
+                {
+                    Console.WriteLine(errorMessage);
+                }
     
                 DXMessageBox.Show(
                     errorMessage,
@@ -47,7 +64,7 @@ namespace Ogur.Sentinel.Devexpress
                 args.Handled = true;
             };
 
-            // ZMIENIONE: Ustaw motyw na VS2019Dark
+            // Ustaw motyw na VS2019Dark
             ApplicationThemeHelper.ApplicationThemeName = Theme.VS2019DarkName;
 
             // Wyłącz Trace (bez Event Log)
@@ -80,7 +97,11 @@ namespace Ogur.Sentinel.Devexpress
 
         protected override void OnExit(ExitEventArgs e)
         {
-            if (SHOW_CONSOLE) FreeConsole();
+            if (DebugMode) 
+            {
+                Console.WriteLine("👋 Application exiting...");
+                FreeConsole();
+            }
             base.OnExit(e);
         }
     }

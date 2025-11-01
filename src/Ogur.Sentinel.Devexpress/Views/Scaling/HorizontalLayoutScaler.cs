@@ -4,18 +4,54 @@ namespace Ogur.Sentinel.Devexpress.Views.Scaling
 {
     public class HorizontalLayoutScaler
     {
+        private readonly Config.ScalingConfig _config;
+
+        public HorizontalLayoutScaler(Config.ScalingConfig config)
+        {
+            _config = config;
+        }
+
         public ScalingResult CalculateScaling(double availableWidth, double availableHeight)
         {
             double panelWidth = availableWidth / 2;
             double minDimension = Math.Min(panelWidth, availableHeight);
 
-            double countdownSize = Math.Max(16, Math.Min(72, minDimension * 0.20));
-            double nextTimeSize = Math.Max(8, Math.Min(16, minDimension * 0.04));
-            double labelSize = Math.Max(10, Math.Min(18, minDimension * 0.045));
+            double countdownSize = Math.Max(
+                _config.Horizontal.Fonts.CountdownMin, 
+                Math.Min(_config.Horizontal.Fonts.CountdownMax, minDimension * _config.Horizontal.Fonts.CountdownScale)
+            );
+            
+            double nextTimeSize = Math.Max(
+                _config.Horizontal.Fonts.NextTimeMin, 
+                Math.Min(_config.Horizontal.Fonts.NextTimeMax, minDimension * _config.Horizontal.Fonts.NextTimeScale)
+            );
+            
+            double labelSize = Math.Max(
+                _config.Horizontal.Fonts.LabelMin, 
+                Math.Min(_config.Horizontal.Fonts.LabelMax, minDimension * _config.Horizontal.Fonts.LabelScale)
+            );
 
             // Marginesy i padding proporcjonalne do rozmiaru
-            double borderMargin = Math.Max(2, Math.Min(8, minDimension * 0.015));
-            double borderPadding = Math.Max(3, Math.Min(15, minDimension * 0.03));
+            double borderMargin = Math.Max(
+                _config.Horizontal.Spacing.BorderMarginMin, 
+                Math.Min(_config.Horizontal.Spacing.BorderMarginMax, minDimension * _config.Horizontal.Spacing.BorderMarginScale)
+            );
+            
+            double borderPadding = Math.Max(
+                _config.Horizontal.Spacing.BorderPaddingMin, 
+                Math.Min(_config.Horizontal.Spacing.BorderPaddingMax, minDimension * _config.Horizontal.Spacing.BorderPaddingScale)
+            );
+
+            // ✅ StatusText - obliczenia
+            double statusTextSize = Math.Max(
+                _config.StatusText.FontMin,
+                Math.Min(_config.StatusText.FontMax, minDimension * _config.StatusText.FontScale)
+            );
+
+            double statusTextMarginTop = Math.Max(
+                _config.StatusText.MarginTopMin,
+                Math.Min(_config.StatusText.MarginTopMax, minDimension * _config.StatusText.MarginTopScale)
+            );
 
             return new ScalingResult
             {
@@ -23,7 +59,9 @@ namespace Ogur.Sentinel.Devexpress.Views.Scaling
                 NextTimeSize = nextTimeSize,
                 LabelSize = labelSize,
                 BorderMargin = borderMargin,
-                BorderPadding = borderPadding
+                BorderPadding = borderPadding,
+                StatusTextSize = statusTextSize,
+                StatusTextMarginTop = statusTextMarginTop
             };
         }
     }

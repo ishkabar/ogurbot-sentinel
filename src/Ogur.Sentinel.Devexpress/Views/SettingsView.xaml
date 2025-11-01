@@ -1,10 +1,14 @@
-﻿<!-- DevExpress SettingsView.xaml - Ogur Sentinel -->
-<Page x:Class="Ogur.Sentinel.Devexpress.Views.SettingsView"
+﻿<Page x:Class="Ogur.Sentinel.Devexpress.Views.SettingsView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
       xmlns:dxe="http://schemas.devexpress.com/winfx/2008/xaml/editors"
       xmlns:dxlc="http://schemas.devexpress.com/winfx/2008/xaml/layoutcontrol"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:vm="clr-namespace:Ogur.Sentinel.Devexpress.ViewModels"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel, IsDesignTimeCreatable=False}"
       Background="#1e1e1e">
     
     <Grid>
@@ -69,16 +73,16 @@
                         </dxlc:LayoutItem.LabelTemplate>
                         
                         <StackPanel Orientation="Horizontal">
-                            <dxe:SpinEdit x:Name="SyncIntervalBox"
-                                         Width="80"
-                                         MinValue="5"
-                                         MaxValue="300"
-                                         Increment="5"
-                                         IsFloatValue="False"
-                                         FontSize="14"
-                                         Background="#2d2d30"
-                                         Foreground="White"
-                                         BorderBrush="#3e3e42"/>
+                            <dxe:SpinEdit Value="{Binding SyncInterval, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          Width="80"
+                                          MinValue="5"
+                                          MaxValue="300"
+                                          Increment="5"
+                                          IsFloatValue="False"
+                                          FontSize="14"
+                                          Background="#2d2d30"
+                                          Foreground="White"
+                                          BorderBrush="#3e3e42"/>
                             <TextBlock Text="seconds" 
                                       Foreground="#cccccc" 
                                       FontSize="14"
@@ -123,6 +127,7 @@
                         
                         <StackPanel Orientation="Horizontal">
                             <dxe:SpinEdit x:Name="TimeOffsetBox"
+                                         Value="{Binding TimeOffset, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Width="80"
                                          MinValue="-180"
                                          MaxValue="180"
@@ -180,6 +185,7 @@
                         
                         <StackPanel Orientation="Horizontal">
                             <dxe:SpinEdit x:Name="WarningRedBox"
+                                         Value="{Binding WarningRed, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Width="80"
                                          MinValue="0"
                                          MaxValue="60"
@@ -213,6 +219,7 @@
                         
                         <StackPanel Orientation="Horizontal">
                             <dxe:SpinEdit x:Name="WarningOrangeBox"
+                                         Value="{Binding WarningOrange, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                          Width="80"
                                          MinValue="0"
                                          MaxValue="120"
@@ -240,9 +247,11 @@
                 <!-- Status Message -->
                 <dxlc:LayoutItem>
                     <TextBlock x:Name="StatusText"
+                              Text="{Binding StatusText}"
+                              Foreground="{Binding StatusForeground}"
+                              Visibility="{Binding StatusVisibility}"
                               FontSize="14"
-                              TextWrapping="Wrap"
-                              Visibility="Collapsed"/>
+                              TextWrapping="Wrap"/>
                 </dxlc:LayoutItem>
                 
             </dxlc:LayoutControl>

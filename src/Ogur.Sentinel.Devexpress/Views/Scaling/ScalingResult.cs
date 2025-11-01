@@ -7,5 +7,7 @@
         public double LabelSize { get; set; }
         public double BorderMargin { get; set; }
         public double BorderPadding { get; set; }
+        public double StatusTextSize { get; set; }
+        public double StatusTextMarginTop { get; set; }
     }
 }

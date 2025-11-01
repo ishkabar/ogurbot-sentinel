@@ -12,6 +12,7 @@ permissions:
 
 env:
   APP_PROJECT: src/Ogur.Sentinel.Devexpress/Ogur.Sentinel.Devexpress.csproj
+  WIX_PROJECT: installer/Ogur.Sentinel.Installer.wixproj
   OUT_ROOT: out
   APP_NAME: Ogur.Sentinel.Devexpress
 
@@ -24,18 +25,15 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch all tags
-        run: |
-          git fetch --tags --force
-          git tag --list
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
-      # ===== Versioning (MinVer) =====
-      - name: Get version with MinVer
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Get version
         id: version
         shell: pwsh
         run: |
@@ -46,127 +44,81 @@ jobs:
           Pop-Location
           $ver = $v.Split('-')[0]
           echo "VERSION=$ver" >> $env:GITHUB_OUTPUT
-          Write-Host "Using version: $ver"
+          Write-Host "Version: $ver"
 
-      - name: Meta
-        id: meta
+      - name: Publish framework-dependent
         shell: pwsh
         run: |
-          echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
-          echo "DATE_TAG=$(Get-Date -Format 'yyyyMMdd-HHmmss')" >> $env:GITHUB_OUTPUT
-
-      # ===== Build .exe (framework-dependent, single-file, trimmed) =====
-      - name: Publish exe (framework-dependent)
-        shell: pwsh
-        run: |
-          dotnet publish $env:APP_PROJECT `
-            -c Release -r win-x64 `
-            -p:PublishSingleFile=true `
-            -p:PublishTrimmed=true `
-            --self-contained false `
-            -p:AssemblyVersion=${{ steps.version.outputs.VERSION }} `
+          dotnet publish $env:APP_PROJECT -c Release -r win-x64 `
+            -p:PublishSingleFile=true --self-contained false `
             -p:FileVersion=${{ steps.version.outputs.VERSION }} `
-            -p:InformationalVersion=${{ steps.version.outputs.VERSION }}+${{ steps.meta.outputs.SHA_SHORT }} `
             -o $env:OUT_ROOT/win-x64
-          Write-Host "Published framework-dependent EXE to $env:OUT_ROOT/win-x64"
 
-      # ===== Build .exe (self-contained, single-file) =====
-      - name: Publish exe (self-contained)
+      - name: Publish self-contained
         shell: pwsh
         run: |
-          dotnet publish $env:APP_PROJECT `
-            -c Release -r win-x64 `
-            -p:PublishSingleFile=true `
-            -p:PublishTrimmed=false `
-            --self-contained true `
-            -p:AssemblyVersion=${{ steps.version.outputs.VERSION }} `
+          dotnet publish $env:APP_PROJECT -c Release -r win-x64 `
+            -p:PublishSingleFile=true --self-contained true `
             -p:FileVersion=${{ steps.version.outputs.VERSION }} `
-            -p:InformationalVersion=${{ steps.version.outputs.VERSION }}+${{ steps.meta.outputs.SHA_SHORT }} `
             -o $env:OUT_ROOT/win-x64-self
-          Write-Host "Published self-contained EXE to $env:OUT_ROOT/win-x64-self"
 
-      # ===== MSI WiX (.wixproj) =====
-      - name: Detect WiX project
-        id: wix
+      - name: Publish for MSI
         shell: pwsh
         run: |
-          $wixProj = Get-ChildItem -Recurse -Filter *.wixproj | Select-Object -First 1
-          if ($wixProj) {
-            echo "WIXPROJ=$($wixProj.FullName)" >> $env:GITHUB_OUTPUT
-            Write-Host "Found WiX project: $($wixProj.FullName)"
-          } else {
-            Write-Host "No WiX project found. Skipping MSI build."
-          }
+          dotnet publish $env:APP_PROJECT -c Release -r win-x64 `
+            -p:PublishSingleFile=true --self-contained true `
+            -p:FileVersion=${{ steps.version.outputs.VERSION }}
 
-      - name: Install WiX Toolset (v3) via Chocolatey
-        if: ${{ steps.wix.outputs.WIXPROJ != '' }}
+      - name: Install WiX
+        shell: pwsh
+        run: choco install wixtoolset --version=3.14.1 -y
+
+      - name: Build MSI
         shell: pwsh
         run: |
-          choco install wixtoolset --version=3.14.1.6526 -y
-          Write-Host "WiX installed"
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          
+          msbuild $env:WIX_PROJECT /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:ProductVersion=${{ steps.version.outputs.VERSION }}
+          
+          $msi = Get-ChildItem installer\bin\x64\Release\*.msi | Select-Object -First 1
+          if (-not $msi) { throw "MSI not found" }
+          
+          New-Item -ItemType Directory -Force -Path "$env:OUT_ROOT/release" | Out-Null
+          Copy-Item $msi.FullName "$env:OUT_ROOT/release/${{ env.APP_NAME }}-Setup-${{ steps.version.outputs.VERSION }}.msi"
 
-      - name: Build MSI (WiX)
-        if: ${{ steps.wix.outputs.WIXPROJ != '' }}
-        shell: pwsh
-        run: |
-          $wixProj = "${{ steps.wix.outputs.WIXPROJ }}"
-  
-          msbuild $wixProj /t:Rebuild /p:Configuration=Release /p:Platform="x64" /p:ProductVersion=${{ steps.version.outputs.VERSION }}
-
-          $msi = Get-ChildItem -Recurse -Filter *.msi | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-          if (-not $msi) { throw "MSI not found after build" }
-          New-Item -ItemType Directory -Force -Path "$env:OUT_ROOT/msi" | Out-Null
-          Copy-Item $msi.FullName "$env:OUT_ROOT/msi/${{ env.APP_NAME }}-Setup-${{ steps.version.outputs.VERSION }}.msi"
-          Write-Host "MSI at $env:OUT_ROOT/msi"
-
-      # ===== Package artifacts (ZIP) =====
       - name: Package ZIPs
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path "$env:OUT_ROOT/release" | Out-Null
-          Compress-Archive -Path $env:OUT_ROOT/win-x64/* -DestinationPath "$env:OUT_ROOT/release/${{ env.APP_NAME }}-win-x64-${{ steps.version.outputs.VERSION }}.zip"
-          Compress-Archive -Path $env:OUT_ROOT/win-x64-self/* -DestinationPath "$env:OUT_ROOT/release/${{ env.APP_NAME }}-win-x64-selfcontained-${{ steps.version.outputs.VERSION }}.zip"
-          if (Test-Path "$env:OUT_ROOT/msi") {
-            Copy-Item "$env:OUT_ROOT/msi/*.msi" "$env:OUT_ROOT/release/"
-          }
+          Compress-Archive $env:OUT_ROOT/win-x64/* "$env:OUT_ROOT/release/${{ env.APP_NAME }}-win-x64-${{ steps.version.outputs.VERSION }}.zip"
+          Compress-Archive $env:OUT_ROOT/win-x64-self/* "$env:OUT_ROOT/release/${{ env.APP_NAME }}-selfcontained-${{ steps.version.outputs.VERSION }}.zip"
 
-      - name: Generate SHA256 checksums
+      - name: Generate checksums
         shell: pwsh
         run: |
           Set-Location "$env:OUT_ROOT/release"
-          Get-ChildItem | Where-Object { -not $_.PSIsContainer } | ForEach-Object {
+          Get-ChildItem *.* | ForEach-Object {
             $hash = Get-FileHash $_.FullName -Algorithm SHA256
-            "$($hash.Hash)  $($_.Name)" | Out-File -FilePath SHA256SUMS.txt -Append -Encoding ascii
+            "$($hash.Hash)  $($_.Name)" | Out-File SHA256SUMS.txt -Append -Encoding ascii
           }
-          Write-Host "SHA256SUMS.txt generated"
 
-      - name: Upload CI artifacts (optional)
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: windows-release-binaries
+          name: windows-release
           path: out/release/*
 
   release:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: windows-release-binaries
+          name: windows-release
           path: release
 
-      - name: Create GitHub Release
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-          files: |
-            release/${{ env.APP_NAME }}-win-x64-*.zip
-            release/${{ env.APP_NAME }}-win-x64-selfcontained-*.zip
-            release/${{ env.APP_NAME }}-Setup-*.msi
-            release/SHA256SUMS.txt
+          files: release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
