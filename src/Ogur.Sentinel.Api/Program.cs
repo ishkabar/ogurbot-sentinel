@@ -109,8 +109,23 @@ try
         app.UseHsts();
     }
 
-    app.UseHttpsRedirection(); // ✅ Tu na początku
-    app.UseStaticFiles(); // wwwroot (css, js, lib)
+    app.UseHttpsRedirection();
+    
+    app.Use(async (context, next) =>
+    {
+        context.Response.Headers.Append(
+            "Content-Security-Policy",
+            "default-src 'self'; " +
+            "connect-src 'self' https://api.github.com; " +
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+            "img-src 'self' data:; " +
+            "font-src 'self';"
+        );
+        await next();
+    });
+    
+    app.UseStaticFiles();
 
 // ✅ /files dla downloadów
     app.UseStaticFiles(new StaticFileOptions

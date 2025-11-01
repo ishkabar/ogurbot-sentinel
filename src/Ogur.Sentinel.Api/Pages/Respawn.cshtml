@@ -305,14 +305,11 @@
 
                     if (channelsResp.ok) {
                         const channelsData = await channelsResp.json();
-                        console.log('📥 /channels/info response:', channelsData);
-                        console.log('📥 First channel ID from response:', channelsData[0]?.id, typeof channelsData[0]?.id);
-                        console.log('📥 Current channels we sent:', currentChannels);
+
 
                         if (Array.isArray(channelsData)) {
                             channelsData.forEach(ch => {
                                 const idAsString = String(ch.id);
-                                console.log(`  Mapping: "${ch.id}" (${typeof ch.id}) → "${idAsString}"`);
                                 window.channelNames[idAsString] = {name: ch.name, guild: ch.guild};
                             });
                         }
@@ -651,12 +648,9 @@
             
             const selectedIds = Array.from(selectedChannelsForAdd);
 
-            console.log('Selected channels from modal:', selectedIds);
-            console.log('Previous channels:', currentChannels);
 
             currentChannels = selectedIds;
 
-            console.log('New channels list:', currentChannels);
 
             renderChannels();
 
@@ -761,7 +755,6 @@
                 });
 
                 if (response.ok) {
-                    console.log('Sound played successfully');
                 } else {
                     const error = await response.json();
                     alert('Failed to play sound: ' + (error.error || 'Unknown error'));
@@ -790,7 +783,6 @@
 
                 if (!response.ok) throw new Error('Save failed');
 
-                console.log('✓ Repeat settings saved');
             } catch (error) {
                 console.error('Failed to save repeat settings:', error);
                 alert('Failed to save: ' + error.message);
@@ -864,18 +856,15 @@
 
             // Jeśli już istnieje, nie twórz nowego
             if (sortable) {
-                console.log('⚠️ Sortable already initialized');
                 return;
             }
 
-            console.log('✅ Initializing Sortable...');
 
             sortable = new Sortable(channelsList, {
                 animation: 150,
                 handle: '.pill',
                 ghostClass: 'sortable-ghost',
                 onEnd: function(evt) {
-                    console.log('📦 Drag ended. Old index:', evt.oldIndex, 'New index:', evt.newIndex);
 
                     // Zaktualizuj tablicę currentChannels z DOM
                     const pills = channelsList.querySelectorAll('.pill');
@@ -886,13 +875,10 @@
                         if (codeEl) {
                             const channelId = codeEl.textContent.trim();
                             newOrder.push(channelId);
-                            console.log(`  [${idx}] ${channelId}`);
                         }
                     });
 
-                    console.log('📋 OLD currentChannels:', currentChannels);
                     currentChannels = newOrder;
-                    console.log('📋 NEW currentChannels:', currentChannels);
 
                     // Zaktualizuj podświetlenie
                     updateFirstChannelHighlight();
@@ -906,12 +892,10 @@
                 }
             });
 
-            console.log('✅ Sortable initialized!');
         }
         function updateFirstChannelHighlight() {
             const pills = document.querySelectorAll('#channelsList .pill');
 
-            console.log('🎨 Updating first-channel highlight...');
 
             pills.forEach((pill, index) => {
                 const hadClass = pill.classList.contains('first-channel');
@@ -981,7 +965,6 @@
                 use_synced_time: document.getElementById('useSyncedTime').checked
             };
 
-            console.log('Sending payload:', payload);
 
             try {
                 const response = await fetch('/settings', {

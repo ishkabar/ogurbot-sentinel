@@ -189,3 +189,34 @@ jobs:
           repository: ishkabar/ogurbot-sentinel-releases
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASES_TOKEN }}
+
+      - name: Remove source code assets from release
+        run: |
+          TAG="v${{ steps.version.outputs.VERSION }}"
+          
+          echo "🔍 Fetching release data for tag: $TAG"
+          RELEASE_DATA=$(curl -s -H "Authorization: token ${{ secrets.RELEASES_TOKEN }}" \
+            "https://api.github.com/repos/ishkabar/ogurbot-sentinel-releases/releases/tags/$TAG")
+          
+          RELEASE_ID=$(echo "$RELEASE_DATA" | jq -r '.id')
+          
+          if [ "$RELEASE_ID" != "null" ] && [ -n "$RELEASE_ID" ]; then
+            echo "✅ Found release ID: $RELEASE_ID"
+            
+            # Get all assets
+            ASSETS=$(curl -s -H "Authorization: token ${{ secrets.RELEASES_TOKEN }}" \
+              "https://api.github.com/repos/ishkabar/ogurbot-sentinel-releases/releases/$RELEASE_ID/assets")
+            
+            # Delete source code assets (zip and tar.gz with version pattern)
+            echo "$ASSETS" | jq -r '.[] | select(.name | test("\\.(zip|tar\\.gz)$")) | select(.name | test("^(v[0-9]|[0-9])")) | .id' | while read asset_id; do
+              if [ -n "$asset_id" ]; then
+                echo "🗑️ Deleting source code asset ID: $asset_id"
+                curl -X DELETE -H "Authorization: token ${{ secrets.RELEASES_TOKEN }}" \
+                  "https://api.github.com/repos/ishkabar/ogurbot-sentinel-releases/releases/assets/$asset_id"
+              fi
+            done
+            
+            echo "✅ Source code assets cleanup completed"
+          else
+            echo "⚠️ Could not find release ID"
+          fi
