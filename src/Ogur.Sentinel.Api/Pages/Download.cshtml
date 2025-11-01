@@ -5,77 +5,252 @@
 
 <div class="container mt-5">
     <div class="text-center mb-5">
-        <h1 class="display-4">Ogur Sentinel Desktop</h1>
+        <h1 class="display-3" style="line-height: 1.3;">Ogur Sentinel Desktop</h1>
         <p class="lead">Aplikacja do monitorowania respawnów</p>
     </div>
-    
+
     <div class="row justify-content-center">
         <div class="col-md-8">
+            <!-- Download Card -->
             <div class="card bg-dark text-white">
                 <div class="card-body p-5">
-                    <h3 class="card-title mb-4">Pobierz aplikację</h3>
-                    
-                    <div class="mb-4">
-                        <a href="/files/Ogur.Sentinel.Desktop.rar" class="btn btn-success btn-lg w-100" download>
-                            Pobierz Ogur.Sentinel.Desktop.rar
-                        </a>
-                        <small class="text-muted d-block mt-2">Windows 10/11 (x64) - Archiwum RAR</small>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h3 class="card-title mb-0">Pobierz aplikację</h3>
+                        <span id="desktop-version" class="badge bg-secondary">
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                            Sprawdzanie wersji...
+                        </span>
                     </div>
-                    
+
+                    <!-- Download Options - Two Columns -->
+<div class="row mb-4">
+    <!-- Installer Column -->
+    <div class="col-md-6 mb-3">
+        <div class="border border-secondary rounded p-3 h-100">
+            <h5 class="text-white mb-3">
+                <i class="bi bi-box-seam me-2"></i>Instalator
+            </h5>
+            
+            <a href="#" id="download-installer" class="btn btn-light btn-lg w-100 mb-3 disabled">
+                <i class="bi bi-download me-2"></i>
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Ładowanie...
+            </a>
+            
+            <div class="small text-muted">
+                <p class="mb-2"><strong>Zalecane dla większości użytkowników</strong></p>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Automatyczna instalacja</li>
+                    <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Zawiera .NET Runtime</li>
+                    <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Menu Start i pulpit</li>
+                    <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Łatwa deinstalacja</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Portable Column -->
+    <div class="col-md-6 mb-3">
+        <div class="border border-secondary rounded p-3 h-100">
+            <h5 class="text-white mb-3">
+                <i class="bi bi-file-zip me-2"></i>Portable
+            </h5>
+            
+            <a href="#" id="download-portable" class="btn btn-outline-light btn-lg w-100 mb-3 disabled">
+                <i class="bi bi-download me-2"></i>
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Ładowanie...
+            </a>
+            
+            <div class="small text-muted">
+                <p class="mb-2"><strong>Wersja bez instalacji</strong></p>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Bez instalacji</li>
+                    <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Uruchom z dowolnego miejsca</li>
+                    <li class="mb-1"><i class="bi bi-x text-danger me-1"></i>Wymaga .NET 8.0</li>
+                    <li class="mb-1"><i class="bi bi-check2 text-success me-1"></i>Na pendrive lub USB</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+                    <!-- Error Message -->
+                    <div id="download-error" class="alert alert-danger d-none" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Nie udało się pobrać informacji o najnowszej wersji.
+                        <a href="https://github.com/ishkabar/ogurbot-sentinel-releases/releases"
+                           target="_blank"
+                           class="alert-link">
+                            Przejdź do strony releases
+                        </a>
+                    </div>
+
+                    <div class="text-center mb-4">
+                        <a href="https://github.com/ishkabar/ogurbot-sentinel-releases/releases/latest"
+                           target="_blank"
+                           class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-journal-text me-1"></i>
+                            Zobacz pełne informacje o wydaniu
+                        </a>
+                    </div>
+
                     <hr class="my-4">
-                    
+
                     <!-- Screenshots -->
+                    <h5 class="mb-3">Zrzuty ekranu:</h5>
                     <div class="row mb-4">
                         <div class="col-md-6 mb-3">
-                            <img src="/files/screenshot1.png" 
-                                 alt="Ogur Sentinel Desktop - Widok timerów" 
+                            <img src="/files/screenshot1.png"
+                                 alt="Ogur Sentinel Desktop - Widok timerów"
                                  class="img-fluid rounded border border-secondary"
                                  style="max-width: 100%; height: auto;">
                             <small class="text-muted d-block mt-2 text-center">Widok timerów</small>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <img src="/files/screenshot2.png" 
-                                 alt="Ogur Sentinel Desktop - Ustawienia" 
+                            <img src="/files/screenshot2.png"
+                                 alt="Ogur Sentinel Desktop - Ustawienia"
                                  class="img-fluid rounded border border-secondary"
                                  style="max-width: 100%; height: auto;">
                             <small class="text-muted d-block mt-2 text-center">Ustawienia</small>
                         </div>
                     </div>
-                    
+
                     <hr class="my-4">
-                    
+
                     <h5 class="mb-3">Funkcje:</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2">• Timery respawnów (10m i 2h)</li>
-                        <li class="mb-2">• Odliczanie czasu w czasie rzeczywistym</li>
-                        <li class="mb-2">• Kolorowe ostrzeżenia (czerwone/pomarańczowe)</li>
-                        <li class="mb-2">• Regulowany offset czasu</li>
-                        <li class="mb-2">• Zawsze na wierzchu (pin)</li>
-                        <li class="mb-2">• Responsywny layout (min 50x50px)</li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Timery respawnów (10m i 2h)
+                        </li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Odliczanie czasu w czasie
+                            rzeczywistym
+                        </li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Kolorowe ostrzeżenia
+                            (czerwone/pomarańczowe)
+                        </li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Regulowany offset czasu
+                        </li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Zawsze na wierzchu (pin)
+                        </li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Responsywny layout (min
+                            50x50px)
+                        </li>
+                        <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Przeciąganie w dowolnym
+                            miejscu okna
+                        </li>
                     </ul>
-                    
+
                     <hr class="my-4">
-                    
-                    <h5 class="mb-3">Wymagania:</h5>
+
+                    <h5 class="mb-3">Wymagania systemowe:</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2">• Windows 10 lub nowszy</li>
-                        <li class="mb-2">• Nie wymaga instalacji .NET</li>
-                        <li class="mb-2">• ~70-100 MB miejsca</li>
+                        <li class="mb-2"><i class="bi bi-pc-display me-2"></i>Windows 10 (64-bit) lub nowszy</li>
+                        <li class="mb-2"><i class="bi bi-cpu me-2"></i>.NET 8.0 Runtime (instalator MSI zawiera)</li>
+                        <li class="mb-2"><i class="bi bi-memory me-2"></i>4 GB RAM (zalecane 8 GB)</li>
+                        <li class="mb-2"><i class="bi bi-hdd me-2"></i>100 MB wolnego miejsca na dysku</li>
                     </ul>
-                    
+
                     <hr class="my-4">
-                    
-                    <div class="alert alert-info">
-                        <strong>Pierwsze uruchomienie:</strong><br>
-                        Config zostanie utworzony automatycznie w:<br>
-                        <code>%LOCALAPPDATA%\OgurSentinel\appsettings.json</code>
+
+                    <div class="alert alert-info mb-0">
+                        <h6 class="alert-heading"><i class="bi bi-info-circle me-2"></i>Pierwsze uruchomienie:</h6>
+                        <p class="mb-2">Config zostanie utworzony automatycznie w:</p>
+                        <code class="d-block p-2 bg-dark rounded">%LOCALAPPDATA%\OgurSentinel\appsettings.json</code>
+                        <hr class="my-2">
+                        <p class="mb-0 small">
+                            <strong>Różnica między wersjami:</strong><br>
+                            • <strong>Instalator MSI:</strong> Instaluje aplikację w Program Files, dodaje do menu
+                            Start, zawiera .NET Runtime<br>
+                            • <strong>Portable ZIP:</strong> Rozpakuj i uruchom z dowolnego miejsca, wymaga
+                            zainstalowanego .NET 8.0
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="text-center mt-4">
-        <a href="/" class="btn btn-outline-secondary">← Powrót do głównej</a>
+        <a href="/" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Powrót do głównej
+        </a>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (async () => {
+            // Desktop Version & Downloads
+            try {
+                const response = await fetch('https://api.github.com/repos/ishkabar/ogurbot-sentinel-releases/releases/latest');
+                const release = await response.json();
+
+                // Update version badge
+                const versionBadge = document.getElementById('desktop-version');
+                versionBadge.innerHTML = `<i class="bi bi-tag-fill me-1"></i>${release.tag_name}`;
+                versionBadge.classList.remove('bg-secondary');
+                versionBadge.classList.add('bg-success');
+
+                // Find installer (MSI)
+                const installerAsset = release.assets.find(asset =>
+                    asset.name.toLowerCase().includes('setup') &&
+                    asset.name.toLowerCase().endsWith('.msi')
+                );
+
+                // Find portable (ZIP)
+                const portableAsset = release.assets.find(asset =>
+                    asset.name.toLowerCase().includes('win-x64') &&
+                    asset.name.toLowerCase().endsWith('.zip') &&
+                    !asset.name.toLowerCase().includes('selfcontained')
+                );
+
+                // Update installer button
+                if (installerAsset) {
+                    const installerBtn = document.getElementById('download-installer');
+                    installerBtn.href = installerAsset.browser_download_url;
+                    installerBtn.classList.remove('disabled');
+                    installerBtn.innerHTML = `
+                    <i class="bi bi-download me-2"></i>
+                    Pobierz Instalator (${(installerAsset.size / 1024 / 1024).toFixed(1)} MB)
+                `;
+                }
+
+                // Update portable button
+                if (portableAsset) {
+                    const portableBtn = document.getElementById('download-portable');
+                    portableBtn.href = portableAsset.browser_download_url;
+                    portableBtn.classList.remove('disabled');
+                    portableBtn.innerHTML = `
+                    <i class="bi bi-file-zip me-2"></i>
+                    Pobierz Portable (${(portableAsset.size / 1024 / 1024).toFixed(1)} MB)
+                `;
+                }
+
+                // Hide error message if was visible
+                document.getElementById('download-error').classList.add('d-none');
+
+            } catch (error) {
+                console.error('Error fetching desktop release:', error);
+
+                // Update version badge to error state
+                const versionBadge = document.getElementById('desktop-version');
+                versionBadge.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Błąd';
+                versionBadge.classList.remove('bg-secondary', 'bg-success');
+                versionBadge.classList.add('bg-danger');
+
+                // Show error message
+                document.getElementById('download-error').classList.remove('d-none');
+
+                // Update buttons to show error
+                document.getElementById('download-installer').innerHTML = `
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Błąd ładowania instalatora
+            `;
+                document.getElementById('download-portable').innerHTML = `
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Błąd ładowania wersji portable
+            `;
+            }
+        })();
+    </script>
+}
