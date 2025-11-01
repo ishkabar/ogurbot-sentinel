@@ -2,6 +2,7 @@
 using System.IO;
 using System.Security.Cryptography;
 using System.Text;
+using System.Windows.Input;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -221,6 +222,14 @@ namespace Ogur.Sentinel.Devexpress.Views
         private void DispatcherInvokeHelper(Action action)
         {
             Dispatcher.BeginInvoke(action, System.Windows.Threading.DispatcherPriority.Loaded);
+        }
+        
+        private void Page_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                Window.GetWindow(this)?.DragMove();
+            }
         }
 
         private string GetConfigFileHash()

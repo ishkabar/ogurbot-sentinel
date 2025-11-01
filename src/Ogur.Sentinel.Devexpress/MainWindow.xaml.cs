@@ -191,6 +191,14 @@ namespace Ogur.Sentinel.Devexpress
         {
             UpdateHeaderVisibility();
         }
+        
+        private void Border_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                DragMove();
+            }
+        }
 
         private void UpdateHeaderVisibility()
         {

@@ -24,7 +24,8 @@
     <Border Background="{StaticResource DarkBackground}"
             CornerRadius="10"
             BorderBrush="{StaticResource DarkBorder}"
-            BorderThickness="1">
+            BorderThickness="1"
+            MouseDown="Border_MouseDown">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -35,8 +36,7 @@
             <Grid Grid.Row="0" 
                   x:Name="HeaderGrid"
                   Background="{StaticResource DarkPanel}"
-                  Height="50"
-                  MouseDown="Header_MouseDown">
+                  Height="50">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>

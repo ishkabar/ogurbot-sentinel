@@ -69,20 +69,26 @@ jobs:
             -p:PublishSingleFile=true --self-contained true `
             -p:FileVersion=${{ steps.version.outputs.VERSION }}
 
-      - name: Install WiX
+- name: Ensure WiX in PATH
         shell: pwsh
         run: |
-          # WiX is pre-installed on windows-latest runners
-          # Just ensure it's in the PATH
-          $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-          echo $env:PATH >> $env:GITHUB_PATH
+          $wixPath = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+          if (Test-Path $wixPath) {
+            echo $wixPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          }
 
-      - name: Build MSI
+- name: Build MSI
         shell: pwsh
         run: |
+          # Odśwież PATH aby uwzględnić MSBuild i WiX
           $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           
-          msbuild $env:WIX_PROJECT /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:ProductVersion=${{ steps.version.outputs.VERSION }}
+          # Znajdź MSBuild
+          $msbuildPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | Select-Object -First 1
+          if (-not $msbuildPath) { throw "MSBuild not found" }
+          
+          # Uruchom MSBuild
+          & $msbuildPath $env:WIX_PROJECT /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:ProductVersion=${{ steps.version.outputs.VERSION }}
           
           $msi = Get-ChildItem installer\bin\x64\Release\*.msi | Select-Object -First 1
           if (-not $msi) { throw "MSI not found" }

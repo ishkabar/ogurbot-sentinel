@@ -4,7 +4,8 @@
       xmlns:dx="http://schemas.devexpress.com/winfx/2008/xaml/core"
       Background="#1e1e1e"
       SizeChanged="Page_SizeChanged"
-      Unloaded="Page_Unloaded">
+      Unloaded="Page_Unloaded"
+      MouseDown="Page_MouseDown">
 
     <Grid x:Name="MainGrid" Margin="20">
         <Grid.RowDefinitions>
