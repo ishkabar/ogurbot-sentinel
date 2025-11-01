@@ -71,7 +71,11 @@ jobs:
 
       - name: Install WiX
         shell: pwsh
-        run: choco install wixtoolset --version=3.14.1 -y
+        run: |
+          # WiX is pre-installed on windows-latest runners
+          # Just ensure it's in the PATH
+          $env:PATH = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          echo $env:PATH >> $env:GITHUB_PATH
 
       - name: Build MSI
         shell: pwsh
