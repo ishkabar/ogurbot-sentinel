@@ -126,7 +126,7 @@ jobs:
           $msbuildPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe | Select-Object -First 1
           if (-not $msbuildPath) { throw "MSBuild not found" }
           
-          & $msbuildPath $env:WIX_PROJECT /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:ProductVersion=${{ steps.version.outputs.VERSION }}
+          & $msbuildPath $env:WIX_PROJECT /t:Rebuild /p:Configuration=Release /p:Platform=x64 /p:ProductVersion=${{ steps.version.outputs.VERSION }} /p:Version=${{ steps.version.outputs.VERSION }}
           
           $msi = Get-ChildItem installer\bin\x64\Release\*.msi | Select-Object -First 1
           if (-not $msi) { throw "MSI not found" }

@@ -258,9 +258,9 @@
                                FontSize="11"
                                HorizontalAlignment="Center">
                         <Run Text="Version "/>
-                        <Run Text="{Binding AppVersion}"/>
+                        <Run Text="{Binding AppVersion, Mode=OneWay}"/>
                         <Run Text=" • "/>
-                        <Run Text="{Binding BuildInfo}"/>
+                        <Run Text="{Binding BuildInfo, Mode=OneWay}"/>
                     </TextBlock>
                 </dxlc:LayoutItem>
             </dxlc:LayoutControl>

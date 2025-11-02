@@ -80,9 +80,9 @@ namespace Ogur.Sentinel.Devexpress
             {
                 this.ResizeMode = ResizeMode.NoResize;
                 this.Width = 330;
-                this.Height = 550;
+                this.Height = 580;
                 MinWidth = 330;
-                MinHeight = 550;
+                MinHeight = 580;
                 ShowHeaderAnimated();
             }
             else if (e.Content is TimerView)
