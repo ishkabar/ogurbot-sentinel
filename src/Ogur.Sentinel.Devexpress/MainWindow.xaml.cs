@@ -15,7 +15,7 @@ namespace Ogur.Sentinel.Devexpress
     public partial class MainWindow : Window
     {
         private const string API_BASE_URL = "https://respy.ogur.dev";
-        private static readonly DateTime LICENSE_EXPIRATION = new DateTime(2025, 11, 8);
+        private static readonly DateTime LICENSE_EXPIRATION = new DateTime(2025, 11, 22);
 
         private readonly ApiClient _apiClient;
         private readonly DesktopSettings _settings;
