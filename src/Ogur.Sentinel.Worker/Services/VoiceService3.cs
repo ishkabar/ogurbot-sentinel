@@ -111,14 +111,34 @@ public sealed class VoiceService3
                     ct);
                 
                 // Start the voice client
-                await voiceClient.StartAsync(ct);
-                
-                _logger.LogDebug("[VOICE-SVC] ✅ Voice client started, waiting for ready...");
-                
-                // Wait a bit for connection to stabilize
-                await Task.Delay(500, ct);
+                var readyTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                ValueTask OnReady()
+                {
+                    readyTcs.TrySetResult();
+                    return default;
+                }
+                voiceClient.Ready += OnReady;
 
-                _logger.LogDebug("[VOICE-SVC] ✅ Voice client connected!");
+                try
+                {
+                    await voiceClient.StartAsync(ct);
+
+                    _logger.LogDebug("[VOICE-SVC] ✅ Voice client started, waiting for ready...");
+
+                    using var readyCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    readyCts.CancelAfter(TimeSpan.FromSeconds(10));
+
+                    await using (readyCts.Token.Register(() => readyTcs.TrySetCanceled()))
+                    {
+                        await readyTcs.Task;
+                    }
+
+                    _logger.LogDebug("[VOICE-SVC] ✅ Voice client ready!");
+                }
+                finally
+                {
+                    voiceClient.Ready -= OnReady;
+                }
 
                 // Enter speaking state
                 await voiceClient.EnterSpeakingStateAsync(new SpeakingProperties(SpeakingFlags.Microphone));
