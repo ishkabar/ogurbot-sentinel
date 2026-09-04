@@ -46,7 +46,8 @@ public sealed class RespawnSchedulerService
         var baseTime = SchedulingMath.ParseHhmm(baseTimeStr);
         var lead = TimeSpan.FromSeconds(Math.Max(0, _state.LeadSeconds));
         var next10 = SchedulingMath.NextAligned(nowLocal, baseTime, TimeSpan.FromMinutes(10), lead);
-        var next2h = SchedulingMath.NextAligned(nowLocal, baseTime, TimeSpan.FromHours(2), lead);
+        //var next2h = SchedulingMath.NextAligned(nowLocal, baseTime, TimeSpan.FromHours(2), lead);
+        var next2h = SchedulingMath.NextAligned(nowLocal, baseTime, TimeSpan.FromMinutes(30), lead);
     
         return (next10, next2h);
     }
