@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <LangVersion>latestmajor</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -11,62 +11,62 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
-        <_Parameter1>BuildTime</_Parameter1>
-        <_Parameter2>$([System.DateTime]::UtcNow.ToString("yyyyMMdd-HHmmss"))</_Parameter2>
-      </AssemblyAttribute>
+        <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+            <_Parameter1>BuildTime</_Parameter1>
+            <_Parameter2>$([System.DateTime]::UtcNow.ToString("yyyyMMdd-HHmmss"))</_Parameter2>
+        </AssemblyAttribute>
     </ItemGroup>
-    
+
     <ItemGroup>
-      <Content Include="..\.dockerignore">
-        <Link>.dockerignore</Link>
-      </Content>
-    </ItemGroup>
-    <ItemGroup>
-      <Content Include="assets\**\*.*">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </Content>
+        <Content Include="..\.dockerignore">
+            <Link>.dockerignore</Link>
+        </Content>
     </ItemGroup>
     <ItemGroup>
-      <ProjectReference Include="..\Ogur.Sentinel.Core\Ogur.Sentinel.Core.csproj" />
-      <ProjectReference Include="..\Ogur.Sentinel.Abstractions\Ogur.Sentinel.Abstractions.csproj" />
+        <Content Include="assets\**\*.*">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
     <ItemGroup>
-      <PackageReference Include="Concentus" Version="2.2.2" />
-      <PackageReference Include="Concentus.Oggfile" Version="1.0.6" />
-      <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.10" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.10" />
-      <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.10" />
-      <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.10" />
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.10" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.10" />
-      <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.10" />
-      <PackageReference Include="NAudio" Version="2.2.1" />
-      <PackageReference Include="NetCord" Version="1.0.0-alpha.439" />
-      <PackageReference Include="NetCord.Hosting" Version="1.0.0-alpha.439" />
-      <PackageReference Include="NetCord.Services" Version="1.0.0-alpha.439" />
-      <PackageReference Include="NLog" Version="6.0.5" />
-      <PackageReference Include="NLog.Extensions.Logging" Version="6.0.5" />
-      <PackageReference Include="NLog.Web" Version="6.0.5" />
-      <PackageReference Include="Sodium.Core" Version="1.4.0" />
-      <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="8.0.0" />
-      <PackageReference Include="System.Net.Http.Json" Version="9.0.5" />
+        <ProjectReference Include="..\Ogur.Sentinel.Core\Ogur.Sentinel.Core.csproj" />
+        <ProjectReference Include="..\Ogur.Sentinel.Abstractions\Ogur.Sentinel.Abstractions.csproj" />
     </ItemGroup>
     <ItemGroup>
-      <None Update="appsettings\appsettings.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="appsettings\respawn.settings.json">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="assets\respawn_2h.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="assets\respawn_10m.wav">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="appsettings\nlog.config">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+        <PackageReference Include="Concentus" Version="2.2.2" />
+        <PackageReference Include="Concentus.Oggfile" Version="1.0.6" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.11" />
+        <PackageReference Include="NAudio" Version="2.2.1" />
+        <PackageReference Include="NetCord" Version="1.0.0-beta.19" />
+        <PackageReference Include="NetCord.Hosting" Version="1.0.0-beta.19" />
+        <PackageReference Include="NetCord.Services" Version="1.0.0-beta.19" />
+        <PackageReference Include="NLog" Version="6.0.5" />
+        <PackageReference Include="NLog.Extensions.Logging" Version="6.0.5" />
+        <PackageReference Include="NLog.Web" Version="6.0.5" />
+        <PackageReference Include="Sodium.Core" Version="1.4.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="8.0.0" />
+        <PackageReference Include="System.Net.Http.Json" Version="9.0.5" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Update="appsettings\appsettings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="appsettings\respawn.settings.json">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\respawn_2h.wav">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="assets\respawn_10m.wav">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
+        <None Update="appsettings\nlog.config">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 </Project>

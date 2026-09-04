@@ -101,14 +101,14 @@ public sealed class VoiceService3
                 _logger.LogDebug("[VOICE-SVC] 🔌 Connecting to voice channel...");
                 
                 voiceClient = await _client.JoinVoiceChannelAsync(
-                    guildId, 
+                    guildId,
                     channelId,
                     new VoiceClientConfiguration
                     {
-                        // Zwiększ timeout
                         Logger = new VoiceLogger(_logger)
                     },
-                    ct);
+                    timeout: null,
+                    cancellationToken: ct);
                 
                 // Start the voice client
                 var readyTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -235,7 +235,7 @@ public sealed class VoiceService3
             }
 
             // Utwórz output stream (Opus) - automatycznie enkoduje
-            using var outputStream = voiceClient.CreateOutputStream();
+            using var outputStream = voiceClient.CreateVoiceStream();
             using var opusStream = new OpusEncodeStream(outputStream, PcmFormat.Short, VoiceChannels.Stereo, OpusApplication.Audio);
             
             _logger.LogDebug("[VOICE-SVC] 📤 Streaming audio...");
