@@ -45,7 +45,7 @@ public sealed class OreDiscordPostService
             _logger.LogWarning("[ORE-POST] Stored static message id={Id} no longer exists, recreating", _state.StaticMessageId);
         }
 
-        var button = new LinkButtonProperties(ChunjoUrl, "Oznacz rudę");
+        var button = new ButtonProperties("ore_open_map", "Oznacz rudę", ButtonStyle.Success);
 
         var message = new MessageProperties
         {
@@ -78,7 +78,7 @@ public sealed class OreDiscordPostService
 
             var message = new MessageProperties
             {
-                Content = $"📍 Ruda oznaczona przez **{username}**\nSektor: **{sector}**",
+                Content = $"📍 Ruda oznaczona przez **{username}**\n**{sector}**",
                 Attachments = [new AttachmentProperties("chunjo_mark.png", stream)]
             };
 
