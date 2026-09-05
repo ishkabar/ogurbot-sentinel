@@ -265,6 +265,7 @@ try
 
     // === Proxy Endpoints to Worker ===
     app.MapProxyEndpoints();
+    app.MapDiscordAuthEndpoints();
 
 
     logger.Info("✅ API application configured successfully");

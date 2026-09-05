@@ -94,7 +94,9 @@ public class AuthMiddleware
                path.StartsWith("/js") ||
                path.StartsWith("/lib") ||
                path.StartsWith("/favicon") ||
-               path.StartsWith("/files");
+               path.StartsWith("/files") ||
+               path.StartsWith("/baerim") ||
+               path.StartsWith("/auth/discord");
     }
 
 

@@ -33,6 +33,7 @@ var isAuthenticated = !string.IsNullOrEmpty(username);
 <body>
 <header>
     <nav class="navbar navbar-expand-sm navbar-dark glass-nav mb-3">
+        <!-- DEBUG role='@role' username='@username' -->
         <div class="container">
             <a href="https://ogur.dev" class="btn btn-sm btn-outline-light me-3" style="font-size: 0.85rem;">
                 ← ogur.dev
@@ -50,6 +51,15 @@ var isAuthenticated = !string.IsNullOrEmpty(username);
                     <li class="nav-item">
                         <a class="nav-link" asp-area="" asp-page="/Respawn">Respawn</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/baerim/ore/chunjo">Baerim</a>
+                    </li>
+                    @if (role == "Admin")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-page="/AdminRole">Admin Role</a>
+                        </li>
+                    }
                     <li class="nav-item">
                         <a class="nav-link" asp-area="" asp-page="/Download">Download</a>
                     </li>

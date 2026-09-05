@@ -1,0 +1,51 @@
+﻿@page
+@model Ogur.Sentinel.Api.Pages.Baerim.Ore.ChunjoModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Chunjo - Ore";
+}
+<!DOCTYPE html>
+<html lang="pl" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chunjo - Ore</title>
+    <style>
+        body { background: #0d0d0f; color: #eee; font-family: system-ui, sans-serif; margin: 0; padding: 0; }
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; }
+        .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
+        .topbar a:hover { color: #fff; }
+        .status { font-size: 0.9rem; color: #ddd; }
+        .map-wrap { display: flex; justify-content: center; padding: 10px 20px 40px; }
+        #mapImg { max-width: 95vw; max-height: 85vh; image-rendering: pixelated; cursor: crosshair; border: 1px solid #333; }
+        .login-hint { color: #888; text-align: center; margin-top: 60px; }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <a href="https://respy.ogur.dev/">← respy.ogur.dev</a>
+    <div class="status">
+        @if (Model.IsLoggedIn)
+        {
+            <span>👤 @Model.DiscordUsername</span>
+            <a href="/auth/discord/logout" style="margin-left: 12px;">Wyloguj</a>
+        }
+        else
+        {
+            <a href="/auth/discord/login?returnTo=/baerim/ore/chunjo">Zaloguj przez Discord</a>
+        }
+    </div>
+</div>
+
+@if (Model.IsLoggedIn)
+{
+    <div class="map-wrap">
+        <img id="mapImg" src="/files/Joan.png" alt="Mapa Chunjo" />
+    </div>
+}
+else
+{
+    <p class="login-hint">Zaloguj się przez Discord, żeby oznaczyć lokalizację rudy.</p>
+}
+</body>
+</html>
