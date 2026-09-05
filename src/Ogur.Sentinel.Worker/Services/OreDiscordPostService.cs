@@ -15,6 +15,7 @@ public sealed class OreDiscordPostService
     private readonly OreState _state;
     private readonly OreStore _store;
     private readonly OreMapImageService _mapImage;
+    private readonly SemaphoreSlim _publishLock = new(1, 1);
     private readonly ILogger<OreDiscordPostService> _logger;
 
     public OreDiscordPostService(
@@ -61,31 +62,52 @@ public sealed class OreDiscordPostService
 
     public async Task PublishMarkAsync(double x, double y, string username, CancellationToken ct = default)
     {
-        await DeleteDynamicPostAsync(ct);
-
-        var imageBytes = await _mapImage.RenderMarkedMapAsync(x, y, ct);
-        if (imageBytes is null)
+        await _publishLock.WaitAsync(ct);
+        try
         {
-            _logger.LogWarning("[ORE-POST] Could not render map image, skipping dynamic post");
-            return;
+            await DeleteDynamicPostInternalAsync(ct);
+
+            var imageBytes = await _mapImage.RenderMarkedMapAsync(x, y, ct);
+            if (imageBytes is null)
+            {
+                _logger.LogWarning("[ORE-POST] Could not render map image, skipping dynamic post");
+                return;
+            }
+
+            using var stream = new MemoryStream(imageBytes);
+
+            var message = new MessageProperties
+            {
+                Content = $"📍 Ruda oznaczona przez **{username}**\nSektor: _—_",
+                Attachments = [new AttachmentProperties("chunjo_mark.png", stream)]
+            };
+
+            var sent = await _client.Rest.SendMessageAsync(ChannelId, message, cancellationToken: ct);
+            _state.SetDynamicMessageId(sent.Id);
+            await _store.SaveAsync(_state.ToPersisted());
+
+            _logger.LogInformation("[ORE-POST] Dynamic post created (id={Id})", sent.Id);
         }
-
-        using var stream = new MemoryStream(imageBytes);
-
-        var message = new MessageProperties
+        finally
         {
-            Content = $"📍 Ruda oznaczona przez **{username}**\nSektor: _—_",
-            Attachments = [new AttachmentProperties("chunjo_mark.png", stream)]
-        };
-
-        var sent = await _client.Rest.SendMessageAsync(ChannelId, message, cancellationToken: ct);
-        _state.SetDynamicMessageId(sent.Id);
-        await _store.SaveAsync(_state.ToPersisted());
-
-        _logger.LogInformation("[ORE-POST] Dynamic post created (id={Id})", sent.Id);
+            _publishLock.Release();
+        }
     }
 
     public async Task DeleteDynamicPostAsync(CancellationToken ct = default)
+    {
+        await _publishLock.WaitAsync(ct);
+        try
+        {
+            await DeleteDynamicPostInternalAsync(ct);
+        }
+        finally
+        {
+            _publishLock.Release();
+        }
+    }
+
+    private async Task DeleteDynamicPostInternalAsync(CancellationToken ct)
     {
         if (_state.DynamicMessageId == 0) return;
 
