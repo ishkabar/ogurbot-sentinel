@@ -634,6 +634,7 @@ webapp.MapPost("/guilds/{guildId}/roles/ogur", async (
                     x = isCurrent ? _oreState.MarkedX : (double?)null,
                     y = isCurrent ? _oreState.MarkedY : (double?)null,
                     marked_by_username = isCurrent ? _oreState.MarkedByUsername : null,
+                    sector = isCurrent ? _oreState.MarkedSector : null,
                     window_start = windowStart,
                     window_end = windowEnd
                 });
