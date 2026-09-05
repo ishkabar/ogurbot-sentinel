@@ -96,7 +96,8 @@ public class AuthMiddleware
                path.StartsWith("/favicon") ||
                path.StartsWith("/files") ||
                path.StartsWith("/baerim") ||
-               path.StartsWith("/auth/discord");
+               path.StartsWith("/auth/discord") ||
+               path.StartsWith("/ore");
     }
 
 

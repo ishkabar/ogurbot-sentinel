@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Ogur.Sentinel.Abstractions.Options;
 using Ogur.Sentinel.Abstractions.Respawn;
 using Ogur.Sentinel.Core.Respawn;
+using Ogur.Sentinel.Core.Ore;
 using Ogur.Sentinel.Worker.Services;
 using Ogur.Sentinel.Abstractions;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,8 @@ public sealed class InternalEndpoints
 {
     private readonly RespawnState _state;
     private readonly RespawnSchedulerService _scheduler;
+    private readonly OreState _oreState;
+    private readonly OreStore _oreStore;
     private readonly SettingsStore _store;
     private readonly SettingsOptions _opts;
     private readonly GatewayClient _client;
@@ -39,6 +42,8 @@ public sealed class InternalEndpoints
     public InternalEndpoints(
         RespawnState state,
         RespawnSchedulerService scheduler,
+        OreState oreState,
+        OreStore oreStore,
         SettingsStore store,
         IOptions<SettingsOptions> opts,
         GatewayClient client,
@@ -49,6 +54,8 @@ public sealed class InternalEndpoints
     {
         _state = state;
         _scheduler = scheduler;
+        _oreState = oreState;
+        _oreStore = oreStore;
         _store = store;
         _opts = opts.Value;
         _client = client;
@@ -532,6 +539,67 @@ webapp.MapPost("/guilds/{guildId}/roles/ogur", async (
         logger.LogError(ex, "[OGUR-ROLE] Failed, guild={Guild} user={User}", gId, userId);
         return Results.Problem(ex.Message, statusCode: 500);
     }
+});
+
+        webapp.MapGet("/ore/state", () =>
+{
+    var now = DateTimeOffset.UtcNow;
+    var isCurrent = OreScheduling.IsInCurrentWindow(_oreState.MarkedAtUtc, now);
+    var (windowStart, windowEnd) = OreScheduling.GetCurrentWindow(now);
+
+    return Results.Ok(new
+    {
+        marked = isCurrent,
+        x = isCurrent ? _oreState.MarkedX : (double?)null,
+        y = isCurrent ? _oreState.MarkedY : (double?)null,
+        marked_by_username = isCurrent ? _oreState.MarkedByUsername : null,
+        marked_at = isCurrent ? _oreState.MarkedAtUtc : null,
+        window_start = windowStart,
+        window_end = windowEnd
+    });
+});
+
+webapp.MapPost("/ore/mark", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
+{
+    using var reader = new StreamReader(ctx.Request.Body);
+    var doc = JsonDocument.Parse(await reader.ReadToEndAsync());
+
+    if (!doc.RootElement.TryGetProperty("x", out var xEl) ||
+        !doc.RootElement.TryGetProperty("y", out var yEl) ||
+        !doc.RootElement.TryGetProperty("user_id", out var uidEl) ||
+        !doc.RootElement.TryGetProperty("username", out var unameEl))
+    {
+        return Results.BadRequest(new { error = "x, y, user_id, username are required" });
+    }
+
+    var x = xEl.GetDouble();
+    var y = yEl.GetDouble();
+    var userId = uidEl.GetString() ?? "";
+    var username = unameEl.GetString() ?? "";
+
+    if (x < 0 || x > 171 || y < 0 || y > 214)
+        return Results.BadRequest(new { error = "Coordinates outside map bounds" });
+
+    var now = DateTimeOffset.UtcNow;
+
+    if (OreScheduling.IsInCurrentWindow(_oreState.MarkedAtUtc, now))
+    {
+        logger.LogWarning("[ORE-MARK] Rejected - already marked this window by {User}", _oreState.MarkedByUsername);
+        return Results.Json(new
+        {
+            error = "Already marked for this respawn window",
+            x = _oreState.MarkedX,
+            y = _oreState.MarkedY,
+            marked_by_username = _oreState.MarkedByUsername
+        }, statusCode: 409);
+    }
+
+    _oreState.SetMark(x, y, userId, username, now);
+    await _oreStore.SaveAsync(_oreState.ToPersisted());
+
+    logger.LogInformation("[ORE-MARK] {Username} ({UserId}) marked ({X}, {Y})", username, userId, x, y);
+
+    return Results.Ok(new { success = true, x, y, marked_by_username = username, marked_at = now });
 });
 
         webapp.MapPost("/respawn/test-sound", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>

@@ -2,14 +2,14 @@
 @model Ogur.Sentinel.Api.Pages.Baerim.Ore.ChunjoModel
 @{
     Layout = null;
-    ViewData["Title"] = "Chunjo - Ore";
+    ViewData["Title"] = "Baerim ruda Chunjo";
 }
 <!DOCTYPE html>
 <html lang="pl" data-bs-theme="dark">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chunjo - Ore</title>
+    <title>Baerim ruda Chunjo</title>
     <style>
         html, body {
             height: 100%;
@@ -51,6 +51,27 @@
             height: 80vh;
             padding: 0 20px;
         }
+
+        .map-wrap { position: relative; }
+        #mapPin {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #ff3b3b;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            box-shadow: 0 0 6px rgba(255,0,0,0.8);
+            pointer-events: none;
+        }
+        #mapLabel {
+            text-align: center;
+            color: #ccc;
+            margin-top: 10px;
+            font-size: 0.95rem;
+        }
+
         #mapImg {
             height: 100%;
             width: auto;
@@ -86,7 +107,77 @@ else
 {
     <div class="map-wrap">
         <img id="mapImg" src="/files/Joan.png" alt="Mapa Chunjo" />
+        <div id="mapPin"></div>
     </div>
+    <p id="mapLabel"></p>
 }
+<script>
+    let mapMarked = false;
+
+    async function loadOreState() {
+        try {
+            const resp = await fetch('/ore/state');
+            const data = await resp.json();
+            renderState(data);
+        } catch (e) {
+            console.warn('Failed to load ore state', e);
+        }
+    }
+
+    function renderState(data) {
+        const pin = document.getElementById('mapPin');
+        const label = document.getElementById('mapLabel');
+        const img = document.getElementById('mapImg');
+
+        if (data.marked) {
+            mapMarked = true;
+            const rect = img.getBoundingClientRect();
+            const scaleX = rect.width / 171;
+            const scaleY = rect.height / 214;
+            pin.style.left = (data.x * scaleX) + 'px';
+            pin.style.top = (data.y * scaleY) + 'px';
+            pin.style.display = 'block';
+            label.textContent = `Oznaczone przez ${data.marked_by_username}`;
+            img.style.cursor = 'default';
+        } else {
+            mapMarked = false;
+            pin.style.display = 'none';
+            label.textContent = 'Kliknij mapę, aby oznaczyć lokalizację rudy';
+            img.style.cursor = 'crosshair';
+        }
+    }
+
+    const mapImgEl = document.getElementById('mapImg');
+    if (mapImgEl) {
+        mapImgEl.addEventListener('click', async (e) => {
+            if (mapMarked) return;
+
+            const rect = e.target.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 171;
+            const y = ((e.clientY - rect.top) / rect.height) * 214;
+
+            try {
+                const resp = await fetch('/ore/mark', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ x, y })
+                });
+                const data = await resp.json();
+
+                if (resp.ok) {
+                    loadOreState();
+                } else {
+                    alert(data.error || 'Nie udało się oznaczyć lokalizacji');
+                    loadOreState();
+                }
+            } catch (err) {
+                alert('Błąd sieci: ' + err.message);
+            }
+        });
+
+        loadOreState();
+        setInterval(loadOreState, 15000);
+    }
+</script>
 </body>
 </html>

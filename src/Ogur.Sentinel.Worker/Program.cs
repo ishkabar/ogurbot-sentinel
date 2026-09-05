@@ -16,6 +16,7 @@ using Ogur.Sentinel.Worker;
 using Ogur.Sentinel.Worker.Discord;
 using Ogur.Sentinel.Worker.Http;
 using Ogur.Sentinel.Worker.Services;
+using Ogur.Sentinel.Core.Ore;
 
 // ✅ Create NLog logger early for startup logging
 var nlogConfigPath = Path.Combine(AppContext.BaseDirectory, "appsettings", "nlog.config");
@@ -56,6 +57,7 @@ try
 
     // --- Initialize Persisted State ---
     await InitializeRespawnState(app.Services);
+    await InitializeOreState(app.Services);
 
     // --- Map Internal Endpoints ---
     app.Services.GetRequiredService<InternalEndpoints>().Map(app);
@@ -121,12 +123,23 @@ static void ConfigureCoreServices(IServiceCollection services)
     services.AddSingleton<RespawnSchedulerService>();
     services.AddSingleton<WikiSyncService>();
     services.AddSingleton<IVersionHelper, VersionHelper>();
+
+    services.AddSingleton<OreState>();
+    services.AddSingleton<OreStore>();
 }
 
 static async Task InitializeRespawnState(IServiceProvider services)
 {
     var store = services.GetRequiredService<SettingsStore>();
     var state = services.GetRequiredService<RespawnState>();
+    var persisted = await store.LoadAsync();
+    state.ApplyPersisted(persisted);
+}
+
+static async Task InitializeOreState(IServiceProvider services)
+{
+    var store = services.GetRequiredService<OreStore>();
+    var state = services.GetRequiredService<OreState>();
     var persisted = await store.LoadAsync();
     state.ApplyPersisted(persisted);
 }
