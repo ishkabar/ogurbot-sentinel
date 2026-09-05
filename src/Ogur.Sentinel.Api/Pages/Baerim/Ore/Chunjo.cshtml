@@ -422,9 +422,17 @@ else
         window.addEventListener('resize', applyZoom);
 
         applyZoom();
-        loadOreState();
         checkOreAdmin();
-        setInterval(loadOreState, 15000);
+
+
+        const stream = new EventSource('/ore/stream');
+        stream.onmessage = (e) => {
+            lastOreData = JSON.parse(e.data);
+            renderState(lastOreData);
+        };
+        stream.onerror = () => {
+            console.warn('SSE connection lost, reconnecting...');
+        };
     }
 </script>
 </body>

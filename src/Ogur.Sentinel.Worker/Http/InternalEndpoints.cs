@@ -612,6 +612,42 @@ webapp.MapPost("/guilds/{guildId}/roles/ogur", async (
             logger.LogInformation("[ORE-RESET] Mark manually cleared");
             return Results.Ok(new { success = true });
         });
+
+        webapp.MapGet("/ore/stream", async (HttpContext ctx, CancellationToken ct) =>
+        {
+            ctx.Response.Headers.Append("Content-Type", "text/event-stream");
+            ctx.Response.Headers.Append("Cache-Control", "no-cache");
+
+            async Task SendState()
+            {
+                var now = DateTimeOffset.UtcNow;
+                var isCurrent = OreScheduling.IsInCurrentWindow(_oreState.MarkedAtUtc, now);
+                var (windowStart, windowEnd) = OreScheduling.GetCurrentWindow(now);
+                var payload = JsonSerializer.Serialize(new
+                {
+                    marked = isCurrent,
+                    x = isCurrent ? _oreState.MarkedX : (double?)null,
+                    y = isCurrent ? _oreState.MarkedY : (double?)null,
+                    marked_by_username = isCurrent ? _oreState.MarkedByUsername : null,
+                    window_start = windowStart,
+                    window_end = windowEnd
+                });
+                await ctx.Response.WriteAsync($"data: {payload}\n\n", ct);
+                await ctx.Response.Body.FlushAsync(ct);
+            }
+
+            var tcs = new TaskCompletionSource();
+            void Handler() => _ = SendState();
+            _oreState.OnChanged += Handler;
+
+            ct.Register(() => tcs.TrySetResult());
+
+            await SendState(); // wyślij stan od razu po podłączeniu
+            await tcs.Task;    // trzymaj połączenie otwarte, dopóki klient nie rozłączy się (ct anulowane)
+
+            _oreState.OnChanged -= Handler;
+        });
+
         webapp.MapPost("/respawn/test-sound", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
         {
             var sound = ctx.Request.Query["sound"].ToString();

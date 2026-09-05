@@ -12,6 +12,8 @@ public sealed class OreState
 
     public ulong StaticMessageId { get; private set; }
     public ulong DynamicMessageId { get; private set; }
+    public event Action? OnChanged;
+
 
     public void SetMark(double x, double y, string userId, string username, DateTimeOffset atUtc)
     {
@@ -23,6 +25,8 @@ public sealed class OreState
             MarkedByUsername = username;
             MarkedAtUtc = atUtc;
         }
+        OnChanged?.Invoke();
+
     }
 
     public void Clear()
@@ -35,6 +39,8 @@ public sealed class OreState
             MarkedByUsername = null;
             MarkedAtUtc = null;
         }
+        OnChanged?.Invoke();
+
     }
 
     public void SetStaticMessageId(ulong id)

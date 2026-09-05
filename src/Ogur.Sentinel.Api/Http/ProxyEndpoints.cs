@@ -437,6 +437,19 @@ public static class ProxyEndpoints
             return Results.Ok(result);
         });
 
+        app.MapGet("/ore/stream", async (HttpContext ctx, IHttpClientFactory cf, CancellationToken ct) =>
+        {
+            ctx.Response.Headers.Append("Content-Type", "text/event-stream");
+            ctx.Response.Headers.Append("Cache-Control", "no-cache");
+
+            var http = cf.CreateClient("worker");
+            using var request = new HttpRequestMessage(HttpMethod.Get, "/ore/stream");
+            using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+            await using var stream = await response.Content.ReadAsStreamAsync(ct);
+
+            await stream.CopyToAsync(ctx.Response.Body, ct);
+        });
+
         app.MapGet("/ore/whoami", (HttpContext ctx, IDataProtectionProvider dp) =>
         {
             var cookie = ctx.Request.Cookies["ore_discord_identity"];
