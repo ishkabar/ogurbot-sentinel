@@ -1,8 +1,8 @@
 ﻿@page
 @model Ogur.Sentinel.Api.Pages.Baerim.Ore.ChunjoModel
 @{
-    Layout = null;
-    ViewData["Title"] = "Baerim ruda Chunjo";
+Layout = null;
+ViewData["Title"] = "Baerim ruda Chunjo";
 }
 <!DOCTYPE html>
 <html lang="pl" data-bs-theme="dark">
@@ -18,6 +18,7 @@
             background: #0d0d0f;
             color: #eee;
             font-family: system-ui, sans-serif;
+            overflow: hidden;
         }
         .topbar {
             display: flex;
@@ -44,13 +45,84 @@
         }
         .login-btn:hover { background: #4752c4; color: #fff; }
 
-        .map-wrap {
-            position: relative;
+        .page-content {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        .sidebar {
+            width: 240px;
+            flex-shrink: 0;
+            padding: 20px;
+            border-right: 1px solid #222;
+            overflow-y: auto;
+        }
+        .sidebar h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+            margin: 0 0 6px;
+        }
+        .sidebar .value {
+            font-size: 1rem;
+            color: #eee;
+            margin: 0 0 20px;
+        }
+        .sidebar .value.muted { color: #666; }
+        .sidebar .countdown {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #43b581;
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .zoom-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            background: #1a1a1e;
+            color: #eee;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .zoom-btn:hover { background: #26262b; }
+
+        .map-area {
+            flex: 1;
+            overflow: auto;
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 80vh;
-            padding: 0 20px;
+            align-items: flex-start;
+            padding: 20px;
+        }
+        .map-wrap {
+            position: relative;
+            flex-shrink: 0;
+            margin: auto;
+        }
+        #mapImg {
+            display: block;
+            image-rendering: pixelated;
+            cursor: crosshair;
+        }
+
+        #mapPin {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: #ff3b3b;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            box-shadow: 0 0 6px rgba(255,0,0,0.8);
+            pointer-events: none;
         }
 
         .modal-backdrop-ore {
@@ -102,26 +174,6 @@
             z-index: 50;
         }
         .reset-btn:hover { background: #c93639; }
-
-        #mapPin {
-            position: absolute;
-            width: 14px;
-            height: 14px;
-            background: #ff3b3b;
-            border: 2px solid #fff;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            display: none;
-            box-shadow: 0 0 6px rgba(255,0,0,0.8);
-            pointer-events: none;
-        }
-        #mapLabel {
-            text-align: center;
-            color: #ccc;
-            margin-top: 10px;
-            font-size: 0.95rem;
-        }
-
     </style>
 </head>
 <body>
@@ -129,50 +181,90 @@
     <a href="https://respy.ogur.dev/">← respy.ogur.dev</a>
     @if (Model.IsLoggedIn)
     {
-        <div class="status">
-            <span>👤 @Model.DiscordUsername</span>
-            <a href="/auth/discord/logout" style="margin-left: 12px;">Wyloguj</a>
-        </div>
+    <div class="status">
+        <span>👤 @Model.DiscordUsername</span>
+        <a href="/auth/discord/logout" style="margin-left: 12px;">Wyloguj</a>
+    </div>
     }
 </div>
 
 @if (!Model.IsLoggedIn)
 {
-    <div class="login-block">
-        <p class="login-text">Zaloguj się przez Discord, żeby oznaczyć lokalizację rudy.</p>
-        <a href="/auth/discord/login?returnTo=/baerim/ore/chunjo" class="login-btn">
-            Zaloguj przez Discord
-        </a>
-    </div>
+<div class="login-block">
+    <p class="login-text">Zaloguj się przez Discord, żeby oznaczyć lokalizację rudy.</p>
+    <a href="/auth/discord/login?returnTo=/baerim/ore/chunjo" class="login-btn">
+        Zaloguj przez Discord
+    </a>
+</div>
 }
 else
 {
-    <div class="map-wrap">
-        <img id="mapImg" src="/files/Joan.png" alt="Mapa Chunjo" />
-        <div id="mapPin"></div>
-    </div>
-    <p id="mapLabel"></p>
-    <div class="modal-backdrop-ore" id="confirmModal">
-        <div class="modal-box">
-            <p>Oznaczyć rudę w tym miejscu?</p>
-            <div class="modal-actions">
-                <button class="modal-btn confirm" id="confirmBtn">Oznacz tutaj</button>
-                <button class="modal-btn cancel" id="cancelBtn">Anuluj</button>
-            </div>
+<div class="page-content">
+    <div class="sidebar">
+        <h3>Sektor</h3>
+        <p class="value muted" id="sidebarSector">—</p>
+
+        <h3>Oznaczone przez</h3>
+        <p class="value" id="sidebarMarkedBy">—</p>
+
+        <h3>Ostatni resp</h3>
+        <p class="value" id="sidebarLastRespawn">—</p>
+
+        <h3>Następny resp za</h3>
+        <p class="value countdown" id="sidebarCountdown">—:—</p>
+
+        <h3>Zoom</h3>
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomOutBtn">−</button>
+            <button class="zoom-btn" id="zoomInBtn">+</button>
         </div>
     </div>
 
-    <button class="reset-btn" id="resetBtn">🗑️ Wyczyść oznaczenie</button>
+    <div class="map-area">
+        <div class="map-wrap">
+            <img id="mapImg" src="/files/Joan.png" alt="Mapa Chunjo" />
+            <div id="mapPin"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-backdrop-ore" id="confirmModal">
+    <div class="modal-box">
+        <p>Oznaczyć rudę w tym miejscu?</p>
+        <div class="modal-actions">
+            <button class="modal-btn confirm" id="confirmBtn">Oznacz tutaj</button>
+            <button class="modal-btn cancel" id="cancelBtn">Anuluj</button>
+        </div>
+    </div>
+</div>
+
+<button class="reset-btn" id="resetBtn">🗑️ Wyczyść oznaczenie</button>
 }
 <script>
     let pendingX = null;
     let pendingY = null;
     let isOreAdmin = false;
+    let lastOreData = null;
+    let zoomLevel = 1;
+    const ZOOM_MIN = 0.5;
+    const ZOOM_MAX = 3;
+    const ZOOM_STEP = 0.25;
+    const BASE_HEIGHT_VH = 80;
+
+    function applyZoom() {
+        const img = document.getElementById('mapImg');
+        if (!img) return;
+        const baseHeight = window.innerHeight * (BASE_HEIGHT_VH / 100);
+        img.style.height = (baseHeight * zoomLevel) + 'px';
+        img.style.width = 'auto';
+        if (lastOreData) renderState(lastOreData);
+    }
 
     async function loadOreState() {
         try {
             const resp = await fetch('/ore/state');
             const data = await resp.json();
+            lastOreData = data;
             renderState(data);
         } catch (e) {
             console.warn('Failed to load ore state', e);
@@ -181,11 +273,10 @@ else
 
     function renderState(data) {
         const pin = document.getElementById('mapPin');
-        const label = document.getElementById('mapLabel');
+        const img = document.getElementById('mapImg');
+        const wrap = img.closest('.map-wrap');
 
         if (data.marked) {
-            const img = document.getElementById('mapImg');
-            const wrap = img.closest('.map-wrap');
             const imgRect = img.getBoundingClientRect();
             const wrapRect = wrap.getBoundingClientRect();
 
@@ -198,11 +289,49 @@ else
             pin.style.left = (offsetLeft + data.x * scaleX) + 'px';
             pin.style.top = (offsetTop + data.y * scaleY) + 'px';
             pin.style.display = 'block';
-            label.textContent = `Oznaczone przez ${data.marked_by_username}`;
+
+            document.getElementById('sidebarMarkedBy').textContent = data.marked_by_username;
         } else {
             pin.style.display = 'none';
-            label.textContent = 'Kliknij mapę, aby oznaczyć lokalizację rudy';
+            document.getElementById('sidebarMarkedBy').textContent = '—';
         }
+
+        if (data.window_start) {
+            const start = new Date(data.window_start);
+            document.getElementById('sidebarLastRespawn').textContent =
+                start.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        if (data.window_end) {
+            updateCountdown(new Date(data.window_end));
+        }
+    }
+
+    let countdownTarget = null;
+    let countdownInterval = null;
+
+    function updateCountdown(targetDate) {
+        countdownTarget = targetDate;
+        if (countdownInterval) clearInterval(countdownInterval);
+        tickCountdown();
+        countdownInterval = setInterval(tickCountdown, 1000);
+    }
+
+    function tickCountdown() {
+        if (!countdownTarget) return;
+        const el = document.getElementById('sidebarCountdown');
+        const diffMs = countdownTarget.getTime() - Date.now();
+
+        if (diffMs <= 0) {
+            el.textContent = '00:00';
+            loadOreState();
+            return;
+        }
+
+        const totalSeconds = Math.floor(diffMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        el.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
     async function checkOreAdmin() {
@@ -279,6 +408,19 @@ else
             }
         });
 
+        document.getElementById('zoomInBtn').addEventListener('click', () => {
+            zoomLevel = Math.min(ZOOM_MAX, zoomLevel + ZOOM_STEP);
+            applyZoom();
+        });
+
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            zoomLevel = Math.max(ZOOM_MIN, zoomLevel - ZOOM_STEP);
+            applyZoom();
+        });
+
+        window.addEventListener('resize', applyZoom);
+
+        applyZoom();
         loadOreState();
         checkOreAdmin();
         setInterval(loadOreState, 15000);
