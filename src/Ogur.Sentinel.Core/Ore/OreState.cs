@@ -10,6 +10,9 @@ public sealed class OreState
     public string? MarkedByUsername { get; private set; }
     public DateTimeOffset? MarkedAtUtc { get; private set; }
 
+    public ulong StaticMessageId { get; private set; }
+    public ulong DynamicMessageId { get; private set; }
+
     public void SetMark(double x, double y, string userId, string username, DateTimeOffset atUtc)
     {
         lock (_lock)
@@ -34,6 +37,16 @@ public sealed class OreState
         }
     }
 
+    public void SetStaticMessageId(ulong id)
+    {
+        lock (_lock) { StaticMessageId = id; }
+    }
+
+    public void SetDynamicMessageId(ulong id)
+    {
+        lock (_lock) { DynamicMessageId = id; }
+    }
+
     public OrePersisted ToPersisted()
     {
         lock (_lock)
@@ -44,7 +57,9 @@ public sealed class OreState
                 MarkedY = MarkedY,
                 MarkedByUserId = MarkedByUserId,
                 MarkedByUsername = MarkedByUsername,
-                MarkedAtUtc = MarkedAtUtc
+                MarkedAtUtc = MarkedAtUtc,
+                StaticMessageId = StaticMessageId,
+                DynamicMessageId = DynamicMessageId
             };
         }
     }
@@ -58,6 +73,8 @@ public sealed class OreState
             MarkedByUserId = persisted.MarkedByUserId;
             MarkedByUsername = persisted.MarkedByUsername;
             MarkedAtUtc = persisted.MarkedAtUtc;
+            StaticMessageId = persisted.StaticMessageId;
+            DynamicMessageId = persisted.DynamicMessageId;
         }
     }
 }
@@ -69,4 +86,6 @@ public sealed class OrePersisted
     public string? MarkedByUserId { get; set; }
     public string? MarkedByUsername { get; set; }
     public DateTimeOffset? MarkedAtUtc { get; set; }
+    public ulong StaticMessageId { get; set; }
+    public ulong DynamicMessageId { get; set; }
 }

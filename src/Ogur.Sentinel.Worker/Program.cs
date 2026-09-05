@@ -48,6 +48,7 @@ try
 
     // --- Application Workers ---
     builder.Services.AddHostedService<RespawnWorker>();
+    builder.Services.AddSingleton<OreMapImageService>();
 
     // --- Internal HTTP Endpoints ---
     builder.Services.AddHttpClient();
