@@ -12,10 +12,13 @@ public sealed class OreState
 
     public ulong StaticMessageId { get; private set; }
     public ulong DynamicMessageId { get; private set; }
+    public string? MarkedSector { get; private set; }
+
     public event Action? OnChanged;
 
 
-    public void SetMark(double x, double y, string userId, string username, DateTimeOffset atUtc)
+
+    public void SetMark(double x, double y, string userId, string username, DateTimeOffset atUtc, string? sector)
     {
         lock (_lock)
         {
@@ -24,9 +27,9 @@ public sealed class OreState
             MarkedByUserId = userId;
             MarkedByUsername = username;
             MarkedAtUtc = atUtc;
+            MarkedSector = sector;
         }
         OnChanged?.Invoke();
-
     }
 
     public void Clear()
@@ -38,9 +41,9 @@ public sealed class OreState
             MarkedByUserId = null;
             MarkedByUsername = null;
             MarkedAtUtc = null;
+            MarkedSector = null;
         }
         OnChanged?.Invoke();
-
     }
 
     public void SetStaticMessageId(ulong id)

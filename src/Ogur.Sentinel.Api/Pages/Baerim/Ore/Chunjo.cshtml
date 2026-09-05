@@ -291,6 +291,7 @@ else
             pin.style.display = 'block';
 
             document.getElementById('sidebarMarkedBy').textContent = data.marked_by_username;
+            document.getElementById('sidebarSector').textContent = data.sector || '—';
         } else {
             pin.style.display = 'none';
             document.getElementById('sidebarMarkedBy').textContent = '—';

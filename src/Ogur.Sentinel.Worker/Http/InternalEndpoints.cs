@@ -32,6 +32,7 @@ public sealed class InternalEndpoints
     private readonly OreStore _oreStore;
     private readonly SettingsStore _store;
     private readonly OreDiscordPostService _orePost;
+    private readonly OreSectorResolver _sectorResolver;
     private readonly SettingsOptions _opts;
     private readonly GatewayClient _client;
     private readonly RespawnOptions _respawnOpts;
@@ -47,6 +48,7 @@ public sealed class InternalEndpoints
         OreStore oreStore,
         SettingsStore store,
         OreDiscordPostService orePost,
+        OreSectorResolver sectorResolver,
         IOptions<SettingsOptions> opts,
         GatewayClient client,
         IOptions<RespawnOptions> respawnOpts,
@@ -60,6 +62,7 @@ public sealed class InternalEndpoints
         _oreStore = oreStore;
         _store = store;
         _orePost = orePost;
+        _sectorResolver = sectorResolver;
         _opts = opts.Value;
         _client = client;
         _respawnOpts = respawnOpts.Value;
@@ -558,7 +561,8 @@ webapp.MapPost("/guilds/{guildId}/roles/ogur", async (
         marked_by_username = isCurrent ? _oreState.MarkedByUsername : null,
         marked_at = isCurrent ? _oreState.MarkedAtUtc : null,
         window_start = windowStart,
-        window_end = windowEnd
+        window_end = windowEnd,
+        sector = isCurrent ? _oreState.MarkedSector : null,
     });
 });
 
@@ -585,14 +589,15 @@ webapp.MapPost("/guilds/{guildId}/roles/ogur", async (
 
             var now = DateTimeOffset.UtcNow;
 
-            _oreState.SetMark(x, y, userId, username, now);
+            var sector = _sectorResolver.ResolveSector(x, y);
+            _oreState.SetMark(x, y, userId, username, now, sector);
             await _oreStore.SaveAsync(_oreState.ToPersisted());
 
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    await _orePost.PublishMarkAsync(x, y, username);
+                    await _orePost.PublishMarkAsync(x, y, username, sector);
                 }
                 catch (Exception ex)
                 {

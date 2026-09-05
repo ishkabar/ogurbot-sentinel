@@ -60,7 +60,7 @@ public sealed class OreDiscordPostService
         _logger.LogInformation("[ORE-POST] Static post created (id={Id})", sent.Id);
     }
 
-    public async Task PublishMarkAsync(double x, double y, string username, CancellationToken ct = default)
+    public async Task PublishMarkAsync(double x, double y, string username, string sector, CancellationToken ct = default)
     {
         await _publishLock.WaitAsync(ct);
         try
@@ -78,7 +78,7 @@ public sealed class OreDiscordPostService
 
             var message = new MessageProperties
             {
-                Content = $"📍 Ruda oznaczona przez **{username}**\nSektor: _—_",
+                Content = $"📍 Ruda oznaczona przez **{username}**\nSektor: **{sector}**",
                 Attachments = [new AttachmentProperties("chunjo_mark.png", stream)]
             };
 

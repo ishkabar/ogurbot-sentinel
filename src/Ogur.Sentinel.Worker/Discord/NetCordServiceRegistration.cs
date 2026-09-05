@@ -41,6 +41,7 @@ public static class NetCordServiceRegistration
         services.AddSingleton<RespawnModule>();
         services.AddSingleton<LeaveModule>();
         services.AddSingleton<AdminBreakModule>();
+        services.AddSingleton<OreSectorResolver>();
 
         // 4. Add command registration service
         services.AddHostedService<CommandRegistrationService>();
