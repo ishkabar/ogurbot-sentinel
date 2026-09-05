@@ -298,8 +298,9 @@ else
 
         if (data.window_start) {
             const start = new Date(data.window_start);
+            const respawnTime = new Date(start.getTime() + 2 * 60 * 1000);
             document.getElementById('sidebarLastRespawn').textContent =
-                start.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                respawnTime.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
         }
 
         if (data.window_end) {

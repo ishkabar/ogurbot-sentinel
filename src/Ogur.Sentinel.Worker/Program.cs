@@ -49,6 +49,7 @@ try
     // --- Application Workers ---
     builder.Services.AddHostedService<RespawnWorker>();
     builder.Services.AddSingleton<OreMapImageService>();
+    builder.Services.AddSingleton<OreDiscordPostService>();
 
     // --- Internal HTTP Endpoints ---
     builder.Services.AddHttpClient();
@@ -59,6 +60,14 @@ try
     // --- Initialize Persisted State ---
     await InitializeRespawnState(app.Services);
     await InitializeOreState(app.Services);
+    var orePostService = app.Services.GetRequiredService<OreDiscordPostService>();
+    _ = Task.Run(async () =>
+    {
+        // Poczekaj aż bot faktycznie połączy się z Discordem, zanim spróbujemy wysłać wiadomość
+        var readyService = app.Services.GetRequiredService<DiscordReadyService>();
+        await readyService.WaitForStableAsync(CancellationToken.None);
+        await orePostService.EnsureStaticPostAsync();
+    });
 
     // --- Map Internal Endpoints ---
     app.Services.GetRequiredService<InternalEndpoints>().Map(app);

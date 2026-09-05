@@ -31,6 +31,7 @@ public sealed class InternalEndpoints
     private readonly OreState _oreState;
     private readonly OreStore _oreStore;
     private readonly SettingsStore _store;
+    private readonly OreDiscordPostService _orePost;
     private readonly SettingsOptions _opts;
     private readonly GatewayClient _client;
     private readonly RespawnOptions _respawnOpts;
@@ -45,6 +46,7 @@ public sealed class InternalEndpoints
         OreState oreState,
         OreStore oreStore,
         SettingsStore store,
+        OreDiscordPostService orePost,
         IOptions<SettingsOptions> opts,
         GatewayClient client,
         IOptions<RespawnOptions> respawnOpts,
@@ -57,6 +59,7 @@ public sealed class InternalEndpoints
         _oreState = oreState;
         _oreStore = oreStore;
         _store = store;
+        _orePost = orePost;
         _opts = opts.Value;
         _client = client;
         _respawnOpts = respawnOpts.Value;
@@ -584,6 +587,18 @@ webapp.MapPost("/guilds/{guildId}/roles/ogur", async (
 
             _oreState.SetMark(x, y, userId, username, now);
             await _oreStore.SaveAsync(_oreState.ToPersisted());
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _orePost.PublishMarkAsync(x, y, username);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "[ORE-MARK] Failed to publish Discord post");
+                }
+            });
 
             logger.LogInformation("[ORE-MARK] {Username} ({UserId}) marked ({X}, {Y})", username, userId, x, y);
 
