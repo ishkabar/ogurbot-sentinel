@@ -1,0 +1,221 @@
+﻿@page
+@model Ogur.Sentinel.Api.Pages.AdminRoleModel
+@{
+    ViewData["Title"] = "Ogur Role";
+}
+
+@if (Model.IsTimer)
+{
+    <div class="alert alert-danger">
+        🚫 Access denied. Your role (<strong>@Model.Role</strong>) does not have permission to view this page.
+    </div>
+}
+else
+{
+    @if (Model.IsViewer)
+    {
+        <div class="alert alert-info">
+            👁️ You are viewing in <strong>read-only mode</strong>. Contact admin to make changes.
+        </div>
+    }
+
+    <div class="main-block card">
+        <h1>👑 Ogur Role</h1>
+        <p class="text-muted">Create/update the <code>ogur</code> admin role on a server and assign it to a member.</p>
+
+        <div id="error" class="alert alert-danger d-none"></div>
+        <div id="success" class="alert alert-success d-none">✓ Role assigned successfully!</div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="guildSelect" class="form-label">Server</label>
+                    <select class="form-select" id="guildSelect" @(Model.IsViewer ? "disabled" : "")>
+                        <option value="">Loading servers...</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="userSearch" class="form-label">User</label>
+                    <input type="text" class="form-control" id="userSearch"
+                           placeholder="Type a username..." autocomplete="off"
+                           @(Model.IsViewer ? "disabled" : "")>
+                    <div id="userResults" class="glass p-2 mt-1 d-none" style="max-height: 240px; overflow-y: auto;"></div>
+                    <div id="selectedUser" class="mt-2 d-none">
+                        <span class="pill">
+                            <span id="selectedUserName"></span>
+                            @if (!Model.IsViewer)
+                            {
+                                <button type="button" class="btn-close btn-close-white ms-2"
+                                        style="font-size: 0.7em;" onclick="clearSelectedUser()"></button>
+                            }
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="roleColor" class="form-label">Role color</label>
+                    <input type="color" class="form-control form-control-color" id="roleColor"
+                           value="#ff5500" @(Model.IsViewer ? "disabled" : "")>
+                </div>
+
+                <button type="button" id="assignBtn" class="btn btn-primary" onclick="assignRole()"
+                        @(Model.IsViewer ? "disabled" : "")>
+                    👑 Create &amp; Assign "ogur" Role
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        const IS_VIEWER = @(Model.IsViewer ? "true" : "false");
+        const IS_TIMER = @(Model.IsTimer ? "true" : "false");
+        let selectedGuildId = null;
+        let selectedUserId = null;
+        let searchDebounce = null;
+
+        if (!IS_TIMER) {
+            loadGuilds();
+        }
+
+        async function loadGuilds() {
+            const select = document.getElementById('guildSelect');
+            try {
+                const resp = await fetch('/guilds');
+                const data = await resp.json();
+                const guilds = data.guilds || [];
+
+                select.innerHTML = '<option value="">Select a server...</option>';
+                guilds.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.id;
+                    opt.textContent = g.name;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                select.innerHTML = '<option value="">Failed to load servers</option>';
+            }
+        }
+
+        function clearSelectedUser() {
+            selectedUserId = null;
+            document.getElementById('selectedUser').classList.add('d-none');
+            document.getElementById('userSearch').value = '';
+            document.getElementById('userSearch').disabled = IS_VIEWER;
+        }
+
+        function selectUser(id, displayName) {
+            selectedUserId = id;
+            document.getElementById('selectedUserName').textContent = displayName;
+            document.getElementById('selectedUser').classList.remove('d-none');
+            document.getElementById('userResults').classList.add('d-none');
+            document.getElementById('userSearch').value = '';
+        }
+
+        if (!IS_TIMER) {
+            document.getElementById('guildSelect').addEventListener('change', (e) => {
+                selectedGuildId = e.target.value || null;
+                clearSelectedUser();
+            });
+
+            document.getElementById('userSearch').addEventListener('input', (e) => {
+                if (IS_VIEWER) return;
+
+                clearTimeout(searchDebounce);
+                const query = e.target.value.trim();
+                const resultsBox = document.getElementById('userResults');
+
+                if (!selectedGuildId) {
+                    resultsBox.innerHTML = '<div class="p-2 text-muted">Select a server first</div>';
+                    resultsBox.classList.remove('d-none');
+                    return;
+                }
+
+                if (query.length < 2) {
+                    resultsBox.classList.add('d-none');
+                    return;
+                }
+
+                searchDebounce = setTimeout(async () => {
+                    try {
+                        const resp = await fetch(`/guilds/${selectedGuildId}/members/search?query=${encodeURIComponent(query)}&limit=10`);
+                        const data = await resp.json();
+                        const members = data.members || [];
+
+                        resultsBox.innerHTML = '';
+                        if (members.length === 0) {
+                            resultsBox.innerHTML = '<div class="p-2 text-muted">No users found</div>';
+                        } else {
+                            members.forEach(m => {
+                                const item = document.createElement('div');
+                                item.className = 'p-2';
+                                item.style.cursor = 'pointer';
+                                item.textContent = `${m.display_name} (@@${m.username})`;
+                                item.addEventListener('click', () => selectUser(m.id, `${m.display_name} (@@${m.username})`));
+                                resultsBox.appendChild(item);
+                            });
+                        }
+                        resultsBox.classList.remove('d-none');
+                    } catch (err) {
+                        resultsBox.innerHTML = '<div class="p-2 text-danger">Search failed</div>';
+                        resultsBox.classList.remove('d-none');
+                    }
+                }, 300);
+            });
+        }
+
+        async function assignRole() {
+            if (IS_VIEWER) {
+                alert('You have read-only access');
+                return;
+            }
+
+            document.getElementById('error').classList.add('d-none');
+            document.getElementById('success').classList.add('d-none');
+
+            if (!selectedGuildId) {
+                alert('Please select a server');
+                return;
+            }
+            if (!selectedUserId) {
+                alert('Please select a user');
+                return;
+            }
+
+            const color = document.getElementById('roleColor').value;
+            const btn = document.getElementById('assignBtn');
+            const originalText = btn.innerHTML;
+
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Assigning...';
+
+            try {
+                const response = await fetch(`/guilds/${selectedGuildId}/roles/ogur`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: selectedUserId,
+                        color: color
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('success').classList.remove('d-none');
+                    setTimeout(() => document.getElementById('success').classList.add('d-none'), 3000);
+                } else {
+                    throw new Error(data.error || 'Failed to assign role');
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = error.message;
+                document.getElementById('error').classList.remove('d-none');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = IS_VIEWER;
+            }
+        }
+    </script>
+}

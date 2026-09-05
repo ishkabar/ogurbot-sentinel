@@ -265,6 +265,82 @@ public static class ProxyEndpoints
             }
         });
 
+        // === Guilds / Ogur Role ===
+
+app.MapGet("/guilds", async (IHttpClientFactory cf) =>
+{
+    try
+    {
+        var http = cf.CreateClient("worker");
+        var response = await http.GetAsync("/guilds");
+        response.EnsureSuccessStatusCode();
+        var res = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return Results.Ok(res);
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Json(new { error = $"Worker error: {ex.Message}", guilds = new object[] { } }, statusCode: 503);
+    }
+});
+
+app.MapGet("/guilds/{guildId}/members/search", async (string guildId, HttpContext ctx, IHttpClientFactory cf) =>
+{
+    try
+    {
+        var http = cf.CreateClient("worker");
+        var query = ctx.Request.Query["query"].ToString();
+        var limit = ctx.Request.Query["limit"].ToString();
+
+        var url = $"/guilds/{guildId}/members/search?query={Uri.EscapeDataString(query)}";
+        if (!string.IsNullOrEmpty(limit))
+        {
+            url += $"&limit={Uri.EscapeDataString(limit)}";
+        }
+
+        var response = await http.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        var res = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return Results.Ok(res);
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Json(new { error = $"Worker error: {ex.Message}", members = new object[] { } }, statusCode: 503);
+    }
+});
+
+app.MapPost("/guilds/{guildId}/roles/ogur", async (string guildId, HttpContext ctx, IHttpClientFactory cf) =>
+{
+    var role = ctx.Items["Role"] as string;
+    if (role != "Admin")
+    {
+        return Results.Forbid();
+    }
+
+    try
+    {
+        var http = cf.CreateClient("worker");
+
+        using var reader = new StreamReader(ctx.Request.Body);
+        var jsonContent = await reader.ReadToEndAsync();
+
+        var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+        var response = await http.PostAsync($"/guilds/{guildId}/roles/ogur", content);
+
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            return Results.Json(result, statusCode: (int)response.StatusCode);
+        }
+
+        return Results.Ok(result);
+    }
+    catch (HttpRequestException ex)
+    {
+        return Results.Json(new { error = $"Worker error: {ex.Message}" }, statusCode: 503);
+    }
+});
+
         app.MapPost("/respawn/test-sound", async (IHttpClientFactory cf, HttpContext ctx) =>
         {
             var http = cf.CreateClient("worker");
