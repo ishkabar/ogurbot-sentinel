@@ -25,4 +25,15 @@ public static class OreScheduling
         var (windowStart, windowEnd) = GetCurrentWindow(nowUtc);
         return timestampUtc.Value >= windowStart && timestampUtc.Value < windowEnd;
     }
+
+    public static DateTimeOffset GetNextDeletionTimeUtc(DateTimeOffset nowUtc)
+    {
+        var (windowStart, _) = GetCurrentWindow(nowUtc);
+        var deletionTime = windowStart + TimeSpan.FromMinutes(14);
+
+        if (deletionTime <= nowUtc)
+            deletionTime += Period;
+
+        return deletionTime;
+    }
 }

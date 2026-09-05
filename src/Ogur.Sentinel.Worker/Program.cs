@@ -50,6 +50,7 @@ try
     builder.Services.AddHostedService<RespawnWorker>();
     builder.Services.AddSingleton<OreMapImageService>();
     builder.Services.AddSingleton<OreDiscordPostService>();
+    builder.Services.AddHostedService<OreCleanupWorker>();
 
     // --- Internal HTTP Endpoints ---
     builder.Services.AddHttpClient();
