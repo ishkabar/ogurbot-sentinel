@@ -22,6 +22,18 @@ public sealed class OreState
         }
     }
 
+    public void Clear()
+    {
+        lock (_lock)
+        {
+            MarkedX = 0;
+            MarkedY = 0;
+            MarkedByUserId = null;
+            MarkedByUsername = null;
+            MarkedAtUtc = null;
+        }
+    }
+
     public OrePersisted ToPersisted()
     {
         lock (_lock)

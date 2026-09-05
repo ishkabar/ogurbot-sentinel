@@ -559,49 +559,44 @@ webapp.MapPost("/guilds/{guildId}/roles/ogur", async (
     });
 });
 
-webapp.MapPost("/ore/mark", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
-{
-    using var reader = new StreamReader(ctx.Request.Body);
-    var doc = JsonDocument.Parse(await reader.ReadToEndAsync());
-
-    if (!doc.RootElement.TryGetProperty("x", out var xEl) ||
-        !doc.RootElement.TryGetProperty("y", out var yEl) ||
-        !doc.RootElement.TryGetProperty("user_id", out var uidEl) ||
-        !doc.RootElement.TryGetProperty("username", out var unameEl))
-    {
-        return Results.BadRequest(new { error = "x, y, user_id, username are required" });
-    }
-
-    var x = xEl.GetDouble();
-    var y = yEl.GetDouble();
-    var userId = uidEl.GetString() ?? "";
-    var username = unameEl.GetString() ?? "";
-
-    if (x < 0 || x > 171 || y < 0 || y > 214)
-        return Results.BadRequest(new { error = "Coordinates outside map bounds" });
-
-    var now = DateTimeOffset.UtcNow;
-
-    if (OreScheduling.IsInCurrentWindow(_oreState.MarkedAtUtc, now))
-    {
-        logger.LogWarning("[ORE-MARK] Rejected - already marked this window by {User}", _oreState.MarkedByUsername);
-        return Results.Json(new
+        webapp.MapPost("/ore/mark", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
         {
-            error = "Already marked for this respawn window",
-            x = _oreState.MarkedX,
-            y = _oreState.MarkedY,
-            marked_by_username = _oreState.MarkedByUsername
-        }, statusCode: 409);
-    }
+            using var reader = new StreamReader(ctx.Request.Body);
+            var doc = JsonDocument.Parse(await reader.ReadToEndAsync());
 
-    _oreState.SetMark(x, y, userId, username, now);
-    await _oreStore.SaveAsync(_oreState.ToPersisted());
+            if (!doc.RootElement.TryGetProperty("x", out var xEl) ||
+                !doc.RootElement.TryGetProperty("y", out var yEl) ||
+                !doc.RootElement.TryGetProperty("user_id", out var uidEl) ||
+                !doc.RootElement.TryGetProperty("username", out var unameEl))
+            {
+                return Results.BadRequest(new { error = "x, y, user_id, username are required" });
+            }
 
-    logger.LogInformation("[ORE-MARK] {Username} ({UserId}) marked ({X}, {Y})", username, userId, x, y);
+            var x = xEl.GetDouble();
+            var y = yEl.GetDouble();
+            var userId = uidEl.GetString() ?? "";
+            var username = unameEl.GetString() ?? "";
 
-    return Results.Ok(new { success = true, x, y, marked_by_username = username, marked_at = now });
-});
+            if (x < 0 || x > 171 || y < 0 || y > 214)
+                return Results.BadRequest(new { error = "Coordinates outside map bounds" });
 
+            var now = DateTimeOffset.UtcNow;
+
+            _oreState.SetMark(x, y, userId, username, now);
+            await _oreStore.SaveAsync(_oreState.ToPersisted());
+
+            logger.LogInformation("[ORE-MARK] {Username} ({UserId}) marked ({X}, {Y})", username, userId, x, y);
+
+            return Results.Ok(new { success = true, x, y, marked_by_username = username, marked_at = now });
+        });
+
+        webapp.MapPost("/ore/reset", async (ILogger<InternalEndpoints> logger) =>
+        {
+            _oreState.Clear();
+            await _oreStore.SaveAsync(_oreState.ToPersisted());
+            logger.LogInformation("[ORE-RESET] Mark manually cleared");
+            return Results.Ok(new { success = true });
+        });
         webapp.MapPost("/respawn/test-sound", async (HttpContext ctx, ILogger<InternalEndpoints> logger) =>
         {
             var sound = ctx.Request.Query["sound"].ToString();

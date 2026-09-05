@@ -8,6 +8,7 @@ namespace Ogur.Sentinel.Api.Http;
 
 public static class ProxyEndpoints
 {
+    private const string OreAdminDiscordId = "822151223116824588";
     // ========== API endpoints (WPF token) ==========
 
     public static void MapProxyEndpoints(this WebApplication app)
@@ -405,6 +406,55 @@ public static class ProxyEndpoints
             return response.IsSuccessStatusCode
                 ? Results.Ok(result)
                 : Results.Json(result, statusCode: (int)response.StatusCode);
+        });
+
+        app.MapPost("/ore/reset", async (HttpContext ctx, IDataProtectionProvider dp, IHttpClientFactory cf) =>
+        {
+            var cookie = ctx.Request.Cookies["ore_discord_identity"];
+            if (string.IsNullOrEmpty(cookie))
+                return Results.Json(new { error = "Not logged in" }, statusCode: 401);
+
+            string discordId;
+            try
+            {
+                var protector = dp.CreateProtector("OreDiscordIdentity");
+                var json = protector.Unprotect(cookie);
+                var doc = JsonDocument.Parse(json);
+                discordId = doc.RootElement.GetProperty("id").GetString()!;
+            }
+            catch
+            {
+                return Results.Json(new { error = "Invalid session" }, statusCode: 401);
+            }
+
+            if (discordId != OreAdminDiscordId)
+                return Results.Forbid();
+
+            var http = cf.CreateClient("worker");
+            var res = await http.PostAsync("/ore/reset", null);
+            res.EnsureSuccessStatusCode();
+            var result = await res.Content.ReadFromJsonAsync<JsonElement>();
+            return Results.Ok(result);
+        });
+
+        app.MapGet("/ore/whoami", (HttpContext ctx, IDataProtectionProvider dp) =>
+        {
+            var cookie = ctx.Request.Cookies["ore_discord_identity"];
+            if (string.IsNullOrEmpty(cookie))
+                return Results.Ok(new { logged_in = false, is_ore_admin = false });
+
+            try
+            {
+                var protector = dp.CreateProtector("OreDiscordIdentity");
+                var json = protector.Unprotect(cookie);
+                var doc = JsonDocument.Parse(json);
+                var discordId = doc.RootElement.GetProperty("id").GetString();
+                return Results.Ok(new { logged_in = true, is_ore_admin = discordId == OreAdminDiscordId });
+            }
+            catch
+            {
+                return Results.Ok(new { logged_in = false, is_ore_admin = false });
+            }
         });
 
         app.MapPost("/respawn/test-sound", async (IHttpClientFactory cf, HttpContext ctx) =>

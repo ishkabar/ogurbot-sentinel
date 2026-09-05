@@ -45,6 +45,7 @@
         .login-btn:hover { background: #4752c4; color: #fff; }
 
         .map-wrap {
+            position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -52,7 +53,56 @@
             padding: 0 20px;
         }
 
-        .map-wrap { position: relative; }
+        .modal-backdrop-ore {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-backdrop-ore.show { display: flex; }
+        .modal-box {
+            background: #1a1a1e;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 24px 28px;
+            text-align: center;
+            min-width: 260px;
+        }
+        .modal-box p { margin: 0 0 18px; color: #ddd; font-size: 1rem; }
+        .modal-actions { display: flex; gap: 10px; justify-content: center; }
+        .modal-btn {
+            padding: 10px 22px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .modal-btn.confirm { background: #43b581; color: #fff; }
+        .modal-btn.confirm:hover { background: #379165; }
+        .modal-btn.cancel { background: #444; color: #ddd; }
+        .modal-btn.cancel:hover { background: #555; }
+
+        .reset-btn {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ed4245;
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 50;
+        }
+        .reset-btn:hover { background: #c93639; }
+
         #mapPin {
             position: absolute;
             width: 14px;
@@ -72,14 +122,6 @@
             font-size: 0.95rem;
         }
 
-        #mapImg {
-            height: 100%;
-            width: auto;
-            max-width: 100%;
-            image-rendering: pixelated;
-            cursor: crosshair;
-            border: 1px solid #333;
-        }
     </style>
 </head>
 <body>
@@ -110,9 +152,22 @@ else
         <div id="mapPin"></div>
     </div>
     <p id="mapLabel"></p>
+    <div class="modal-backdrop-ore" id="confirmModal">
+        <div class="modal-box">
+            <p>Oznaczyć rudę w tym miejscu?</p>
+            <div class="modal-actions">
+                <button class="modal-btn confirm" id="confirmBtn">Oznacz tutaj</button>
+                <button class="modal-btn cancel" id="cancelBtn">Anuluj</button>
+            </div>
+        </div>
+    </div>
+
+    <button class="reset-btn" id="resetBtn">🗑️ Wyczyść oznaczenie</button>
 }
 <script>
-    let mapMarked = false;
+    let pendingX = null;
+    let pendingY = null;
+    let isOreAdmin = false;
 
     async function loadOreState() {
         try {
@@ -127,55 +182,105 @@ else
     function renderState(data) {
         const pin = document.getElementById('mapPin');
         const label = document.getElementById('mapLabel');
-        const img = document.getElementById('mapImg');
 
         if (data.marked) {
-            mapMarked = true;
-            const rect = img.getBoundingClientRect();
-            const scaleX = rect.width / 171;
-            const scaleY = rect.height / 214;
-            pin.style.left = (data.x * scaleX) + 'px';
-            pin.style.top = (data.y * scaleY) + 'px';
+            const img = document.getElementById('mapImg');
+            const wrap = img.closest('.map-wrap');
+            const imgRect = img.getBoundingClientRect();
+            const wrapRect = wrap.getBoundingClientRect();
+
+            const scaleX = imgRect.width / 171;
+            const scaleY = imgRect.height / 214;
+
+            const offsetLeft = imgRect.left - wrapRect.left;
+            const offsetTop = imgRect.top - wrapRect.top;
+
+            pin.style.left = (offsetLeft + data.x * scaleX) + 'px';
+            pin.style.top = (offsetTop + data.y * scaleY) + 'px';
             pin.style.display = 'block';
             label.textContent = `Oznaczone przez ${data.marked_by_username}`;
-            img.style.cursor = 'default';
         } else {
-            mapMarked = false;
             pin.style.display = 'none';
             label.textContent = 'Kliknij mapę, aby oznaczyć lokalizację rudy';
-            img.style.cursor = 'crosshair';
+        }
+    }
+
+    async function checkOreAdmin() {
+        try {
+            const resp = await fetch('/ore/whoami');
+            const data = await resp.json();
+            isOreAdmin = data.is_ore_admin === true;
+            document.getElementById('resetBtn').style.display = isOreAdmin ? 'block' : 'none';
+        } catch (e) {
+            console.warn('Failed to check ore admin status', e);
+        }
+    }
+
+    function showConfirmModal(x, y) {
+        pendingX = x;
+        pendingY = y;
+        document.getElementById('confirmModal').classList.add('show');
+    }
+
+    function hideConfirmModal() {
+        pendingX = null;
+        pendingY = null;
+        document.getElementById('confirmModal').classList.remove('show');
+    }
+
+    async function submitMark(x, y) {
+        try {
+            const resp = await fetch('/ore/mark', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ x, y })
+            });
+            const data = await resp.json();
+
+            if (resp.ok) {
+                loadOreState();
+            } else {
+                alert(data.error || 'Nie udało się oznaczyć lokalizacji');
+            }
+        } catch (err) {
+            alert('Błąd sieci: ' + err.message);
         }
     }
 
     const mapImgEl = document.getElementById('mapImg');
     if (mapImgEl) {
-        mapImgEl.addEventListener('click', async (e) => {
-            if (mapMarked) return;
-
+        mapImgEl.addEventListener('click', (e) => {
             const rect = e.target.getBoundingClientRect();
             const x = ((e.clientX - rect.left) / rect.width) * 171;
             const y = ((e.clientY - rect.top) / rect.height) * 214;
+            showConfirmModal(x, y);
+        });
 
+        document.getElementById('confirmBtn').addEventListener('click', () => {
+            if (pendingX !== null && pendingY !== null) {
+                submitMark(pendingX, pendingY);
+            }
+            hideConfirmModal();
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', hideConfirmModal);
+
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            if (!confirm('Na pewno wyczyścić oznaczenie?')) return;
             try {
-                const resp = await fetch('/ore/mark', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ x, y })
-                });
-                const data = await resp.json();
-
+                const resp = await fetch('/ore/reset', { method: 'POST' });
                 if (resp.ok) {
                     loadOreState();
                 } else {
-                    alert(data.error || 'Nie udało się oznaczyć lokalizacji');
-                    loadOreState();
+                    alert('Nie udało się zresetować (brak uprawnień?)');
                 }
-            } catch (err) {
-                alert('Błąd sieci: ' + err.message);
+            } catch (e) {
+                alert('Błąd sieci: ' + e.message);
             }
         });
 
         loadOreState();
+        checkOreAdmin();
         setInterval(loadOreState, 15000);
     }
 </script>
