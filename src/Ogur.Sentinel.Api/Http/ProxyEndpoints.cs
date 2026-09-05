@@ -364,26 +364,8 @@ public static class ProxyEndpoints
             }
         });
 
-        app.MapPost("/ore/mark", async (HttpContext ctx, IHttpClientFactory cf, IDataProtectionProvider dp) =>
+        app.MapPost("/ore/mark", async (HttpContext ctx, IHttpClientFactory cf) =>
         {
-            var cookie = ctx.Request.Cookies["ore_discord_identity"];
-            if (string.IsNullOrEmpty(cookie))
-                return Results.Json(new { error = "Not logged in" }, statusCode: 401);
-
-            string discordId, username;
-            try
-            {
-                var protector = dp.CreateProtector("OreDiscordIdentity");
-                var json = protector.Unprotect(cookie);
-                var doc = JsonDocument.Parse(json);
-                discordId = doc.RootElement.GetProperty("id").GetString()!;
-                username = doc.RootElement.GetProperty("username").GetString()!;
-            }
-            catch
-            {
-                return Results.Json(new { error = "Invalid session" }, statusCode: 401);
-            }
-
             JsonElement body;
             try
             {
@@ -397,7 +379,11 @@ public static class ProxyEndpoints
             if (!body.TryGetProperty("x", out var xEl) || !body.TryGetProperty("y", out var yEl))
                 return Results.BadRequest(new { error = "x, y are required" });
 
-            var payload = new { x = xEl.GetDouble(), y = yEl.GetDouble(), user_id = discordId, username };
+            var username = body.TryGetProperty("username", out var unameEl) ? unameEl.GetString() : null;
+            if (string.IsNullOrWhiteSpace(username))
+                return Results.BadRequest(new { error = "username is required" });
+
+            var payload = new { x = xEl.GetDouble(), y = yEl.GetDouble(), user_id = "web-" + username, username };
 
             var http = cf.CreateClient("worker");
             var response = await http.PostAsJsonAsync("/ore/mark", payload);
@@ -408,28 +394,8 @@ public static class ProxyEndpoints
                 : Results.Json(result, statusCode: (int)response.StatusCode);
         });
 
-        app.MapPost("/ore/reset", async (HttpContext ctx, IDataProtectionProvider dp, IHttpClientFactory cf) =>
+        app.MapPost("/ore/reset", async (IHttpClientFactory cf) =>
         {
-            var cookie = ctx.Request.Cookies["ore_discord_identity"];
-            if (string.IsNullOrEmpty(cookie))
-                return Results.Json(new { error = "Not logged in" }, statusCode: 401);
-
-            string discordId;
-            try
-            {
-                var protector = dp.CreateProtector("OreDiscordIdentity");
-                var json = protector.Unprotect(cookie);
-                var doc = JsonDocument.Parse(json);
-                discordId = doc.RootElement.GetProperty("id").GetString()!;
-            }
-            catch
-            {
-                return Results.Json(new { error = "Invalid session" }, statusCode: 401);
-            }
-
-            if (discordId != OreAdminDiscordId)
-                return Results.Forbid();
-
             var http = cf.CreateClient("worker");
             var res = await http.PostAsync("/ore/reset", null);
             res.EnsureSuccessStatusCode();

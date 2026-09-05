@@ -1,8 +1,8 @@
 ﻿@page
 @model Ogur.Sentinel.Api.Pages.Baerim.Ore.ChunjoModel
 @{
-Layout = null;
-ViewData["Title"] = "Baerim ruda Chunjo";
+    Layout = null;
+    ViewData["Title"] = "Baerim ruda Chunjo";
 }
 <!DOCTYPE html>
 <html lang="pl" data-bs-theme="dark">
@@ -29,21 +29,7 @@ ViewData["Title"] = "Baerim ruda Chunjo";
         .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .topbar a:hover { color: #fff; }
         .status { font-size: 0.9rem; color: #ddd; }
-
-        .login-block { text-align: center; margin-top: 80px; }
-        .login-text { color: #ccc; font-size: 1.1rem; margin-bottom: 20px; }
-        .login-btn {
-            display: inline-block;
-            background: #5865F2;
-            color: #fff;
-            text-decoration: none;
-            font-size: 1.3rem;
-            font-weight: 600;
-            padding: 16px 40px;
-            border-radius: 10px;
-            transition: background 0.15s ease;
-        }
-        .login-btn:hover { background: #4752c4; color: #fff; }
+        .status a { margin-left: 12px; cursor: pointer; }
 
         .page-content {
             display: flex;
@@ -141,9 +127,20 @@ ViewData["Title"] = "Baerim ruda Chunjo";
             border-radius: 12px;
             padding: 24px 28px;
             text-align: center;
-            min-width: 260px;
+            min-width: 280px;
         }
         .modal-box p { margin: 0 0 18px; color: #ddd; font-size: 1rem; }
+        .modal-box input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: #0d0d0f;
+            color: #eee;
+            font-size: 1rem;
+            margin-bottom: 18px;
+            box-sizing: border-box;
+        }
         .modal-actions { display: flex; gap: 10px; justify-content: center; }
         .modal-btn {
             padding: 10px 22px;
@@ -159,7 +156,6 @@ ViewData["Title"] = "Baerim ruda Chunjo";
         .modal-btn.cancel:hover { background: #555; }
 
         .reset-btn {
-            display: none;
             position: fixed;
             bottom: 20px;
             right: 20px;
@@ -179,26 +175,12 @@ ViewData["Title"] = "Baerim ruda Chunjo";
 <body>
 <div class="topbar">
     <a href="https://respy.ogur.dev/">← respy.ogur.dev</a>
-    @if (Model.IsLoggedIn)
-    {
     <div class="status">
-        <span>👤 @Model.DiscordUsername</span>
-        <a href="/auth/discord/logout" style="margin-left: 12px;">Wyloguj</a>
+        <span>👤 <span id="nickDisplay">—</span></span>
+        <a id="changeNickLink">Zmień nick</a>
     </div>
-    }
 </div>
 
-@if (!Model.IsLoggedIn)
-{
-<div class="login-block">
-    <p class="login-text">Zaloguj się przez Discord, żeby oznaczyć lokalizację rudy.</p>
-    <a href="/auth/discord/login?returnTo=/baerim/ore/chunjo" class="login-btn">
-        Zaloguj przez Discord
-    </a>
-</div>
-}
-else
-{
 <div class="page-content">
     <div class="sidebar">
         <h3>Sektor</h3>
@@ -228,6 +210,16 @@ else
     </div>
 </div>
 
+<div class="modal-backdrop-ore" id="nickModal">
+    <div class="modal-box">
+        <p>Podaj swój nick</p>
+        <input type="text" id="nickInput" maxlength="32" placeholder="np. ogur" autocomplete="off" />
+        <div class="modal-actions">
+            <button class="modal-btn confirm" id="nickConfirmBtn">Zapisz</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-backdrop-ore" id="confirmModal">
     <div class="modal-box">
         <p>Oznaczyć rudę w tym miejscu?</p>
@@ -239,17 +231,51 @@ else
 </div>
 
 <button class="reset-btn" id="resetBtn">🗑️ Wyczyść oznaczenie</button>
-}
+
 <script>
+    const NICK_KEY = 'chunjo_ore_nick';
     let pendingX = null;
     let pendingY = null;
-    let isOreAdmin = false;
     let lastOreData = null;
     let zoomLevel = 1;
     const ZOOM_MIN = 0.5;
     const ZOOM_MAX = 3;
     const ZOOM_STEP = 0.25;
     const BASE_HEIGHT_VH = 80;
+
+    function getNick() {
+        return localStorage.getItem(NICK_KEY);
+    }
+
+    function setNick(nick) {
+        localStorage.setItem(NICK_KEY, nick);
+        document.getElementById('nickDisplay').textContent = nick;
+    }
+
+    function showNickModal() {
+        document.getElementById('nickInput').value = getNick() || '';
+        document.getElementById('nickModal').classList.add('show');
+    }
+
+    function hideNickModal() {
+        document.getElementById('nickModal').classList.remove('show');
+    }
+
+    document.getElementById('nickConfirmBtn').addEventListener('click', () => {
+        const val = document.getElementById('nickInput').value.trim();
+        if (!val) {
+            alert('Nick nie może być pusty');
+            return;
+        }
+        setNick(val);
+        hideNickModal();
+    });
+
+    document.getElementById('nickInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('nickConfirmBtn').click();
+    });
+
+    document.getElementById('changeNickLink').addEventListener('click', showNickModal);
 
     function applyZoom() {
         const img = document.getElementById('mapImg');
@@ -295,6 +321,7 @@ else
         } else {
             pin.style.display = 'none';
             document.getElementById('sidebarMarkedBy').textContent = '—';
+            document.getElementById('sidebarSector').textContent = '—';
         }
 
         if (data.window_start) {
@@ -336,17 +363,6 @@ else
         el.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
     }
 
-    async function checkOreAdmin() {
-        try {
-            const resp = await fetch('/ore/whoami');
-            const data = await resp.json();
-            isOreAdmin = data.is_ore_admin === true;
-            document.getElementById('resetBtn').style.display = isOreAdmin ? 'block' : 'none';
-        } catch (e) {
-            console.warn('Failed to check ore admin status', e);
-        }
-    }
-
     function showConfirmModal(x, y) {
         pendingX = x;
         pendingY = y;
@@ -360,11 +376,12 @@ else
     }
 
     async function submitMark(x, y) {
+        const nick = getNick();
         try {
             const resp = await fetch('/ore/mark', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ x, y })
+                body: JSON.stringify({ x, y, username: nick })
             });
             const data = await resp.json();
 
@@ -379,61 +396,64 @@ else
     }
 
     const mapImgEl = document.getElementById('mapImg');
-    if (mapImgEl) {
-        mapImgEl.addEventListener('click', (e) => {
-            const rect = e.target.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 171;
-            const y = ((e.clientY - rect.top) / rect.height) * 214;
-            showConfirmModal(x, y);
-        });
+    mapImgEl.addEventListener('click', (e) => {
+        const rect = e.target.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 171;
+        const y = ((e.clientY - rect.top) / rect.height) * 214;
+        showConfirmModal(x, y);
+    });
 
-        document.getElementById('confirmBtn').addEventListener('click', () => {
-            if (pendingX !== null && pendingY !== null) {
-                submitMark(pendingX, pendingY);
+    document.getElementById('confirmBtn').addEventListener('click', () => {
+        if (pendingX !== null && pendingY !== null) {
+            submitMark(pendingX, pendingY);
+        }
+        hideConfirmModal();
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', hideConfirmModal);
+
+    document.getElementById('resetBtn').addEventListener('click', async () => {
+        if (!confirm('Na pewno wyczyścić oznaczenie?')) return;
+        try {
+            const resp = await fetch('/ore/reset', { method: 'POST' });
+            if (resp.ok) {
+                loadOreState();
+            } else {
+                alert('Nie udało się zresetować');
             }
-            hideConfirmModal();
-        });
+        } catch (e) {
+            alert('Błąd sieci: ' + e.message);
+        }
+    });
 
-        document.getElementById('cancelBtn').addEventListener('click', hideConfirmModal);
-
-        document.getElementById('resetBtn').addEventListener('click', async () => {
-            if (!confirm('Na pewno wyczyścić oznaczenie?')) return;
-            try {
-                const resp = await fetch('/ore/reset', { method: 'POST' });
-                if (resp.ok) {
-                    loadOreState();
-                } else {
-                    alert('Nie udało się zresetować (brak uprawnień?)');
-                }
-            } catch (e) {
-                alert('Błąd sieci: ' + e.message);
-            }
-        });
-
-        document.getElementById('zoomInBtn').addEventListener('click', () => {
-            zoomLevel = Math.min(ZOOM_MAX, zoomLevel + ZOOM_STEP);
-            applyZoom();
-        });
-
-        document.getElementById('zoomOutBtn').addEventListener('click', () => {
-            zoomLevel = Math.max(ZOOM_MIN, zoomLevel - ZOOM_STEP);
-            applyZoom();
-        });
-
-        window.addEventListener('resize', applyZoom);
-
+    document.getElementById('zoomInBtn').addEventListener('click', () => {
+        zoomLevel = Math.min(ZOOM_MAX, zoomLevel + ZOOM_STEP);
         applyZoom();
-        checkOreAdmin();
+    });
 
+    document.getElementById('zoomOutBtn').addEventListener('click', () => {
+        zoomLevel = Math.max(ZOOM_MIN, zoomLevel - ZOOM_STEP);
+        applyZoom();
+    });
 
-        const stream = new EventSource('/ore/stream');
-        stream.onmessage = (e) => {
-            lastOreData = JSON.parse(e.data);
-            renderState(lastOreData);
-        };
-        stream.onerror = () => {
-            console.warn('SSE connection lost, reconnecting...');
-        };
+    window.addEventListener('resize', applyZoom);
+
+    applyZoom();
+    loadOreState();
+
+    const stream = new EventSource('/ore/stream');
+    stream.onmessage = (e) => {
+        lastOreData = JSON.parse(e.data);
+        renderState(lastOreData);
+    };
+    stream.onerror = () => {
+        console.warn('SSE connection lost, reconnecting...');
+    };
+
+    if (!getNick()) {
+        showNickModal();
+    } else {
+        document.getElementById('nickDisplay').textContent = getNick();
     }
 </script>
 </body>
