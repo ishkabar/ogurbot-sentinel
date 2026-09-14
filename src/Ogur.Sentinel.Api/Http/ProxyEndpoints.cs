@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Ogur.Sentinel.Core.Auth;
+using Ogur.Sentinel.Api.Services;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace Ogur.Sentinel.Api.Http;
@@ -364,8 +365,26 @@ public static class ProxyEndpoints
             }
         });
 
-        app.MapPost("/ore/mark", async (HttpContext ctx, IHttpClientFactory cf) =>
+        app.MapPost("/ore/mark", async (HttpContext ctx, IHttpClientFactory cf, IDataProtectionProvider dp, OreMarkLogger markLogger) =>
         {
+            var cookie = ctx.Request.Cookies["ore_discord_identity"];
+            if (string.IsNullOrEmpty(cookie))
+                return Results.Json(new { error = "Not logged in" }, statusCode: 401);
+
+            string discordId, username;
+            try
+            {
+                var protector = dp.CreateProtector("OreDiscordIdentity");
+                var json = protector.Unprotect(cookie);
+                var doc = JsonDocument.Parse(json);
+                discordId = doc.RootElement.GetProperty("id").GetString()!;
+                username = doc.RootElement.GetProperty("username").GetString()!;
+            }
+            catch
+            {
+                return Results.Json(new { error = "Invalid session" }, statusCode: 401);
+            }
+
             JsonElement body;
             try
             {
@@ -379,19 +398,23 @@ public static class ProxyEndpoints
             if (!body.TryGetProperty("x", out var xEl) || !body.TryGetProperty("y", out var yEl))
                 return Results.BadRequest(new { error = "x, y are required" });
 
-            var username = body.TryGetProperty("username", out var unameEl) ? unameEl.GetString() : null;
-            if (string.IsNullOrWhiteSpace(username))
-                return Results.BadRequest(new { error = "username is required" });
+            var x = xEl.GetDouble();
+            var y = yEl.GetDouble();
 
-            var payload = new { x = xEl.GetDouble(), y = yEl.GetDouble(), user_id = "web-" + username, username };
+            var payload = new { x, y, user_id = discordId, username };
 
             var http = cf.CreateClient("worker");
             var response = await http.PostAsJsonAsync("/ore/mark", payload);
             var result = await response.Content.ReadFromJsonAsync<JsonElement>();
 
-            return response.IsSuccessStatusCode
-                ? Results.Ok(result)
-                : Results.Json(result, statusCode: (int)response.StatusCode);
+            if (response.IsSuccessStatusCode)
+            {
+                var ip = GetClientIp(ctx);
+                _ = markLogger.LogMarkAsync(x, y, username, discordId, ip);
+                return Results.Ok(result);
+            }
+
+            return Results.Json(result, statusCode: (int)response.StatusCode);
         });
 
         app.MapPost("/ore/reset", async (IHttpClientFactory cf) =>
@@ -471,5 +494,17 @@ public static class ProxyEndpoints
                 return Results.Json(new { version = "disconnected", build_time = "-" });
             }
         });
+    }
+
+    private static string GetClientIp(HttpContext ctx)
+    {
+        var forwarded = ctx.Request.Headers["X-Forwarded-For"].ToString();
+        if (!string.IsNullOrWhiteSpace(forwarded))
+        {
+            // X-Forwarded-For może zawierać listę IP oddzielonych przecinkami; pierwszy to prawdziwy klient
+            return forwarded.Split(',')[0].Trim();
+        }
+
+        return ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 }

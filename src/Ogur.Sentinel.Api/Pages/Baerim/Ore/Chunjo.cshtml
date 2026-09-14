@@ -31,6 +31,21 @@
         .status { font-size: 0.9rem; color: #ddd; }
         .status a { margin-left: 12px; cursor: pointer; }
 
+        .login-block { text-align: center; margin-top: 80px; }
+        .login-text { color: #ccc; font-size: 1.1rem; margin-bottom: 20px; }
+        .login-btn {
+            display: inline-block;
+            background: #5865F2;
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.3rem;
+            font-weight: 600;
+            padding: 16px 40px;
+            border-radius: 10px;
+            transition: background 0.15s ease;
+        }
+        .login-btn:hover { background: #4752c4; color: #fff; }
+
         .page-content {
             display: flex;
             height: calc(100vh - 60px);
@@ -130,17 +145,6 @@
             min-width: 280px;
         }
         .modal-box p { margin: 0 0 18px; color: #ddd; font-size: 1rem; }
-        .modal-box input[type="text"] {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid #444;
-            background: #0d0d0f;
-            color: #eee;
-            font-size: 1rem;
-            margin-bottom: 18px;
-            box-sizing: border-box;
-        }
         .modal-actions { display: flex; gap: 10px; justify-content: center; }
         .modal-btn {
             padding: 10px 22px;
@@ -156,6 +160,7 @@
         .modal-btn.cancel:hover { background: #555; }
 
         .reset-btn {
+            display: none;
             position: fixed;
             bottom: 20px;
             right: 20px;
@@ -175,65 +180,69 @@
 <body>
 <div class="topbar">
     <a href="https://respy.ogur.dev/">← respy.ogur.dev</a>
-    <div class="status">
-        <span>👤 <span id="nickDisplay">—</span></span>
-        <a id="changeNickLink">Zmień nick</a>
-    </div>
+    @if (Model.IsLoggedIn)
+    {
+        <div class="status">
+            <span>👤 @Model.DiscordUsername</span>
+            <a href="/auth/discord/logout">Wyloguj</a>
+        </div>
+    }
 </div>
 
-<div class="page-content">
-    <div class="sidebar">
-        <h3>Sektor</h3>
-        <p class="value muted" id="sidebarSector">—</p>
+@if (!Model.IsLoggedIn)
+{
+    <div class="login-block">
+        <p class="login-text">Zaloguj się przez Discord, żeby oznaczyć lokalizację rudy.</p>
+        <a href="/auth/discord/login?returnTo=/baerim/ore/chunjo" class="login-btn">
+            Zaloguj przez Discord
+        </a>
+    </div>
+}
+else
+{
+    <div class="page-content">
+        <div class="sidebar">
+            <h3>Sektor</h3>
+            <p class="value muted" id="sidebarSector">—</p>
 
-        <h3>Oznaczone przez</h3>
-        <p class="value" id="sidebarMarkedBy">—</p>
+            <h3>Oznaczone przez</h3>
+            <p class="value" id="sidebarMarkedBy">—</p>
 
-        <h3>Ostatni resp</h3>
-        <p class="value" id="sidebarLastRespawn">—</p>
+            <h3>Ostatni resp</h3>
+            <p class="value" id="sidebarLastRespawn">—</p>
 
-        <h3>Następny resp za</h3>
-        <p class="value countdown" id="sidebarCountdown">—:—</p>
+            <h3>Następny resp za</h3>
+            <p class="value countdown" id="sidebarCountdown">—:—</p>
 
-        <h3>Zoom</h3>
-        <div class="zoom-controls">
-            <button class="zoom-btn" id="zoomOutBtn">−</button>
-            <button class="zoom-btn" id="zoomInBtn">+</button>
+            <h3>Zoom</h3>
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="zoomOutBtn">−</button>
+                <button class="zoom-btn" id="zoomInBtn">+</button>
+            </div>
+        </div>
+
+        <div class="map-area">
+            <div class="map-wrap">
+                <img id="mapImg" src="/files/Joan.png" alt="Mapa Chunjo" />
+                <div id="mapPin"></div>
+            </div>
         </div>
     </div>
 
-    <div class="map-area">
-        <div class="map-wrap">
-            <img id="mapImg" src="/files/Joan.png" alt="Mapa Chunjo" />
-            <div id="mapPin"></div>
+    <div class="modal-backdrop-ore" id="confirmModal">
+        <div class="modal-box">
+            <p>Oznaczyć rudę w tym miejscu?</p>
+            <div class="modal-actions">
+                <button class="modal-btn confirm" id="confirmBtn">Oznacz tutaj</button>
+                <button class="modal-btn cancel" id="cancelBtn">Anuluj</button>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="modal-backdrop-ore" id="nickModal">
-    <div class="modal-box">
-        <p>Podaj swój nick</p>
-        <input type="text" id="nickInput" maxlength="32" placeholder="np. ogur" autocomplete="off" />
-        <div class="modal-actions">
-            <button class="modal-btn confirm" id="nickConfirmBtn">Zapisz</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-backdrop-ore" id="confirmModal">
-    <div class="modal-box">
-        <p>Oznaczyć rudę w tym miejscu?</p>
-        <div class="modal-actions">
-            <button class="modal-btn confirm" id="confirmBtn">Oznacz tutaj</button>
-            <button class="modal-btn cancel" id="cancelBtn">Anuluj</button>
-        </div>
-    </div>
-</div>
-
-<button class="reset-btn" id="resetBtn">🗑️ Wyczyść oznaczenie</button>
+    <button class="reset-btn" id="resetBtn">🗑️ Wyczyść oznaczenie</button>
+}
 
 <script>
-    const NICK_KEY = 'chunjo_ore_nick';
     let pendingX = null;
     let pendingY = null;
     let lastOreData = null;
@@ -242,40 +251,6 @@
     const ZOOM_MAX = 3;
     const ZOOM_STEP = 0.25;
     const BASE_HEIGHT_VH = 80;
-
-    function getNick() {
-        return localStorage.getItem(NICK_KEY);
-    }
-
-    function setNick(nick) {
-        localStorage.setItem(NICK_KEY, nick);
-        document.getElementById('nickDisplay').textContent = nick;
-    }
-
-    function showNickModal() {
-        document.getElementById('nickInput').value = getNick() || '';
-        document.getElementById('nickModal').classList.add('show');
-    }
-
-    function hideNickModal() {
-        document.getElementById('nickModal').classList.remove('show');
-    }
-
-    document.getElementById('nickConfirmBtn').addEventListener('click', () => {
-        const val = document.getElementById('nickInput').value.trim();
-        if (!val) {
-            alert('Nick nie może być pusty');
-            return;
-        }
-        setNick(val);
-        hideNickModal();
-    });
-
-    document.getElementById('nickInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') document.getElementById('nickConfirmBtn').click();
-    });
-
-    document.getElementById('changeNickLink').addEventListener('click', showNickModal);
 
     function applyZoom() {
         const img = document.getElementById('mapImg');
@@ -300,6 +275,7 @@
     function renderState(data) {
         const pin = document.getElementById('mapPin');
         const img = document.getElementById('mapImg');
+        if (!img) return;
         const wrap = img.closest('.map-wrap');
 
         if (data.marked) {
@@ -349,6 +325,7 @@
     function tickCountdown() {
         if (!countdownTarget) return;
         const el = document.getElementById('sidebarCountdown');
+        if (!el) return;
         const diffMs = countdownTarget.getTime() - Date.now();
 
         if (diffMs <= 0) {
@@ -376,12 +353,11 @@
     }
 
     async function submitMark(x, y) {
-        const nick = getNick();
         try {
             const resp = await fetch('/ore/mark', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ x, y, username: nick })
+                body: JSON.stringify({ x, y })
             });
             const data = await resp.json();
 
@@ -395,65 +371,73 @@
         }
     }
 
-    const mapImgEl = document.getElementById('mapImg');
-    mapImgEl.addEventListener('click', (e) => {
-        const rect = e.target.getBoundingClientRect();
-        const x = ((e.clientX - rect.left) / rect.width) * 171;
-        const y = ((e.clientY - rect.top) / rect.height) * 214;
-        showConfirmModal(x, y);
-    });
-
-    document.getElementById('confirmBtn').addEventListener('click', () => {
-        if (pendingX !== null && pendingY !== null) {
-            submitMark(pendingX, pendingY);
-        }
-        hideConfirmModal();
-    });
-
-    document.getElementById('cancelBtn').addEventListener('click', hideConfirmModal);
-
-    document.getElementById('resetBtn').addEventListener('click', async () => {
-        if (!confirm('Na pewno wyczyścić oznaczenie?')) return;
+    async function checkOreAdmin() {
         try {
-            const resp = await fetch('/ore/reset', { method: 'POST' });
-            if (resp.ok) {
-                loadOreState();
-            } else {
-                alert('Nie udało się zresetować');
-            }
+            const resp = await fetch('/ore/whoami');
+            const data = await resp.json();
+            const btn = document.getElementById('resetBtn');
+            if (btn) btn.style.display = data.is_ore_admin ? 'block' : 'none';
         } catch (e) {
-            alert('Błąd sieci: ' + e.message);
+            console.warn('Failed to check ore admin status', e);
         }
-    });
+    }
 
-    document.getElementById('zoomInBtn').addEventListener('click', () => {
-        zoomLevel = Math.min(ZOOM_MAX, zoomLevel + ZOOM_STEP);
+    const mapImgEl = document.getElementById('mapImg');
+    if (mapImgEl) {
+        mapImgEl.addEventListener('click', (e) => {
+            const rect = e.target.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 171;
+            const y = ((e.clientY - rect.top) / rect.height) * 214;
+            showConfirmModal(x, y);
+        });
+
+        document.getElementById('confirmBtn').addEventListener('click', () => {
+            if (pendingX !== null && pendingY !== null) {
+                submitMark(pendingX, pendingY);
+            }
+            hideConfirmModal();
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', hideConfirmModal);
+
+        document.getElementById('resetBtn').addEventListener('click', async () => {
+            if (!confirm('Na pewno wyczyścić oznaczenie?')) return;
+            try {
+                const resp = await fetch('/ore/reset', { method: 'POST' });
+                if (resp.ok) {
+                    loadOreState();
+                } else {
+                    alert('Nie udało się zresetować (brak uprawnień?)');
+                }
+            } catch (e) {
+                alert('Błąd sieci: ' + e.message);
+            }
+        });
+
+        document.getElementById('zoomInBtn').addEventListener('click', () => {
+            zoomLevel = Math.min(ZOOM_MAX, zoomLevel + ZOOM_STEP);
+            applyZoom();
+        });
+
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            zoomLevel = Math.max(ZOOM_MIN, zoomLevel - ZOOM_STEP);
+            applyZoom();
+        });
+
+        window.addEventListener('resize', applyZoom);
+
         applyZoom();
-    });
+        loadOreState();
+        checkOreAdmin();
 
-    document.getElementById('zoomOutBtn').addEventListener('click', () => {
-        zoomLevel = Math.max(ZOOM_MIN, zoomLevel - ZOOM_STEP);
-        applyZoom();
-    });
-
-    window.addEventListener('resize', applyZoom);
-
-    applyZoom();
-    loadOreState();
-
-    const stream = new EventSource('/ore/stream');
-    stream.onmessage = (e) => {
-        lastOreData = JSON.parse(e.data);
-        renderState(lastOreData);
-    };
-    stream.onerror = () => {
-        console.warn('SSE connection lost, reconnecting...');
-    };
-
-    if (!getNick()) {
-        showNickModal();
-    } else {
-        document.getElementById('nickDisplay').textContent = getNick();
+        const stream = new EventSource('/ore/stream');
+        stream.onmessage = (e) => {
+            lastOreData = JSON.parse(e.data);
+            renderState(lastOreData);
+        };
+        stream.onerror = () => {
+            console.warn('SSE connection lost, reconnecting...');
+        };
     }
 </script>
 </body>

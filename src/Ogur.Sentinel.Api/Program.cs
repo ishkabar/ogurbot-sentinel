@@ -21,7 +21,7 @@ using Ogur.Sentinel.Core.Auth;
 using Microsoft.AspNetCore.Http;
 using Ogur.Sentinel.Api.Middleware;
 using Microsoft.Extensions.FileProviders;
-
+using Ogur.Sentinel.Api.Services;
 
 // ✅ Load NLog config from appsettings directory
 var nlogConfigPath = Path.Combine(AppContext.BaseDirectory, "appsettings", "nlog.config");
@@ -99,7 +99,7 @@ try
         var cfg = sp.GetRequiredService<IConfiguration>();
         http.BaseAddress = new Uri(cfg["Worker:BaseUrl"] ?? "http://localhost:9090");
     });
-
+    builder.Services.AddSingleton<OreMarkLogger>();
 
     var app = builder.Build();
 
