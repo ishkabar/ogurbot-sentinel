@@ -43,11 +43,18 @@ jobs:
         run: |
           cd src
           dotnet tool install --global minver-cli
-          VERSION=$(minver -t v -m 1.0 -d preview | cut -d'-' -f1)
+          RAW_VERSION=$(minver -t v -m 1.0 -d preview)
+          EXIT_CODE=$?
+          echo "minver exit code: $EXIT_CODE"
+          echo "Raw minver output: '$RAW_VERSION'"
+          VERSION=$(echo "$RAW_VERSION" | cut -d'-' -f1)
+          echo "Cut version: '$VERSION'"
+          if [ -z "$VERSION" ]; then
+            echo "❌ VERSION is empty, failing early instead of building bad tags"
+            exit 1
+          fi
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "✅ Using version: $VERSION"  # ← lepszy output
-          echo "📋 Git tags:"  # ← DODAJ debug
-          git tag --list
+          echo "✅ Using version: $VERSION"
           
       - name: Meta
         id: meta
