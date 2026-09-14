@@ -439,6 +439,32 @@ public static class ProxyEndpoints
             await stream.CopyToAsync(ctx.Response.Body, ct);
         });
 
+        app.MapGet("/ore/marks/recent", async (OreMarkLogger markLogger) =>
+        {
+            var marks = await markLogger.GetRecentAsync(6);
+            var result = marks.Select(m => new
+            {
+                time = m.Time,
+                username = m.Username,
+                user_id = m.UserId,
+                x = m.X,
+                y = m.Y
+            });
+            return Results.Ok(new { marks = result });
+        });
+
+        app.MapGet("/ore/visits/recent", async (OreVisitLogger visitLogger) =>
+        {
+            var visits = await visitLogger.GetRecentAsync(TimeSpan.FromHours(6));
+            var result = visits.Select(v => new
+            {
+                time = v.Time,
+                username = v.Username,
+                ip = v.Ip
+            });
+            return Results.Ok(new { visits = result });
+        });
+
         app.MapGet("/ore/whoami", (HttpContext ctx, IDataProtectionProvider dp) =>
         {
             var cookie = ctx.Request.Cookies["ore_discord_identity"];

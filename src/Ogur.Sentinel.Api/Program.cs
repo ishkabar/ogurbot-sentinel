@@ -23,6 +23,7 @@ using Ogur.Sentinel.Api.Middleware;
 using Microsoft.Extensions.FileProviders;
 using Ogur.Sentinel.Api.Services;
 
+
 // ✅ Load NLog config from appsettings directory
 var nlogConfigPath = Path.Combine(AppContext.BaseDirectory, "appsettings", "nlog.config");
 var logger = LogManager.Setup().LoadConfigurationFromFile(nlogConfigPath).GetCurrentClassLogger();
@@ -100,6 +101,7 @@ try
         http.BaseAddress = new Uri(cfg["Worker:BaseUrl"] ?? "http://localhost:9090");
     });
     builder.Services.AddSingleton<OreMarkLogger>();
+    builder.Services.AddSingleton<OreVisitLogger>();
 
     var app = builder.Build();
 

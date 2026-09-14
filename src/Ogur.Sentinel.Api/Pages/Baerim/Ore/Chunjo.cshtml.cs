@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Ogur.Sentinel.Api.Services;
 using System.Text.Json;
 
 namespace Ogur.Sentinel.Api.Pages.Baerim.Ore;
@@ -7,31 +8,49 @@ namespace Ogur.Sentinel.Api.Pages.Baerim.Ore;
 public class ChunjoModel : PageModel
 {
     private readonly IDataProtectionProvider _dp;
+    private readonly OreVisitLogger _visitLogger;
 
-    public ChunjoModel(IDataProtectionProvider dp)
+    public ChunjoModel(IDataProtectionProvider dp, OreVisitLogger visitLogger)
     {
         _dp = dp;
+        _visitLogger = visitLogger;
     }
 
     public bool IsLoggedIn { get; private set; }
     public string DiscordUsername { get; private set; } = string.Empty;
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
         var cookie = Request.Cookies["ore_discord_identity"];
-        if (string.IsNullOrEmpty(cookie)) return;
+        if (!string.IsNullOrEmpty(cookie))
+        {
+            try
+            {
+                var protector = _dp.CreateProtector("OreDiscordIdentity");
+                var json = protector.Unprotect(cookie);
+                var doc = JsonDocument.Parse(json);
+                DiscordUsername = doc.RootElement.GetProperty("username").GetString() ?? "";
+                IsLoggedIn = !string.IsNullOrEmpty(DiscordUsername);
+            }
+            catch
+            {
+                IsLoggedIn = false;
+            }
+        }
 
-        try
+        var ip = GetClientIp();
+        var visitUsername = IsLoggedIn ? DiscordUsername : "anonim";
+        _ = _visitLogger.LogVisitAsync(visitUsername, ip);
+    }
+
+    private string GetClientIp()
+    {
+        var forwarded = Request.Headers["X-Forwarded-For"].ToString();
+        if (!string.IsNullOrWhiteSpace(forwarded))
         {
-            var protector = _dp.CreateProtector("OreDiscordIdentity");
-            var json = protector.Unprotect(cookie);
-            var doc = JsonDocument.Parse(json);
-            DiscordUsername = doc.RootElement.GetProperty("username").GetString() ?? "";
-            IsLoggedIn = !string.IsNullOrEmpty(DiscordUsername);
+            return forwarded.Split(',')[0].Trim();
         }
-        catch
-        {
-            IsLoggedIn = false;
-        }
+
+        return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 }

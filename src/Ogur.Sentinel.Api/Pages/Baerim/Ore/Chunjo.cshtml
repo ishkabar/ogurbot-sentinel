@@ -107,6 +107,54 @@
             flex-shrink: 0;
             margin: auto;
         }
+        .drawer-toggle {
+            position: fixed;
+            top: 70px;
+            right: 0;
+            background: #1a1a1e;
+            border: 1px solid #333;
+            border-right: none;
+            color: #eee;
+            padding: 10px 8px;
+            border-radius: 8px 0 0 8px;
+            cursor: pointer;
+            z-index: 60;
+            font-size: 1.1rem;
+        }
+        .drawer-toggle:hover { background: #26262b; }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 320px;
+            height: 100%;
+            background: #14141a;
+            border-left: 1px solid #222;
+            z-index: 70;
+            transition: right 0.2s ease;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .drawer.open { right: 0; }
+
+        .drawer h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #888;
+            margin: 20px 0 10px;
+        }
+        .drawer h3:first-child { margin-top: 0; }
+
+        .drawer-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #222;
+            font-size: 0.85rem;
+            color: #ccc;
+        }
+        .drawer-item .time { color: #888; font-size: 0.75rem; }
+        .drawer-empty { color: #555; font-size: 0.85rem; font-style: italic; }
         #mapImg {
             display: block;
             image-rendering: pixelated;
@@ -423,6 +471,65 @@ else
             zoomLevel = Math.max(ZOOM_MIN, zoomLevel - ZOOM_STEP);
             applyZoom();
         });
+
+        document.getElementById('drawerToggle').addEventListener('click', () => {
+            const drawer = document.getElementById('drawer');
+            const btn = document.getElementById('drawerToggle');
+            drawer.classList.toggle('open');
+            btn.textContent = drawer.classList.contains('open') ? '▶' : '◀';
+        });
+
+        async function loadRecentMarks() {
+            try {
+                const resp = await fetch('/ore/marks/recent');
+                const data = await resp.json();
+                const container = document.getElementById('marksListContainer');
+
+                if (!data.marks || data.marks.length === 0) {
+                    container.innerHTML = '<p class="drawer-empty">Brak historii</p>';
+                    return;
+                }
+
+                container.innerHTML = data.marks.map(m => {
+                    const t = new Date(m.time);
+                    const dateStr = t.toLocaleDateString('pl-PL');
+                    const timeStr = t.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                    return `<div class="drawer-item">
+                <div>${m.username} — (${m.x.toFixed(1)}, ${m.y.toFixed(1)})</div>
+                <div class="time">${dateStr} ${timeStr}</div>
+            </div>`;
+                }).join('');
+            } catch (e) {
+                console.warn('Failed to load recent marks', e);
+            }
+        }
+
+        async function loadRecentVisits() {
+            try {
+                const resp = await fetch('/ore/visits/recent');
+                const data = await resp.json();
+                const container = document.getElementById('visitsListContainer');
+
+                if (!data.visits || data.visits.length === 0) {
+                    container.innerHTML = '<p class="drawer-empty">Brak odwiedzin</p>';
+                    return;
+                }
+
+                container.innerHTML = data.visits.map(v => {
+                    const t = new Date(v.time);
+                    const timeStr = t.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                    return `<div class="drawer-item">
+                <div>${v.username} — ${v.ip}</div>
+                <div class="time">${timeStr}</div>
+            </div>`;
+                }).join('');
+            } catch (e) {
+                console.warn('Failed to load recent visits', e);
+            }
+        }
+
+        loadRecentMarks();
+        loadRecentVisits();
 
         window.addEventListener('resize', applyZoom);
 
