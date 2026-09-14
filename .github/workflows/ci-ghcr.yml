@@ -38,6 +38,9 @@ jobs:
           
       - uses: docker/setup-buildx-action@v3
       
+      - name: Debug env vars
+        run: printenv | grep -i minver || echo "brak zmiennych MinVer w env"
+
       - name: Get version
         id: version
         run: |
