@@ -535,7 +535,7 @@ else
                     const t = new Date(v.time);
                     const timeStr = t.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
                     return `<div class="drawer-item">
-                <div>${v.username} — ${v.ip}</div>
+                <div>${v.username}</div>
                 <div class="time">${timeStr}</div>
             </div>`;
                 }).join('');
