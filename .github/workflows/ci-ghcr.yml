@@ -43,7 +43,7 @@ jobs:
         run: |
           cd src
           dotnet tool install --global minver-cli
-          RAW_VERSION=$(minver -t v -m 1.0 -d preview)
+          RAW_VERSION=$(minver -t v -m 1.0 -p preview.0)
           EXIT_CODE=$?
           echo "minver exit code: $EXIT_CODE"
           echo "Raw minver output: '$RAW_VERSION'"
