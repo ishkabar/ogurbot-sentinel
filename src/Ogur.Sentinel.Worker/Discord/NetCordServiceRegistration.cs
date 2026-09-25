@@ -5,6 +5,7 @@ using NetCord.Gateway;
 using NetCord.Hosting.Gateway;
 using NetCord.Hosting.Services;
 using NetCord.Services.ApplicationCommands;
+using Ogur.Sentinel.Worker.Discord.Break;
 using Ogur.Sentinel.Worker.Discord.Modules;
 using Ogur.Sentinel.Worker.Discord.Handlers;
 using Ogur.Sentinel.Worker.Services;
@@ -33,6 +34,10 @@ public static class NetCordServiceRegistration
             options.Token = discordToken; // Bezpośrednio string, nie BotToken
         });
         services.AddSingleton<IVoiceServerUpdateGatewayHandler, VoiceServerUpdateHandler>();
+        services.Configure<BreakOptions>(configuration.GetSection("Break"));
+        services.AddSingleton<ApplicationCommandService<UserCommandContext>>();
+        services.AddSingleton<BreakService>();
+        services.AddHostedService<BreakEnforcer>();
 
         // 2. Add Application Commands service manually
         services.AddSingleton<ApplicationCommandService<SlashCommandContext>>();

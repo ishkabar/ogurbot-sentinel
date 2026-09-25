@@ -10,6 +10,7 @@ using NetCord.Gateway;
 using NetCord.Rest;
 using NetCord.Services.ApplicationCommands;
 using Ogur.Sentinel.Worker.Discord.Modules;
+using NetCord.Services;
 
 namespace Ogur.Sentinel.Worker.Discord;
 
@@ -18,14 +19,20 @@ public sealed class CommandRegistrationService : BackgroundService
     private readonly GatewayClient _client;
     private readonly ILogger<CommandRegistrationService> _logger;
     private readonly ApplicationCommandService<SlashCommandContext> _commandService;
+    private readonly ApplicationCommandService<UserCommandContext> _userCommandService;
+    private readonly IServiceProvider _services;
 
     public CommandRegistrationService(
         GatewayClient client,
         ApplicationCommandService<SlashCommandContext> commandService,
+        ApplicationCommandService<UserCommandContext> userCommandService,
+        IServiceProvider services,
         ILogger<CommandRegistrationService> logger)
     {
         _client = client;
         _commandService = commandService;
+        _userCommandService = userCommandService;
+        _services = services;
         _logger = logger;
     }
 
@@ -40,23 +47,32 @@ public sealed class CommandRegistrationService : BackgroundService
 
     private ValueTask OnInteraction(Interaction interaction)
     {
-        if (interaction is SlashCommandInteraction slashCommand)
+        switch (interaction)
         {
-            var context = new SlashCommandContext(slashCommand, _client);
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _commandService.ExecuteAsync(context);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error executing slash command {CommandName}", slashCommand.Data.Name);
-                }
-            });
+            case SlashCommandInteraction slash:
+                Dispatch(slash.Data.Name, () => _commandService.ExecuteAsync(new SlashCommandContext(slash, _client), _services));
+                break;
+            case UserCommandInteraction user:
+                Dispatch(user.Data.Name, () => _userCommandService.ExecuteAsync(new UserCommandContext(user, _client), _services));
+                break;
         }
 
         return ValueTask.CompletedTask;
+    }
+
+    private void Dispatch(string name, Func<ValueTask<IExecutionResult>> execute)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await execute();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error executing command {CommandName}", name);
+            }
+        });
     }
 
     private async Task WaitForReadyAsync(CancellationToken ct)

@@ -1,86 +1,50 @@
-﻿using Microsoft.Extensions.Logging;
-//using Discord;
-//using Discord.WebSocket;
+﻿using System.Globalization;
+using NetCord;
+using NetCord.Rest;
+using NetCord.Services.ApplicationCommands;
 using Ogur.Sentinel.Abstractions.Leaves;
 using Ogur.Sentinel.Worker.Services;
 
 namespace Ogur.Sentinel.Worker.Discord.Modules;
 
-
-public sealed class LeaveModule
-{/*
-    private readonly LeaveService _service;
-    private readonly ILogger<LeaveModule> _logger;
-
-    public LeaveModule(LeaveService service, ILogger<LeaveModule> logger)
+[SlashCommand("leave", "Leave management")]
+public sealed class LeaveModule(LeaveService service) : ApplicationCommandModule<ApplicationCommandContext>
+{
+    [SubSlashCommand("set", "Set return date (UTC ISO or yyyy-MM-dd HH:mm)")]
+    public InteractionMessageProperties Set(
+        [SlashCommandParameter(Description = "Game nick")] string nick,
+        [SlashCommandParameter(Name = "return_at_utc", Description = "UTC return time")] string returnAtUtc,
+        [SlashCommandParameter(Description = "Optional reason")] string? reason = null)
     {
-        _service = service;
-        _logger = logger;
-    }
+        if (!DateTimeOffset.TryParse(returnAtUtc, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var dto))
+            return Ephemeral("Invalid datetime format.");
 
-    public SlashCommandBuilder Build()
-    {
-        var b = new SlashCommandBuilder()
-            .WithName("leave")
-            .WithDescription("Leave management");
-
-        b.AddOption(new SlashCommandOptionBuilder()
-            .WithName("set")
-            .WithDescription("Set return date (UTC ISO or yyyy-MM-dd HH:mm)")
-            .AddOption("nick", ApplicationCommandOptionType.String, "Game nick", isRequired: true)
-            .AddOption("return_at_utc", ApplicationCommandOptionType.String, "UTC return time", isRequired: true)
-            .AddOption("reason", ApplicationCommandOptionType.String, "Optional reason", isRequired: false)
-            .WithType(ApplicationCommandOptionType.SubCommand));
-
-        b.AddOption(new SlashCommandOptionBuilder()
-            .WithName("clear")
-            .WithDescription("Clear user's leave")
-            .WithType(ApplicationCommandOptionType.SubCommand));
-
-        return b;
-    }
-
-    public async Task Handle(SocketSlashCommand cmd)
-    {
-        var sub = cmd.Data.Options.FirstOrDefault()?.Name;
-        switch (sub)
+        var rec = new LeaveRecord
         {
-            case "set":
-            {
-                var nick = (string)cmd.Data.Options.First().Options.First(x => x.Name == "nick").Value!;
-                var when = (string)cmd.Data.Options.First().Options.First(x => x.Name == "return_at_utc").Value!;
-                var reason = (string?)cmd.Data.Options.First().Options.FirstOrDefault(x => x.Name == "reason")?.Value;
+            GuildId = Context.Interaction.GuildId ?? 0,
+            ChannelId = Context.Channel.Id,
+            MessageId = 0,
+            UserId = Context.User.Id,
+            GameNick = nick,
+            ReturnAtUtc = dto.ToUniversalTime(),
+            Reason = reason
+        };
+        service.Set(rec);
 
-                if (!DateTimeOffset.TryParse(when, out var dto))
-                {
-                    await cmd.RespondAsync("Invalid datetime format.", ephemeral: true);
-                    return;
-                }
+        var (days, remaining) = service.GetRemaining(Context.User.Id);
+        return Ephemeral($"Leave set for **{nick}** → back in {days} days, {remaining}.");
+    }
 
-                var rec = new LeaveRecord
-                {
-                    GuildId = cmd.GuildId ?? 0,
-                    ChannelId = cmd.Channel.Id,
-                    MessageId = 0,
-                    UserId = cmd.User.Id,
-                    GameNick = nick,
-                    ReturnAtUtc = dto.ToUniversalTime(),
-                    Reason = reason
-                };
-                _service.Set(rec);
+    [SubSlashCommand("clear", "Clear user's leave")]
+    public InteractionMessageProperties Clear()
+    {
+        var ok = service.Clear(Context.User.Id);
+        return Ephemeral(ok ? "Leave cleared." : "No leave set.");
+    }
 
-                var (days, remaining) = _service.GetRemaining(cmd.User.Id);
-                await cmd.RespondAsync($"Leave set for **{nick}** → back in {days} days, {remaining}.", ephemeral: true);
-                break;
-            }
-            case "clear":
-                var ok = _service.Clear(cmd.User.Id);
-                await cmd.RespondAsync(ok ? "Leave cleared." : "No leave set.", ephemeral: true);
-                break;
-
-            default:
-                await cmd.RespondAsync("Unknown subcommand.", ephemeral: true);
-                break;
-        }
-    }*/
+    private static InteractionMessageProperties Ephemeral(string content) => new()
+    {
+        Content = content,
+        Flags = MessageFlags.Ephemeral
+    };
 }
