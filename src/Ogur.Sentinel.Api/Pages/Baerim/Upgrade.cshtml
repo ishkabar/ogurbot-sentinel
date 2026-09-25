@@ -38,13 +38,31 @@ var en = Model.Lang == "en";
         .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .topbar a:hover { color: #fff; }
         .topbar-right { display: flex; align-items: center; gap: 16px; }
-        .page-logo { padding: 6px 20px 0; }
-        .page-logo-img { width: 500px; max-width: 90%; height: auto; border-radius: 12px; display: block; }
+        .page-logo {position: sticky; top: 20px; flex: 0 0 260px; padding: 0;}
+        .page-logo-img {width: 260px; max-width: 100%; height: auto; border-radius: 12px; display: block;}
         .status { font-size: 0.9rem; color: #ddd; }
         .status a { margin-left: 12px; cursor: pointer; }
         .status-badge { font-size: 0.85rem; color: #666; }
         .login-link { color: #5865F2; text-decoration: none; font-weight: 600; }
         .login-link:hover { color: #4752c4; }
+
+        .support-widget {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            width: 300px;
+            height: 450px;
+            z-index: 1000;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .support-widget iframe {
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
 
         .lang-switch { display: flex; gap: 4px; }
         .lang-switch a {
@@ -184,7 +202,13 @@ var en = Model.Lang == "en";
     <h1>@(en ? "Upgrading" : "Ulepszanie")</h1>
     <p>@(en ? "Search for an item to see its upgrade success chances" : "Wyszukaj przedmiot, aby zobaczyć szanse na ulepszenie")</p>
 </div>
-
+<div class="support-widget">
+    <iframe
+        src="https://zrzutka.pl/fhyeca/widget/23"
+        frameborder="0"
+        scrolling="no">
+    </iframe>
+</div>
 <div class="content">
     <div class="filters">
         <input type="text" id="searchInput" class="search-input" placeholder="@(en ? "Filter by item name..." : "Filtruj po nazwie przedmiotu...")" autocomplete="off" />
@@ -227,6 +251,7 @@ var en = Model.Lang == "en";
             <tbody id="upgradeTableBody"></tbody>
         </table>
     </div>
+
 </div>
 
 <script>

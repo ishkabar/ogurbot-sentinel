@@ -38,8 +38,20 @@
         .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .topbar a:hover { color: #fff; }
         .topbar-right { display: flex; align-items: center; gap: 16px; }
-        .page-logo { padding: 6px 20px 0; }
-        .page-logo-img { width: 500px; max-width: 90%; height: auto; border-radius: 12px; display: block; }
+        .page-logo {
+            position: sticky;
+            top: 20px;
+            flex: 0 0 260px;
+            padding: 0;
+        }
+
+        .page-logo-img {
+            width: 260px;
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            display: block;
+        }
         .status { font-size: 0.9rem; color: #ddd; }
         .status a { margin-left: 12px; cursor: pointer; }
         .status-badge { font-size: 0.85rem; color: #666; }
