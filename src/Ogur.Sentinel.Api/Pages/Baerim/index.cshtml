@@ -11,6 +11,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Baerim</title>
+    <link rel="icon" type="image/png" href="/files/baerim-og.png" />
     <meta property="og:site_name" content="Ogur.dev" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Baerim" />
@@ -37,6 +38,8 @@
         .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .topbar a:hover { color: #fff; }
         .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .page-logo { padding: 6px 20px 0; }
+        .page-logo-img { width: 500px; max-width: 90%; height: auto; border-radius: 12px; display: block; }
         .status { font-size: 0.9rem; color: #ddd; }
         .status a { margin-left: 12px; cursor: pointer; }
         .status-badge { font-size: 0.85rem; color: #666; }
@@ -143,6 +146,9 @@
         }
     </div>
 </div>
+<div class="page-logo">
+    <img src="/files/baerim-og.png" alt="Baerim" class="page-logo-img" />
+</div>
 
 <div class="hero">
     <h1>Baerim</h1>
@@ -156,12 +162,11 @@
         <p>@(en ? "Mark ore locations on kingdom maps" : "Oznaczanie lokalizacji rudy na mapach królestw")</p>
     </a>
 
-    <div class="tile disabled">
-        <div class="icon">🔨</div>
+    <a class="tile" href="/baerim/upgrade" style="border-color: rgba(67,181,129,0.55); background: linear-gradient(180deg, rgba(67,181,129,0.08), #1a1a1e 60%);">
+        <div class="icon" style="color: #43b581;">🔨</div>
         <h3>@(en ? "Upgrading" : "Ulepszanie")</h3>
         <p>@(en ? "Item upgrade success chance" : "Szansa na ulepszenie przedmiotu (%)")</p>
-        <span class="soon">@(en ? "Soon" : "Wkrótce")</span>
-    </div>
+    </a>
 
     <div class="tile disabled">
         <div class="icon">🛠️</div>

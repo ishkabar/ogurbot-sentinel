@@ -102,6 +102,7 @@ try
     });
     builder.Services.AddSingleton<OreMarkLogger>();
     builder.Services.AddSingleton<OreVisitLogger>();
+    builder.Services.AddSingleton<UpgradeChanceService>();
     builder.Services.AddHttpClient("zrzutka");
 
     var app = builder.Build();
@@ -266,6 +267,8 @@ try
         userStore.Reload();
         return Results.Ok(new { message = "Users reloaded" });
     });
+
+    app.MapGet("/baerim/upgrade-data", (UpgradeChanceService service) => Results.Ok(service.GetData()));
 
     // === Proxy Endpoints to Worker ===
     app.MapProxyEndpoints();

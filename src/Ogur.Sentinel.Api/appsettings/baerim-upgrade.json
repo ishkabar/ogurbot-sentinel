@@ -1,0 +1,781 @@
+{
+  "levels": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "groups": [
+    {
+      "name": "Bronie 65",
+      "items": [
+        "Miecz Bojowy",
+        "Miecz Szponu Ducha",
+        "Smoczy Nóż",
+        "Olbrz. Łuk Żółt. Smoka",
+        "Partyzana",
+        "Dzwon Nieba I Ziemi",
+        "Wachlarz Zbawienia"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        0.95,
+        0.95,
+        0.8,
+        0.65,
+        0.6,
+        0.55,
+        0.5
+      ],
+      "name_en": "Weapons 65",
+      "items_en": [
+        "Battle Sword",
+        "Ghost Fang Blade",
+        "Dragon Knife",
+        "Yellow Dragon Bow",
+        "Partisan",
+        "Heaven and Earth Bell",
+        "Salvation Fan"
+      ],
+      "type": "weapon",
+      "level": 65
+    },
+    {
+      "name": "Bronie 75",
+      "items": [
+        "Zatruty miecz",
+        "Lwi Miecz",
+        "Skrzydła Demona Chakr.",
+        "Stalowy Łuk Kruka",
+        "Miecz Żalu",
+        "Bambusowy Dzwon"
+      ],
+      "chances": [
+        1.0,
+        0.8,
+        0.7,
+        0.6,
+        0.55,
+        0.45,
+        0.45,
+        0.4,
+        0.4
+      ],
+      "name_en": "Weapons 75",
+      "items_en": [
+        "Poison Sword",
+        "Lion Sword",
+        "Devil Wing Chakram",
+        "Crow Steel Bow",
+        "Grudge Sword",
+        "Bamboo Bell"
+      ],
+      "type": "weapon",
+      "level": 75
+    },
+    {
+      "name": "Bronie PvP 80",
+      "items": [
+        "Miecz Trytona",
+        "Święty Miecz",
+        "Olbrz. Łuk Diabła",
+        "Zabójca Żółt. Smoka",
+        "Bezduszny Nóż",
+        "Dzwon Szczęki Smoka",
+        "Wachlarz Demona"
+      ],
+      "chances": [
+        1.0,
+        0.8,
+        0.6,
+        0.5,
+        0.45,
+        0.4,
+        0.35,
+        0.3,
+        0.2
+      ],
+      "name_en": "PvP Weapons 80",
+      "items_en": [
+        "Triton Sword",
+        "Holy Sword",
+        "Giant Devil Bow",
+        "Yellow Dragon Slayer",
+        "Soulless Knife",
+        "Dragon Jaw Bell",
+        "Demon Fan"
+      ],
+      "type": "weapon",
+      "level": 80
+    },
+    {
+      "name": "Bronie PvP 90",
+      "items": [
+        "Runiczny Miecz",
+        "Klinga Smoczego Kła",
+        "Kolec Pięciu Elementów",
+        "Łuk Feniksa",
+        "Ostrze Słońca",
+        "Dzwon Smoczego Ducha",
+        "Wachlarz Leżąc. Smoka"
+      ],
+      "chances": [
+        0.5,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.35,
+        0.3,
+        0.25,
+        0.2
+      ],
+      "name_en": "PvP Weapons 90",
+      "items_en": [
+        "Rune Sword",
+        "Dragon Tooth Blade",
+        "Five Element Blade",
+        "Phoenix Bow",
+        "Solar Blade",
+        "Dragon Ghost Bell",
+        "Lying Dragon Fan"
+      ],
+      "type": "weapon",
+      "level": 90
+    },
+    {
+      "name": "Zbroja stal",
+      "items": [
+        "Zbroja Z Czarnej Stali",
+        "Ubranie Czarn. Wiatru",
+        "Zbr. Płyt. Czar. Magii",
+        "Czarna Szata"
+      ],
+      "chances": [
+        1.0,
+        0.8,
+        0.8,
+        0.7,
+        0.65,
+        0.55,
+        0.55,
+        0.4,
+        0.4
+      ],
+      "name_en": "Steel Armor",
+      "items_en": [
+        "Black Steel Armour",
+        "Black Wind Suit",
+        "Magic Plate Armour",
+        "Black Clothing"
+      ],
+      "type": "armor",
+      "level": 65
+    },
+    {
+      "name": "Zbroja niebiańska stal",
+      "items": [
+        "Zbroja Z Nieb. Stali",
+        "Ubranie Nieb. Smoka",
+        "Zbroja Płytowa Aury",
+        "Szata Smoka"
+      ],
+      "chances": [
+        1.0,
+        0.8,
+        0.6,
+        0.5,
+        0.45,
+        0.4,
+        0.3,
+        0.2,
+        0.1
+      ],
+      "name_en": "Celestial Steel Armor",
+      "items_en": [
+        "Blue Steel Armour",
+        "Blue Dragon Suit",
+        "Aura Plate Armour",
+        "Dragon Clothing"
+      ],
+      "type": "armor",
+      "level": 75
+    },
+    {
+      "name": "Zbroja smoka",
+      "items": [
+        "Pancerz Diabel. Rogu",
+        "Szata Smoczego Jeźdźca",
+        "Pancerz Kościopłytowy",
+        "Złote Ubranie"
+      ],
+      "chances": [
+        0.5,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.3,
+        0.2,
+        0.15,
+        0.1
+      ],
+      "name_en": "Dragon Armor",
+      "items_en": [
+        "Devil's Horn Armour",
+        "Dragon Rider Suit",
+        "Bone Plated Armour",
+        "Golden Clothing"
+      ],
+      "type": "armor",
+      "level": 90
+    },
+    {
+      "name": "Zbroja smoka mroku (nowa)",
+      "items": [
+        "Miecz Smoka Mroku",
+        "Brzeszczot Smoka Mrok",
+        "Sztylet Smoka Mroku",
+        "Łuk Smoka Mroku",
+        "Ostrze Smoka Mroku",
+        "Dzwon Smoka Mroku",
+        "Wachlarz Smoka Mroku",
+        "Hełm Smoka Mroku",
+        "Hełm Smoka Wiatru",
+        "Hełm Smoka Magii",
+        "Hełm Boskiego Smoka",
+        "Zbroja Smoka Mroku",
+        "Zbroja Smoka Wiatru",
+        "Zbroja Smoka Magii",
+        "Zbroja Boskiego Smoka"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "name_en": "Dark Dragon Armor (New)",
+      "items_en": [
+        "Gloom Dragon Sword",
+        "Gloom Dragon Sabre",
+        "Gloom Dragon Dagger",
+        "Gloom Dragon Bow",
+        "Gloom Dragon Blade",
+        "Gloom Dragon Bell",
+        "Gloom Dragon Fan",
+        "Gloom Dragon Helmet",
+        "Tempest Dragon Helmet",
+        "Hex Dragon Helmet",
+        "Exalted Dragon Helmet",
+        "Gloom Dragon Armour",
+        "Tempest Dragon Armour",
+        "Hex Dragon Armour",
+        "Exalted Dragon Armour"
+      ],
+      "type": "armor",
+      "level": 90
+    },
+    {
+      "name": "Helm 60",
+      "items": [
+        "Maska Strachu",
+        "Orkowy Kaptur",
+        "Rogowy Hełm",
+        "Kapelusz Kardynała"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        0.9,
+        0.85,
+        0.8,
+        0.75,
+        0.7,
+        0.6,
+        0.6
+      ],
+      "name_en": "Helmet 60",
+      "items_en": [
+        "Fear Mask",
+        "Orc Hood",
+        "Horned Helmet",
+        "Cardinal's Hat"
+      ],
+      "type": "helmet",
+      "level": 60
+    },
+    {
+      "name": "Helm 100",
+      "items": [
+        "Hełm Mistrza Wojny",
+        "Pajęczy Kaptur",
+        "Magiczny Hełm",
+        "Kapelusz Duszy"
+      ],
+      "chances": [
+        0.5,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.3,
+        0.2,
+        0.15,
+        0.1
+      ],
+      "name_en": "Helmet 100",
+      "items_en": [
+        "War Master Helmet",
+        "Spider Hood",
+        "Magic Helmet",
+        "Soul Shard Hat"
+      ],
+      "type": "helmet",
+      "level": 100
+    },
+    {
+      "name": "Tarcze 61",
+      "items": [
+        "Sokola Tarcza",
+        "Tarcza Tygrysa",
+        "Lwia Tarcza",
+        "Tarcza Smoka"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        0.9,
+        0.9,
+        0.85,
+        0.8,
+        0.75,
+        0.7,
+        0.6
+      ],
+      "name_en": "Shields 61",
+      "items_en": [
+        "Falcon Shield",
+        "Tiger Shield",
+        "Lion Edge Shield",
+        "Dragon Scale Shield"
+      ],
+      "type": "shield",
+      "level": 61
+    },
+    {
+      "name": "Tarcza Tytanów",
+      "items": [
+        "Tarcza Tytanów"
+      ],
+      "chances": [
+        1.0,
+        0.8,
+        0.6,
+        0.5,
+        0.45,
+        0.4,
+        0.3,
+        0.2,
+        0.1
+      ],
+      "name_en": "Titan Shield",
+      "items_en": [
+        "Titan Shield"
+      ],
+      "type": "shield",
+      "level": 75
+    },
+    {
+      "name": "Tarcza Trzech Władców",
+      "items": [
+        "Tarcza Trzech Władców"
+      ],
+      "chances": [
+        0.5,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.3,
+        0.2,
+        0.15,
+        0.1
+      ],
+      "name_en": "Shield of the Three Lords",
+      "items_en": [
+        "Three Emperors Shield"
+      ],
+      "type": "shield",
+      "level": 90
+    },
+    {
+      "name": "Boska Tarcza",
+      "items": [
+        "Boska Tarcza"
+      ],
+      "chances": [
+        0.5,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.3,
+        0.2,
+        0.15,
+        0.1
+      ],
+      "name_en": "Divine Shield",
+      "items_en": [
+        "Divine Shield"
+      ],
+      "type": "shield",
+      "level": 100
+    },
+    {
+      "name": "Buty 55",
+      "items": [
+        "Ekstazyjne Buty",
+        "Deszczowe Buty",
+        "Buty Feniksa",
+        "Buty Ognistego Ptaka"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        0.9,
+        0.85,
+        0.8,
+        0.75,
+        0.7,
+        0.65,
+        0.6
+      ],
+      "name_en": "Boots 55",
+      "items_en": [
+        "Ecstasy Shoes",
+        "Nimbus Boots",
+        "Phoenix Shoes",
+        "Fire Bird Shoes"
+      ],
+      "type": "boots",
+      "level": 55
+    },
+    {
+      "name": "Buty 75",
+      "items": [
+        "Buty Euforii",
+        "Kozaki Glorii",
+        "Buty Qilina",
+        "Buty Zimorodka"
+      ],
+      "chances": [
+        1.0,
+        0.9,
+        0.7,
+        0.65,
+        0.5,
+        0.45,
+        0.35,
+        0.3,
+        0.2
+      ],
+      "name_en": "Boots 75",
+      "items_en": [
+        "Euphoria Shoes",
+        "Glory Boots",
+        "Qilin Shoes",
+        "Kingfisher Shoes"
+      ],
+      "type": "boots",
+      "level": 75
+    },
+    {
+      "name": "Buty Enigmy",
+      "items": [
+        "Buty Enigmy"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "name_en": "Enigma Boots",
+      "items_en": [
+        "Enigma Shoes"
+      ],
+      "type": "boots",
+      "level": 90
+    },
+    {
+      "name": "Biżuteria 55",
+      "items": [
+        "Kryształowa Bransoleta",
+        "Ametystowa Bransoleta",
+        "Bransol. Z Niebiań.Łez",
+        "Kryształowy Naszyjnik",
+        "Ametystowy Naszyjnik",
+        "Naszyj. Z Niebiań.Łez",
+        "Kryształowe Kolczyki",
+        "Ametystowe Kolczyki",
+        "Kolczyki Z Niebiań.Łez"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        0.95,
+        0.95,
+        0.9,
+        0.85,
+        0.8,
+        0.7,
+        0.6
+      ],
+      "name_en": "Jewelry 55",
+      "items_en": [
+        "Crystal Bracelet",
+        "Amethyst Bracelet",
+        "Heaven's Tear Bracelet",
+        "Crystal Necklace",
+        "Amethyst Necklace",
+        "Heaven's Tear Necklace",
+        "Crystal Earrings",
+        "Amethyst Earrings",
+        "Heaven's Tear Earrings"
+      ],
+      "type": "jewelry",
+      "level": 55
+    },
+    {
+      "name": "Biżuteria Kryształu Duszy",
+      "items": [
+        "Opaska Kryształu Duszy",
+        "Naszyjnik Krysz. Duszy",
+        "Kolczyki Krysz. Duszy"
+      ],
+      "chances": [
+        1.0,
+        0.8,
+        0.6,
+        0.5,
+        0.45,
+        0.4,
+        0.35,
+        0.25,
+        0.15
+      ],
+      "name_en": "Soul Crystal Jewelry",
+      "items_en": [
+        "Soul Crystal Bracelet",
+        "Soul Crystal Necklace",
+        "Soul Crystal Earrings"
+      ],
+      "type": "jewelry",
+      "level": 75
+    },
+    {
+      "name": "Biżuteria kolorowa",
+      "items": [
+        "Rubinowa Bransoleta",
+        "Granatowa Bransoleta",
+        "Szmaragdowa Bransoleta",
+        "Szafirowa Bransoleta",
+        "Rubinowy Naszyjnik",
+        "Granatowy Naszyjnik",
+        "Szmaragdowy Naszyjnik",
+        "Szafirowy Naszyjnik",
+        "Rubinowe Kolczyki",
+        "Granatowe Kolczyki",
+        "Szmaragdowe Kolczyki",
+        "Szafirowe Kolczyki"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        0.9,
+        0.9,
+        0.8,
+        0.7,
+        0.7,
+        0.6,
+        0.6
+      ],
+      "name_en": "Colored Jewelry",
+      "items_en": [
+        "Ruby Bracelet",
+        "Garnet Bracelet",
+        "Emerald Bracelet",
+        "Sapphire Bracelet",
+        "Ruby Necklace",
+        "Garnet Necklace",
+        "Emerald Necklace",
+        "Sapphire Necklace",
+        "Ruby Earrings",
+        "Garnet Earrings",
+        "Emerald Earrings",
+        "Sapphire Earrings"
+      ],
+      "type": "jewelry",
+      "level": 55
+    },
+    {
+      "name": "Elementalna",
+      "items": [
+        "Elementalne Buty",
+        "Elementalny Naszyjnik"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        0.95,
+        0.95,
+        0.9,
+        0.85,
+        0.8,
+        0.7,
+        0.6
+      ],
+      "name_en": "Elemental",
+      "items_en": [
+        "Elemental Shoes",
+        "Elemental Necklace"
+      ],
+      "type": "jewelry",
+      "level": 55
+    },
+    {
+      "name": "Turmalin",
+      "items": [
+        "Bransoleta z Turmalinu",
+        "Naszyjnik z Turmalinu"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "name_en": "Tourmaline",
+      "items_en": [
+        "Tourmaline Bracelet",
+        "Tourmaline Necklace"
+      ],
+      "type": "jewelry",
+      "level": 90
+    },
+    {
+      "name": "Pas Lniany",
+      "items": [
+        "Pas Lniany"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        1.0,
+        0.9,
+        0.8,
+        0.75,
+        0.7,
+        0.65,
+        0.6
+      ],
+      "name_en": "Linen Belt",
+      "items_en": [
+        "Linen Belt"
+      ],
+      "type": "belt",
+      "level": 55
+    },
+    {
+      "name": "Pas Skórzany",
+      "items": [
+        "Pas Skórzany"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        1.0,
+        0.9,
+        0.8,
+        0.75,
+        0.7,
+        0.65,
+        0.6
+      ],
+      "name_en": "Leather Belt",
+      "items_en": [
+        "Leather Belt"
+      ],
+      "type": "belt",
+      "level": 55
+    },
+    {
+      "name": "Pas Niedźwiedzi",
+      "items": [
+        "Pas Niedźwiedzi"
+      ],
+      "chances": [
+        0.5,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.3,
+        0.2,
+        0.15,
+        0.1
+      ],
+      "name_en": "Bear Belt",
+      "items_en": [
+        "Great Bear Belt"
+      ],
+      "type": "belt",
+      "level": 90
+    },
+    {
+      "name": "Pas Dusz",
+      "items": [
+        "Pas Dusz"
+      ],
+      "chances": [
+        0.5,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.3,
+        0.2,
+        0.15,
+        0.1
+      ],
+      "name_en": "Soul Belt",
+      "items_en": [
+        "Souls Belt"
+      ],
+      "type": "belt",
+      "level": 90
+    }
+  ]
+}

@@ -1,0 +1,339 @@
+﻿@page
+@model Ogur.Sentinel.Api.Pages.Baerim.UpgradeModel
+@{
+Layout = null;
+ViewData["Title"] = "Baerim ulepszanie";
+var en = Model.Lang == "en";
+}
+<!DOCTYPE html>
+<html lang="@Model.Lang" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Baerim ulepszanie</title>
+    <link rel="icon" type="image/png" href="/files/baerim-og.png" />
+    <meta property="og:site_name" content="Ogur.dev" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Baerim — Ulepszanie" />
+    <meta property="og:description" content="Sprawdź szansę na ulepszenie przedmiotu na kolejny poziom." />
+    <meta property="og:image" content="https://respy.ogur.dev/files/baerim-og.png" />
+    <meta property="og:url" content="https://respy.ogur.dev/baerim/upgrade" />
+    <meta name="theme-color" content="#43b581" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #0d0d0f;
+            color: #eee;
+            font-family: system-ui, sans-serif;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            gap: 16px;
+        }
+        .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
+        .topbar a:hover { color: #fff; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .page-logo { padding: 6px 20px 0; }
+        .page-logo-img { width: 500px; max-width: 90%; height: auto; border-radius: 12px; display: block; }
+        .status { font-size: 0.9rem; color: #ddd; }
+        .status a { margin-left: 12px; cursor: pointer; }
+        .status-badge { font-size: 0.85rem; color: #666; }
+        .login-link { color: #5865F2; text-decoration: none; font-weight: 600; }
+        .login-link:hover { color: #4752c4; }
+
+        .lang-switch { display: flex; gap: 4px; }
+        .lang-switch a {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid #2a2a2e;
+            color: #888;
+        }
+        .lang-switch a.active { color: #eee; border-color: #43b581; }
+
+        .hero { text-align: center; padding: 30px 20px 10px; }
+        .hero h1 { margin: 0 0 8px; font-size: 2rem; }
+        .hero p { margin: 0; color: #999; }
+
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .filter-select {
+            background: #1a1a1e;
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            padding: 10px 12px;
+            color: #eee;
+            font-size: 0.9rem;
+        }
+        .filter-select:focus {
+            outline: none;
+            border-color: #43b581;
+        }
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            box-sizing: border-box;
+            background: #1a1a1e;
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: #eee;
+            font-size: 1rem;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #43b581;
+        }
+
+        .table-wrap {
+            margin-top: 20px;
+            overflow-x: auto;
+            border: 1px solid #2a2a2e;
+            border-radius: 12px;
+        }
+        .upgrade-table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 840px;
+        }
+        .upgrade-table th, .upgrade-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid #222;
+            font-size: 0.85rem;
+        }
+        .upgrade-table thead th {
+            color: #888;
+            font-weight: 600;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            background: #14141a;
+            position: sticky;
+            top: 0;
+        }
+        .upgrade-table td:nth-child(2), .upgrade-table th:nth-child(2) {
+            text-align: left;
+        }
+        .upgrade-table tbody tr:hover { background: #1f1f24; }
+        .upgrade-table tbody tr.row-hidden { display: none; }
+
+        .item-photo-placeholder {
+            width: 96px;
+            height: 48px;
+            border-radius: 8px;
+            background: #26262b;
+            border: 1px dashed #3a3a3e;
+            margin: 0 auto;
+        }
+        .item-name { font-weight: 600; }
+        .item-sub { font-size: 0.72rem; color: #777; margin-top: 2px; }
+
+        .chance-high { color: #43b581; font-weight: 700; }
+        .chance-mid { color: rgb(222,156,47); font-weight: 700; }
+        .chance-low { color: #ed4245; font-weight: 700; }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <a href="/baerim/">← Baerim</a>
+    <div class="topbar-right">
+        <div class="lang-switch">
+            <a href="?lang=pl" class="@(en ? "" : "active")">PL</a>
+            <a href="?lang=en" class="@(en ? "active" : "")">EN</a>
+        </div>
+        @if (Model.IsLoggedIn)
+        {
+        <div class="status">
+            <span>👤 @Model.DiscordUsername</span>
+            <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
+        </div>
+        }
+        else
+        {
+        <div class="status">
+            <span class="status-badge">@(en ? "Not logged in" : "Niezalogowany")</span>
+            <a class="login-link" href="/auth/discord/login?returnTo=/baerim/upgrade">@(en ? "Log in with Discord" : "Zaloguj przez Discord")</a>
+        </div>
+        }
+    </div>
+</div>
+<div class="page-logo">
+    <img src="/files/baerim-og.png" alt="Baerim" class="page-logo-img" />
+</div>
+
+<div class="hero">
+    <h1>@(en ? "Upgrading" : "Ulepszanie")</h1>
+    <p>@(en ? "Search for an item to see its upgrade success chances" : "Wyszukaj przedmiot, aby zobaczyć szanse na ulepszenie")</p>
+</div>
+
+<div class="content">
+    <div class="filters">
+        <input type="text" id="searchInput" class="search-input" placeholder="@(en ? "Filter by item name..." : "Filtruj po nazwie przedmiotu...")" autocomplete="off" />
+        <select id="typeFilter" class="filter-select">
+            <option value="">@(en ? "All types" : "Wszystkie typy")</option>
+            <option value="weapon">@(en ? "Weapon" : "Broń")</option>
+            <option value="armor">@(en ? "Armor" : "Zbroja")</option>
+            <option value="helmet">@(en ? "Helmet" : "Hełm")</option>
+            <option value="shield">@(en ? "Shield" : "Tarcza")</option>
+            <option value="boots">@(en ? "Boots" : "Buty")</option>
+            <option value="jewelry">@(en ? "Jewelry" : "Biżuteria")</option>
+            <option value="belt">@(en ? "Belt" : "Pas")</option>
+        </select>
+        <select id="levelFilter" class="filter-select">
+            <option value="">@(en ? "All levels" : "Wszystkie poziomy")</option>
+            <option value="0-59">@(en ? "Up to 59" : "Do 59")</option>
+            <option value="60-79">60-79</option>
+            <option value="80-99">80-99</option>
+            <option value="100-999">100+</option>
+        </select>
+    </div>
+
+    <div class="table-wrap">
+        <table class="upgrade-table">
+            <thead>
+            <tr>
+                <th></th>
+                <th>@(en ? "Item" : "Przedmiot")</th>
+                <th>+1</th>
+                <th>+2</th>
+                <th>+3</th>
+                <th>+4</th>
+                <th>+5</th>
+                <th>+6</th>
+                <th>+7</th>
+                <th>+8</th>
+                <th>+9</th>
+            </tr>
+            </thead>
+            <tbody id="upgradeTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Categories where all items share one row per group (weapon/armor sets).
+    // Everything else (jewelry, boots, helmets, shields, belts) gets one row per item.
+    const GROUPED_PREFIXES = ['Bronie', 'Zbroja'];
+    const IS_EN = @Html.Raw(en ? "true" : "false");
+
+    function isGroupedCategory(groupName) {
+        return GROUPED_PREFIXES.some(prefix => groupName.startsWith(prefix));
+    }
+
+    function localizedGroupName(g) {
+        return (IS_EN && g.name_en) ? g.name_en : g.name;
+    }
+
+    function localizedItemName(g, index) {
+        if (IS_EN && g.items_en && g.items_en[index]) return g.items_en[index];
+        return g.items[index];
+    }
+
+    function localizedItemList(g) {
+        return g.items.map((_, i) => localizedItemName(g, i)).join(', ');
+    }
+
+    function chanceClass(value) {
+        if (value >= 0.7) return 'chance-high';
+        if (value >= 0.4) return 'chance-mid';
+        return 'chance-low';
+    }
+
+    function buildEntries(data) {
+        return data.groups.flatMap(g => {
+            if (isGroupedCategory(g.name)) {
+                return [{
+                    name: localizedGroupName(g),
+                    sub: localizedItemList(g),
+                    chances: g.chances,
+                    type: g.type,
+                    level: g.level,
+                    searchText: (g.name + ' ' + (g.name_en || '') + ' ' + g.items.join(' ') + ' ' + (g.items_en || []).join(' ')).toLowerCase()
+                }];
+            }
+            return g.items.map((_, i) => ({
+                name: localizedItemName(g, i),
+                sub: localizedGroupName(g),
+                chances: g.chances,
+                type: g.type,
+                level: g.level,
+                searchText: (g.items[i] + ' ' + (g.items_en?.[i] || '') + ' ' + g.name).toLowerCase()
+            }));
+        });
+    }
+
+    function renderRows(entries) {
+        const tbody = document.getElementById('upgradeTableBody');
+        tbody.innerHTML = entries.map(entry => {
+            const cells = entry.chances.map(v => {
+                const pct = Math.round(v * 100);
+                return `<td class="${chanceClass(v)}">${pct}%</td>`;
+            }).join('');
+
+            return `<tr data-search="${entry.searchText}" data-type="${entry.type}" data-level="${entry.level}">
+                <td><div class="item-photo-placeholder"></div></td>
+                <td>
+                    <div class="item-name">${entry.name}</div>
+                    <div class="item-sub">${entry.sub}</div>
+                </td>
+                ${cells}
+            </tr>`;
+        }).join('');
+    }
+
+    function levelInRange(level, rangeValue) {
+        if (!rangeValue) return true;
+        const [min, max] = rangeValue.split('-').map(Number);
+        return level >= min && level <= max;
+    }
+
+    function applyFilters() {
+        const q = document.getElementById('searchInput').value.trim().toLowerCase();
+        const type = document.getElementById('typeFilter').value;
+        const levelRange = document.getElementById('levelFilter').value;
+
+        document.querySelectorAll('#upgradeTableBody tr').forEach(row => {
+            const matchesSearch = !q || row.dataset.search.includes(q);
+            const matchesType = !type || row.dataset.type === type;
+            const matchesLevel = levelInRange(Number(row.dataset.level), levelRange);
+            row.classList.toggle('row-hidden', !(matchesSearch && matchesType && matchesLevel));
+        });
+    }
+
+    async function init() {
+        try {
+            const resp = await fetch('/baerim/upgrade-data');
+            const data = await resp.json();
+            renderRows(buildEntries(data));
+        } catch (e) {
+            console.warn('Failed to load upgrade data', e);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('typeFilter').addEventListener('change', applyFilters);
+        document.getElementById('levelFilter').addEventListener('change', applyFilters);
+    }
+
+    init();
+</script>
+</body>
+</html>
