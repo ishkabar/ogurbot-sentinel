@@ -39,8 +39,8 @@ var en = Model.Lang == "en";
         .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .topbar a:hover { color: #fff; }
         .topbar-right { display: flex; align-items: center; gap: 16px; }
-        .page-logo { padding: 6px 20px 0; }
-        .page-logo-img { width: 500px; max-width: 90%; height: auto; border-radius: 12px; display: block; }
+        .page-logo { margin: 0 0 16px; }
+        .page-logo-img { width: 100%; max-width: 200px; height: auto; border-radius: 10px; display: block; }
         .status { font-size: 0.9rem; color: #ddd; }
         .status a { margin-left: 12px; cursor: pointer; }
 
@@ -138,21 +138,66 @@ var en = Model.Lang == "en";
             margin: auto;
         }
 
-        .support-widget {
-            position: relative;
+        .support-widget-box {
             width: 100%;
             max-width: 200px;
-            height: 300px;
-            overflow: hidden;
             margin-top: auto;
+            background: #1a1a1e;
+            border: 1px solid #2a2a2e;
             border-radius: 10px;
+            overflow: hidden;
         }
-
-        .support-widget iframe {
-            width: 100%;
-            height: 100%;
-            border: 0;
+        .support-widget-collapsed-view {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px 12px;
         }
+        .support-widget-collapsed-view p {
+            margin: 0;
+            font-size: 0.78rem;
+            color: #ccc;
+            line-height: 1.3;
+        }
+        .support-widget-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .support-widget-btn {
+            background: #43b581;
+            color: #0d0d0f;
+            font-weight: 700;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.76rem;
+            white-space: nowrap;
+        }
+        .support-widget-btn:hover { filter: brightness(1.1); }
+        .support-widget-toggle {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 2px 4px;
+            flex-shrink: 0;
+        }
+        .support-widget-toggle:hover { color: #eee; }
+        .support-widget-expanded-view { position: relative; }
+        .support-widget-toggle-inline {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            z-index: 1;
+            background: rgba(13,13,15,0.7);
+            border-radius: 6px;
+        }
+        .support-widget-frame { width: 100%; height: 300px; border: 0; display: block; }
+        .support-widget-box.collapsed .support-widget-expanded-view { display: none; }
+        .support-widget-box:not(.collapsed) .support-widget-collapsed-view { display: none; }
 
         .drawer-toggle {
             position: fixed;
@@ -294,9 +339,6 @@ var en = Model.Lang == "en";
         }
     </div>
 </div>
-<div class="page-logo">
-    <img src="/files/baerim-og.png" alt="Baerim" class="page-logo-img" />
-</div>
 
 @if (!Model.IsLoggedIn)
 {
@@ -311,6 +353,10 @@ else
 {
 <div class="page-content">
     <div class="sidebar">
+        <div class="page-logo">
+            <img src="/files/baerim-og.png" alt="Baerim" class="page-logo-img" />
+        </div>
+
         <h3>@(en ? "Sector" : "Sektor")</h3>
         <p class="value muted" id="sidebarSector">—</p>
 
@@ -329,12 +375,18 @@ else
             <button class="zoom-btn" id="zoomInBtn">+</button>
         </div>
 
-        <div class="support-widget">
-            <iframe
-                src="https://zrzutka.pl/fhyeca/widget/23"
-                frameborder="0"
-                scrolling="no">
-            </iframe>
+        <div class="support-widget-box" id="supportWidgetChunjo">
+            <div class="support-widget-collapsed-view">
+                <p>@(en ? "Enjoying the map? Support the server." : "Podoba Ci się mapa? Wesprzyj serwer.")</p>
+                <div class="support-widget-header-row">
+                    <a class="support-widget-btn" href="https://zrzutka.pl/fhyeca" target="_blank" rel="noopener">@(en ? "Support" : "Wesprzyj")</a>
+                    <button class="support-widget-toggle" type="button" data-action="expand" aria-label="@(en ? "Expand" : "Rozwiń")">▸</button>
+                </div>
+            </div>
+            <div class="support-widget-expanded-view">
+                <button class="support-widget-toggle support-widget-toggle-inline" type="button" data-action="collapse" aria-label="@(en ? "Collapse" : "Zwiń")">▾</button>
+                <iframe class="support-widget-frame" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0" scrolling="no"></iframe>
+            </div>
         </div>
     </div>
 
@@ -369,6 +421,31 @@ else
 }
 
 <script>
+    (function() {
+        const KEY = 'baerim_support_widget_collapsed_until';
+        const HOURS = 24;
+        function isCollapsed() {
+            const until = parseInt(localStorage.getItem(KEY) || '0', 10);
+            return until > Date.now();
+        }
+        function setCollapsed(collapsed) {
+            if (collapsed) {
+                localStorage.setItem(KEY, String(Date.now() + HOURS * 60 * 60 * 1000));
+            } else {
+                localStorage.removeItem(KEY);
+            }
+        }
+        const box = document.getElementById('supportWidgetChunjo');
+        if (!box) return;
+        if (isCollapsed()) box.classList.add('collapsed');
+        box.querySelectorAll('[data-action="collapse"]').forEach(btn =>
+            btn.addEventListener('click', () => { box.classList.add('collapsed'); setCollapsed(true); })
+        );
+        box.querySelectorAll('[data-action="expand"]').forEach(btn =>
+            btn.addEventListener('click', () => { box.classList.remove('collapsed'); setCollapsed(false); })
+        );
+    })();
+
     const T = {
         locale: '@(en ? "en-GB" : "pl-PL")',
         markFailed: '@(en ? "Failed to mark the location" : "Nie udało się oznaczyć lokalizacji")',

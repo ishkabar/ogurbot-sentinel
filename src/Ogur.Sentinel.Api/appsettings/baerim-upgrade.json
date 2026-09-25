@@ -667,15 +667,15 @@
         "Naszyjnik z Turmalinu"
       ],
       "chances": [
-        1.0,
-        1.0,
-        1.0,
-        1.0,
-        1.0,
-        1.0,
-        1.0,
-        1.0,
-        1.0
+        0.4,
+        0.35,
+        0.35,
+        0.35,
+        0.3,
+        0.25,
+        0.2,
+        0.15,
+        0.1
       ],
       "name_en": "Tourmaline",
       "items_en": [
@@ -683,7 +683,7 @@
         "Tourmaline Necklace"
       ],
       "type": "jewelry",
-      "level": 90
+      "level": 100
     },
     {
       "name": "Pas Lniany",
@@ -776,6 +776,159 @@
       ],
       "type": "belt",
       "level": 90
+    },
+    {
+      "name": "Bronie Meley",
+      "items": [
+        "Zatruty miecz Meley",
+        "Lwi Miecz Meley",
+        "Skrzydła Demona Chakr. Meley",
+        "Stalowy Łuk Kruka Meley",
+        "Miecz Żalu Meley",
+        "Bambusowy Dzwon Meley"
+      ],
+      "chances": [
+        0.4,
+        0.35,
+        0.35,
+        0.35,
+        0.3,
+        0.25,
+        0.2,
+        0.15,
+        0.1
+      ],
+      "name_en": "Meley Weapons",
+      "items_en": null,
+      "type": "weapon",
+      "level": 100
+    },
+    {
+      "name": "Hełmy Dragona",
+      "items": [
+        "Stalowy Hełm Dragona",
+        "Kaptur Dragona",
+        "Pancerny Hełm Dragona",
+        "Kapelusz Dragona"
+      ],
+      "chances": [
+        0.4,
+        0.35,
+        0.35,
+        0.35,
+        0.3,
+        0.25,
+        0.2,
+        0.15,
+        0.1
+      ],
+      "name_en": "Dragoneer Helmets",
+      "items_en": [
+        "Dragoneer Steel Helm",
+        "Dragoneer Hood",
+        "Dragoneer Scale Helm",
+        "Dragoneer Hat"
+      ],
+      "type": "helmet",
+      "level": 100
+    },
+    {
+      "name": "Pas Przepychu",
+      "items": [
+        "Pas Przepychu"
+      ],
+      "chances": [
+        1.0,
+        1.0,
+        1.0,
+        0.9,
+        0.8,
+        0.75,
+        0.7,
+        0.65,
+        0.6
+      ],
+      "name_en": "Magnificent Belt",
+      "items_en": [
+        "Magnificent Belt"
+      ],
+      "type": "belt",
+      "level": 55
+    },
+    {
+      "name": "Pas Mądrości",
+      "items": [
+        "Pas Mądrości"
+      ],
+      "chances": [
+        1.0,
+        0.9,
+        0.8,
+        0.7,
+        0.6,
+        0.5,
+        0.35,
+        0.25,
+        0.15
+      ],
+      "name_en": "Belt of Wisdom",
+      "items_en": [
+        "Belt of Wisdom"
+      ],
+      "type": "belt",
+      "level": 75
+    },
+    {
+      "name": "Pas z Turmalinu",
+      "items": [
+        "Pas z Turmalinu"
+      ],
+      "chances": [
+        0.4,
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.2,
+        0.15,
+        0.1,
+        0.05
+      ],
+      "name_en": "Tourmaline Belt",
+      "items_en": [
+        "Tourmaline Belt"
+      ],
+      "type": "belt",
+      "level": 100
+    },
+    {
+      "name": "Zbroja Meley",
+      "items": [
+        "Pancerz Magmy",
+        "Ubr. Krwaw. Księżyca",
+        "Piekielny Pancerz",
+        "Szata Ognia"
+      ],
+      "chances": [
+        0.4,
+        0.35,
+        0.35,
+        0.35,
+        0.3,
+        0.25,
+        0.2,
+        0.15,
+        0.1
+      ],
+      "name_en": "Meley Armor",
+      "items_en": [
+        "Magma Glow Armour",
+        "Blood Moon Suit",
+        "Hellrider Armour",
+        "Fire Clothing"
+      ],
+      "type": "armor",
+      "level": 100
     }
   ]
 }

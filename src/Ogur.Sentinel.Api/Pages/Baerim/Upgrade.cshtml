@@ -24,6 +24,7 @@ var en = Model.Lang == "en";
             height: 100%;
             margin: 0;
             padding: 0;
+            position: relative;
             background: #0d0d0f;
             color: #eee;
             font-family: system-ui, sans-serif;
@@ -38,31 +39,93 @@ var en = Model.Lang == "en";
         .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .topbar a:hover { color: #fff; }
         .topbar-right { display: flex; align-items: center; gap: 16px; }
-        .page-logo {position: sticky; top: 20px; flex: 0 0 260px; padding: 0;}
-        .page-logo-img {width: 260px; max-width: 100%; height: auto; border-radius: 12px; display: block;}
+        .page-logo {
+            position: absolute;
+            top: 64px;
+            left: 20px;
+            z-index: 5;
+            background: #1a1a1e;
+            border: 1px solid #2a2a2e;
+            border-radius: 14px;
+            padding: 0;
+        }
+
+        .page-logo-img { width: 260px; max-width: 90vw; height: auto; border-radius: 14px; display: block; }
+
+        @@media (max-width: 640px) {
+        .page-logo {
+            position: static;
+            display: flex;
+            justify-content: center;
+            margin: 12px auto 16px;
+        }
+        .page-logo-img { width: 160px !important; }
+        }
         .status { font-size: 0.9rem; color: #ddd; }
         .status a { margin-left: 12px; cursor: pointer; }
         .status-badge { font-size: 0.85rem; color: #666; }
         .login-link { color: #5865F2; text-decoration: none; font-weight: 600; }
         .login-link:hover { color: #4752c4; }
 
-        .support-widget {
+        .support-widget-box {
             position: fixed;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%);
+            bottom: 20px;
+            left: 20px;
             width: 300px;
-            height: 450px;
-            z-index: 1000;
+            z-index: 40;
+            background: #1a1a1e;
+            border: 1px solid #2a2a2e;
+            border-radius: 14px;
             overflow: hidden;
-            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
-
-        .support-widget iframe {
-            width: 100%;
-            height: 100%;
-            border: 0;
+        .support-widget-collapsed-view {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 14px;
         }
+        .support-widget-collapsed-view p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #ccc;
+            line-height: 1.3;
+            flex: 1;
+        }
+        .support-widget-btn {
+            background: #43b581;
+            color: #0d0d0f;
+            font-weight: 700;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .support-widget-btn:hover { filter: brightness(1.1); }
+        .support-widget-toggle {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 2px 4px;
+            flex-shrink: 0;
+        }
+        .support-widget-toggle:hover { color: #eee; }
+        .support-widget-expanded-view { position: relative; }
+        .support-widget-toggle-inline {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            z-index: 1;
+            background: rgba(13,13,15,0.7);
+            border-radius: 6px;
+        }
+        .support-widget-frame { width: 100%; height: 450px; border: 0; display: block; }
+        .support-widget-box.collapsed .support-widget-expanded-view { display: none; }
+        .support-widget-box:not(.collapsed) .support-widget-collapsed-view { display: none; }
 
         .lang-switch { display: flex; gap: 4px; }
         .lang-switch a {
@@ -84,6 +147,56 @@ var en = Model.Lang == "en";
             margin: 0 auto;
             padding: 20px;
         }
+
+        .calc-box {
+            max-width: 640px;
+            margin: 0 auto 24px;
+            background: #1a1a1e;
+            border: 1px solid #2a2a2e;
+            border-radius: 14px;
+            padding: 20px;
+        }
+        .calc-box h2 { margin: 0 0 16px; font-size: 1.1rem; }
+        .calc-row { margin-bottom: 14px; }
+        .calc-row label { display: block; font-size: 0.8rem; color: #999; margin-bottom: 6px; }
+        .calc-search-wrap { position: relative; }
+        .calc-search-input, .calc-select {
+            width: 100%;
+            box-sizing: border-box;
+            background: #14141a;
+            border: 1px solid #2a2a2e;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #eee;
+            font-size: 0.95rem;
+        }
+        .calc-select:disabled { opacity: 0.5; }
+        .calc-search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 4px;
+            background: #14141a;
+            border: 1px solid #2a2a2e;
+            border-radius: 8px;
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 20;
+            display: none;
+        }
+        .calc-search-results.show { display: block; }
+        .calc-search-item { padding: 8px 12px; cursor: pointer; font-size: 0.88rem; }
+        .calc-search-item:hover { background: #26262b; }
+        .calc-selected-item { font-size: 0.85rem; color: #43b581; margin-top: 8px; min-height: 1em; }
+        .calc-checks { display: flex; flex-wrap: wrap; gap: 14px; }
+        .calc-checks label { display: flex; align-items: center; gap: 6px; font-size: 0.88rem; color: #ccc; margin: 0; }
+        .calc-result { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+        .calc-result-box { flex: 1; text-align: center; padding: 14px; border-radius: 10px; background: #14141a; }
+        .calc-result-box.highlight { border: 1px solid #43b581; }
+        .calc-result-label { display: block; font-size: 0.75rem; color: #999; margin-bottom: 4px; }
+        .calc-result-value { font-size: 1.5rem; font-weight: 700; display: block; }
+        .calc-result-arrow { color: #666; font-size: 1.3rem; }
 
         .search-box {
             position: relative;
@@ -202,13 +315,100 @@ var en = Model.Lang == "en";
     <h1>@(en ? "Upgrading" : "Ulepszanie")</h1>
     <p>@(en ? "Search for an item to see its upgrade success chances" : "Wyszukaj przedmiot, aby zobaczyć szanse na ulepszenie")</p>
 </div>
-<div class="support-widget">
-    <iframe
-        src="https://zrzutka.pl/fhyeca/widget/23"
-        frameborder="0"
-        scrolling="no">
-    </iframe>
+
+<div class="calc-box">
+    <h2>@(en ? "Upgrade calculator" : "Kalkulator ulepszania")</h2>
+
+    <div class="calc-row">
+        <label>@(en ? "Item" : "Przedmiot")</label>
+        <div class="calc-search-wrap">
+            <input type="text" id="calcItemSearch" class="calc-search-input" placeholder="@(en ? "Search item..." : "Szukaj przedmiotu...")" autocomplete="off" />
+            <div class="calc-search-results" id="calcSearchResults"></div>
+        </div>
+        <div class="calc-selected-item" id="calcSelectedItem"></div>
+    </div>
+
+    <div class="calc-row">
+        <label>@(en ? "Upgrade" : "Ulepszenie")</label>
+        <select id="calcLevelSelect" class="calc-select" disabled></select>
+    </div>
+
+    <div class="calc-row calc-checks">
+        <label><input type="checkbox" id="calcSeal5" /> @(en ? "5% seal" : "Pieczęć 5%")</label>
+        <label><input type="checkbox" id="calcSeal10" /> @(en ? "10% seal" : "Pieczęć 10%")</label>
+        <label><input type="checkbox" id="calcEvent" /> @(en ? "Upgrade event (+5%)" : "Event ulepszania (+5%)")</label>
+    </div>
+
+    <div class="calc-row">
+        <label>@(en ? "Guild bonus" : "Bonus gildii")</label>
+        <select id="calcGuildBonus" class="calc-select">
+            <option value="0">0%</option>
+            <option value="5">+5%</option>
+            <option value="10">+10%</option>
+            <option value="15">+15%</option>
+            <option value="20">+20%</option>
+            <option value="25">+25%</option>
+            <option value="30">+30%</option>
+        </select>
+    </div>
+
+    <div class="calc-result" id="calcResult" style="display:none;">
+        <div class="calc-result-box">
+            <span class="calc-result-label">@(en ? "Default chance" : "Domyślna szansa")</span>
+            <span class="calc-result-value" id="calcDefaultPct">—</span>
+        </div>
+        <div class="calc-result-arrow">→</div>
+        <div class="calc-result-box highlight">
+            <span class="calc-result-label">@(en ? "With bonuses" : "Z bonusami")</span>
+            <span class="calc-result-value" id="calcFinalPct">—</span>
+        </div>
+    </div>
 </div>
+<div class="support-widget-box" id="supportWidgetUpgrade">
+    <div class="support-widget-collapsed-view">
+        <p>@(en ? "Enjoying the site? Support the server." : "Podoba Ci się strona? Wesprzyj serwer.")</p>
+        <a class="support-widget-btn" href="https://zrzutka.pl/fhyeca" target="_blank" rel="noopener">@(en ? "Support" : "Wesprzyj")</a>
+        <button class="support-widget-toggle" type="button" data-action="expand" aria-label="@(en ? "Expand" : "Rozwiń")">▸</button>
+    </div>
+    <div class="support-widget-expanded-view">
+        <button class="support-widget-toggle support-widget-toggle-inline" type="button" data-action="collapse" aria-label="@(en ? "Collapse" : "Zwiń")">▾</button>
+        <iframe class="support-widget-frame" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0" scrolling="no"></iframe>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const COLLAPSED_UNTIL_KEY = 'baerim_support_widget_collapsed_until';
+        const USER_EXPANDED_KEY = 'baerim_support_widget_user_expanded';
+        const HOURS = 24;
+        const isMobile = () => window.matchMedia('(max-width: 640px)').matches;
+
+        function isCollapsed() {
+            const until = parseInt(localStorage.getItem(COLLAPSED_UNTIL_KEY) || '0', 10);
+            if (until > Date.now()) return true;
+            if (localStorage.getItem(USER_EXPANDED_KEY) === '1') return false;
+            return isMobile();
+        }
+        function setCollapsed(collapsed) {
+            if (collapsed) {
+                localStorage.setItem(COLLAPSED_UNTIL_KEY, String(Date.now() + HOURS * 60 * 60 * 1000));
+                localStorage.removeItem(USER_EXPANDED_KEY);
+            } else {
+                localStorage.removeItem(COLLAPSED_UNTIL_KEY);
+                localStorage.setItem(USER_EXPANDED_KEY, '1');
+            }
+        }
+        const box = document.getElementById('supportWidgetUpgrade');
+        if (!box) return;
+        if (isCollapsed()) box.classList.add('collapsed');
+        box.querySelectorAll('[data-action="collapse"]').forEach(btn =>
+            btn.addEventListener('click', () => { box.classList.add('collapsed'); setCollapsed(true); })
+        );
+        box.querySelectorAll('[data-action="expand"]').forEach(btn =>
+            btn.addEventListener('click', () => { box.classList.remove('collapsed'); setCollapsed(false); })
+        );
+    })();
+</script>
 <div class="content">
     <div class="filters">
         <input type="text" id="searchInput" class="search-input" placeholder="@(en ? "Filter by item name..." : "Filtruj po nazwie przedmiotu...")" autocomplete="off" />
@@ -306,6 +506,20 @@ var en = Model.Lang == "en";
         });
     }
 
+    // Always one row per item, regardless of grouping — used only for the calculator search
+    function buildFlatItems(data) {
+        return data.groups.flatMap(g =>
+            g.items.map((_, i) => ({
+                name: localizedItemName(g, i),
+                sub: localizedGroupName(g),
+                chances: g.chances,
+                type: g.type,
+                level: g.level,
+                searchText: (g.items[i] + ' ' + (g.items_en?.[i] || '') + ' ' + g.name).toLowerCase()
+            }))
+        );
+    }
+
     function renderRows(entries) {
         const tbody = document.getElementById('upgradeTableBody');
         tbody.innerHTML = entries.map(entry => {
@@ -344,11 +558,105 @@ var en = Model.Lang == "en";
         });
     }
 
+    // --- Upgrade calculator ---
+    let calcEntries = [];
+    let calcSearchItems = [];
+    let calcSelectedEntry = null;
+
+    function initCalcLevelOptions() {
+        const select = document.getElementById('calcLevelSelect');
+        if (!select) return;
+        select.innerHTML = Array.from({ length: 9 }, (_, i) =>
+            `<option value="${i}">+${i} → +${i + 1}</option>`
+        ).join('');
+    }
+
+    function renderCalcSearchResults(query) {
+        const container = document.getElementById('calcSearchResults');
+        if (!query) {
+            container.classList.remove('show');
+            container.innerHTML = '';
+            return;
+        }
+        const q = query.toLowerCase();
+        const matches = calcSearchItems.filter(e => e.searchText.includes(q)).slice(0, 12);
+
+        if (matches.length === 0) {
+            container.innerHTML = `<div class="calc-search-item" style="color:#666; cursor:default;">${IS_EN ? 'No matches' : 'Brak wyników'}</div>`;
+        } else {
+            container.innerHTML = matches.map((m) =>
+                `<div class="calc-search-item" data-idx="${calcSearchItems.indexOf(m)}">${m.name}${m.sub ? ` — ${m.sub}` : ''}</div>`
+            ).join('');
+            container.querySelectorAll('.calc-search-item[data-idx]').forEach(el => {
+                el.addEventListener('click', () => {
+                    calcSelectedEntry = calcSearchItems[parseInt(el.dataset.idx, 10)];
+                    document.getElementById('calcItemSearch').value = calcSelectedEntry.name;
+                    document.getElementById('calcSelectedItem').textContent = IS_EN
+                        ? `Selected: ${calcSelectedEntry.name}`
+                        : `Wybrano: ${calcSelectedEntry.name}`;
+                    document.getElementById('calcLevelSelect').disabled = false;
+                    container.classList.remove('show');
+                    computeCalc();
+                });
+            });
+        }
+        container.classList.add('show');
+    }
+
+    function computeCalc() {
+        const resultBox = document.getElementById('calcResult');
+        if (!calcSelectedEntry) {
+            resultBox.style.display = 'none';
+            return;
+        }
+        const levelIdx = parseInt(document.getElementById('calcLevelSelect').value, 10);
+        const base = calcSelectedEntry.chances[levelIdx];
+
+        const seal5 = document.getElementById('calcSeal5').checked ? 0.05 : 0;
+        const seal10 = document.getElementById('calcSeal10').checked ? 0.10 : 0;
+        const event = document.getElementById('calcEvent').checked ? 0.05 : 0;
+        const guild = parseInt(document.getElementById('calcGuildBonus').value, 10) / 100;
+
+        const final = Math.min(1, base + seal5 + seal10 + event + guild);
+
+        document.getElementById('calcDefaultPct').textContent = `${Math.round(base * 100)}%`;
+        document.getElementById('calcFinalPct').textContent = `${Math.round(final * 100)}%`;
+        resultBox.style.display = 'flex';
+    }
+
+    function initCalculator() {
+        const searchInput = document.getElementById('calcItemSearch');
+        if (!searchInput) return;
+
+        initCalcLevelOptions();
+
+        searchInput.addEventListener('input', () => renderCalcSearchResults(searchInput.value.trim()));
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.calc-search-wrap')) {
+                document.getElementById('calcSearchResults').classList.remove('show');
+            }
+        });
+
+        document.getElementById('calcLevelSelect').addEventListener('change', computeCalc);
+        document.getElementById('calcSeal5').addEventListener('change', (e) => {
+            if (e.target.checked) document.getElementById('calcSeal10').checked = false;
+            computeCalc();
+        });
+        document.getElementById('calcSeal10').addEventListener('change', (e) => {
+            if (e.target.checked) document.getElementById('calcSeal5').checked = false;
+            computeCalc();
+        });
+        document.getElementById('calcEvent').addEventListener('change', computeCalc);
+        document.getElementById('calcGuildBonus').addEventListener('change', computeCalc);
+    }
+
     async function init() {
         try {
             const resp = await fetch('/baerim/upgrade-data');
             const data = await resp.json();
-            renderRows(buildEntries(data));
+            calcEntries = buildEntries(data);
+            calcSearchItems = buildFlatItems(data);
+            renderRows(calcEntries);
         } catch (e) {
             console.warn('Failed to load upgrade data', e);
         }
@@ -356,6 +664,8 @@ var en = Model.Lang == "en";
         document.getElementById('searchInput').addEventListener('input', applyFilters);
         document.getElementById('typeFilter').addEventListener('change', applyFilters);
         document.getElementById('levelFilter').addEventListener('change', applyFilters);
+
+        initCalculator();
     }
 
     init();
