@@ -102,6 +102,7 @@ try
     });
     builder.Services.AddSingleton<OreMarkLogger>();
     builder.Services.AddSingleton<OreVisitLogger>();
+    builder.Services.AddHttpClient("zrzutka");
 
     var app = builder.Build();
 
@@ -112,7 +113,7 @@ try
     }
 
     app.UseHttpsRedirection();
-    
+
     app.Use(async (context, next) =>
     {
         context.Response.Headers.Append(
@@ -127,7 +128,7 @@ try
         );
         await next();
     });
-    
+
     app.UseStaticFiles();
 
 // ✅ /files dla downloadów

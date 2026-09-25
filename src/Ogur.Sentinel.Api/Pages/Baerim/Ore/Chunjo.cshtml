@@ -1,11 +1,12 @@
 ﻿@page
 @model Ogur.Sentinel.Api.Pages.Baerim.Ore.ChunjoModel
 @{
-    Layout = null;
-    ViewData["Title"] = "Baerim ruda Chunjo";
+Layout = null;
+ViewData["Title"] = "Baerim ruda Chunjo";
+var en = Model.Lang == "en";
 }
 <!DOCTYPE html>
-<html lang="pl" data-bs-theme="dark">
+<html lang="@Model.Lang" data-bs-theme="dark">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -25,11 +26,27 @@
             justify-content: space-between;
             align-items: center;
             padding: 14px 20px;
+            gap: 16px;
         }
         .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
         .topbar a:hover { color: #fff; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
         .status { font-size: 0.9rem; color: #ddd; }
         .status a { margin-left: 12px; cursor: pointer; }
+
+        .lang-switch { display: flex; gap: 4px; }
+        .lang-switch a {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid #2a2a2e;
+            color: #888;
+        }
+        .lang-switch a.active {
+            color: #eee;
+            border-color: #43b581;
+        }
 
         .login-block { text-align: center; margin-top: 80px; }
         .login-text { color: #ccc; font-size: 1.1rem; margin-bottom: 20px; }
@@ -236,83 +253,99 @@
 </head>
 <body>
 <div class="topbar">
-    <a href="https://respy.ogur.dev/">← respy.ogur.dev</a>
-    @if (Model.IsLoggedIn)
-    {
+    <a href="/baerim/ore/">← Baerim</a>
+    <div class="topbar-right">
+        <div class="lang-switch">
+            <a href="?lang=pl" class="@(en ? "" : "active")">PL</a>
+            <a href="?lang=en" class="@(en ? "active" : "")">EN</a>
+        </div>
+        @if (Model.IsLoggedIn)
+        {
         <div class="status">
             <span>👤 @Model.DiscordUsername</span>
-            <a href="/auth/discord/logout">Wyloguj</a>
+            <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
         </div>
-    }
+        }
+    </div>
 </div>
 
 @if (!Model.IsLoggedIn)
 {
-    <div class="login-block">
-        <p class="login-text">Zaloguj się przez Discord, żeby oznaczyć lokalizację rudy.</p>
-        <a href="/auth/discord/login?returnTo=/baerim/ore/chunjo" class="login-btn">
-            Zaloguj przez Discord
-        </a>
-    </div>
+<div class="login-block">
+    <p class="login-text">@(en ? "Log in with Discord to mark the ore location." : "Zaloguj się przez Discord, żeby oznaczyć lokalizację rudy.")</p>
+    <a href="/auth/discord/login?returnTo=/baerim/ore/chunjo" class="login-btn">
+        @(en ? "Log in with Discord" : "Zaloguj przez Discord")
+    </a>
+</div>
 }
 else
 {
-    <div class="page-content">
-        <div class="sidebar">
-            <h3>Sektor</h3>
-            <p class="value muted" id="sidebarSector">—</p>
+<div class="page-content">
+    <div class="sidebar">
+        <h3>@(en ? "Sector" : "Sektor")</h3>
+        <p class="value muted" id="sidebarSector">—</p>
 
-            <h3>Oznaczone przez</h3>
-            <p class="value" id="sidebarMarkedBy">—</p>
+        <h3>@(en ? "Marked by" : "Oznaczone przez")</h3>
+        <p class="value" id="sidebarMarkedBy">—</p>
 
-            <h3>Ostatni resp</h3>
-            <p class="value" id="sidebarLastRespawn">—</p>
+        <h3>@(en ? "Last respawn" : "Ostatni resp")</h3>
+        <p class="value" id="sidebarLastRespawn">—</p>
 
-            <h3>Następny resp za</h3>
-            <p class="value countdown" id="sidebarCountdown">—:—</p>
+        <h3>@(en ? "Next respawn in" : "Następny resp za")</h3>
+        <p class="value countdown" id="sidebarCountdown">—:—</p>
 
-            <h3>Zoom</h3>
-            <div class="zoom-controls">
-                <button class="zoom-btn" id="zoomOutBtn">−</button>
-                <button class="zoom-btn" id="zoomInBtn">+</button>
-            </div>
-
-            <div style="position: relative; width: 100%; max-width: 300px; height: 450px; overflow: hidden; margin-top: auto;">
-                <iframe style="position: absolute; top:0; left: 0; bottom: 0; right: 0; width: 100%; height: 100%;" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0" scrolling="no"></iframe>
-            </div>
+        <h3>Zoom</h3>
+        <div class="zoom-controls">
+            <button class="zoom-btn" id="zoomOutBtn">−</button>
+            <button class="zoom-btn" id="zoomInBtn">+</button>
         </div>
 
-        <div class="map-area">
-            <div class="map-wrap">
-                <img id="mapImg" src="/files/Joan.png" alt="Mapa Chunjo" />
-                <div id="mapPin"></div>
-            </div>
+        <div style="position: relative; width: 100%; max-width: 300px; height: 450px; overflow: hidden; margin-top: auto;">
+            <iframe style="position: absolute; top:0; left: 0; bottom: 0; right: 0; width: 100%; height: 100%;" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0" scrolling="no"></iframe>
         </div>
     </div>
 
-    <div class="modal-backdrop-ore" id="confirmModal">
-        <div class="modal-box">
-            <p>Oznaczyć rudę w tym miejscu?</p>
-            <div class="modal-actions">
-                <button class="modal-btn confirm" id="confirmBtn">Oznacz tutaj</button>
-                <button class="modal-btn cancel" id="cancelBtn">Anuluj</button>
-            </div>
+    <div class="map-area">
+        <div class="map-wrap">
+            <img id="mapImg" src="/files/Joan.png" alt="@(en ? "Chunjo map" : "Mapa Chunjo")" />
+            <div id="mapPin"></div>
         </div>
     </div>
+</div>
 
-    <button class="drawer-toggle" id="drawerToggle">◀</button>
-    <div class="drawer" id="drawer">
-        <h3>Ostatnie oznaczenia</h3>
-        <div id="marksListContainer"><p class="drawer-empty">Ładowanie...</p></div>
-
-        <h3>Odwiedzający (6h)</h3>
-        <div id="visitsListContainer"><p class="drawer-empty">Ładowanie...</p></div>
+<div class="modal-backdrop-ore" id="confirmModal">
+    <div class="modal-box">
+        <p>@(en ? "Mark the ore at this location?" : "Oznaczyć rudę w tym miejscu?")</p>
+        <div class="modal-actions">
+            <button class="modal-btn confirm" id="confirmBtn">@(en ? "Mark here" : "Oznacz tutaj")</button>
+            <button class="modal-btn cancel" id="cancelBtn">@(en ? "Cancel" : "Anuluj")</button>
+        </div>
     </div>
+</div>
 
-    <button class="reset-btn" id="resetBtn">🗑️ Wyczyść oznaczenie</button>
+<button class="drawer-toggle" id="drawerToggle">◀</button>
+<div class="drawer" id="drawer">
+    <h3>@(en ? "Recent marks" : "Ostatnie oznaczenia")</h3>
+    <div id="marksListContainer"><p class="drawer-empty">@(en ? "Loading..." : "Ładowanie...")</p></div>
+
+    <h3>@(en ? "Visitors (6h)" : "Odwiedzający (6h)")</h3>
+    <div id="visitsListContainer"><p class="drawer-empty">@(en ? "Loading..." : "Ładowanie...")</p></div>
+</div>
+
+<button class="reset-btn" id="resetBtn">🗑️ @(en ? "Clear mark" : "Wyczyść oznaczenie")</button>
 }
 
 <script>
+    const T = {
+        locale: '@(en ? "en-GB" : "pl-PL")',
+        markFailed: '@(en ? "Failed to mark the location" : "Nie udało się oznaczyć lokalizacji")',
+        networkError: '@(en ? "Network error: " : "Błąd sieci: ")',
+        confirmReset: '@(en ? "Clear the mark for good?" : "Na pewno wyczyścić oznaczenie?")',
+        resetFailed: '@(en ? "Failed to reset (missing permissions?)" : "Nie udało się zresetować (brak uprawnień?)")',
+        noHistory: '@(en ? "No history yet" : "Brak historii")',
+        noVisits: '@(en ? "No visits yet" : "Brak odwiedzin")'
+    };
+
     let pendingX = null;
     let pendingY = null;
     let lastOreData = null;
@@ -374,7 +407,7 @@ else
             const start = new Date(data.window_start);
             const respawnTime = new Date(start.getTime() + 2 * 60 * 1000);
             document.getElementById('sidebarLastRespawn').textContent =
-                respawnTime.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                respawnTime.toLocaleTimeString(T.locale, { hour: '2-digit', minute: '2-digit' });
         }
 
         if (data.window_end) {
@@ -434,10 +467,10 @@ else
             if (resp.ok) {
                 loadOreState();
             } else {
-                alert(data.error || 'Nie udało się oznaczyć lokalizacji');
+                alert(data.error || T.markFailed);
             }
         } catch (err) {
-            alert('Błąd sieci: ' + err.message);
+            alert(T.networkError + err.message);
         }
     }
 
@@ -471,16 +504,16 @@ else
         document.getElementById('cancelBtn').addEventListener('click', hideConfirmModal);
 
         document.getElementById('resetBtn').addEventListener('click', async () => {
-            if (!confirm('Na pewno wyczyścić oznaczenie?')) return;
+            if (!confirm(T.confirmReset)) return;
             try {
                 const resp = await fetch('/ore/reset', { method: 'POST' });
                 if (resp.ok) {
                     loadOreState();
                 } else {
-                    alert('Nie udało się zresetować (brak uprawnień?)');
+                    alert(T.resetFailed);
                 }
             } catch (e) {
-                alert('Błąd sieci: ' + e.message);
+                alert(T.networkError + e.message);
             }
         });
 
@@ -508,14 +541,14 @@ else
                 const container = document.getElementById('marksListContainer');
 
                 if (!data.marks || data.marks.length === 0) {
-                    container.innerHTML = '<p class="drawer-empty">Brak historii</p>';
+                    container.innerHTML = `<p class="drawer-empty">${T.noHistory}</p>`;
                     return;
                 }
 
                 container.innerHTML = data.marks.map(m => {
                     const t = new Date(m.time);
-                    const dateStr = t.toLocaleDateString('pl-PL');
-                    const timeStr = t.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                    const dateStr = t.toLocaleDateString(T.locale);
+                    const timeStr = t.toLocaleTimeString(T.locale, { hour: '2-digit', minute: '2-digit' });
                     return `<div class="drawer-item">
                 <div>${m.username} — (${m.x.toFixed(1)}, ${m.y.toFixed(1)})</div>
                 <div class="time">${dateStr} ${timeStr}</div>
@@ -533,13 +566,13 @@ else
                 const container = document.getElementById('visitsListContainer');
 
                 if (!data.visits || data.visits.length === 0) {
-                    container.innerHTML = '<p class="drawer-empty">Brak odwiedzin</p>';
+                    container.innerHTML = `<p class="drawer-empty">${T.noVisits}</p>`;
                     return;
                 }
 
                 container.innerHTML = data.visits.map(v => {
                     const t = new Date(v.time);
-                    const timeStr = t.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                    const timeStr = t.toLocaleTimeString(T.locale, { hour: '2-digit', minute: '2-digit' });
                     return `<div class="drawer-item">
                 <div>${v.username}</div>
                 <div class="time">${timeStr}</div>

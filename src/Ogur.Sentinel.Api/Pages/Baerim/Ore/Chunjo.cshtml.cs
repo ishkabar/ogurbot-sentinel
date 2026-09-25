@@ -18,9 +18,12 @@ public class ChunjoModel : PageModel
 
     public bool IsLoggedIn { get; private set; }
     public string DiscordUsername { get; private set; } = string.Empty;
+    public string Lang { get; private set; } = "pl";
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(string? lang)
     {
+        Lang = BaerimLang.Resolve(Request, Response, lang);
+
         var cookie = Request.Cookies["ore_discord_identity"];
         if (!string.IsNullOrEmpty(cookie))
         {
@@ -38,9 +41,11 @@ public class ChunjoModel : PageModel
             }
         }
 
-        var ip = GetClientIp();
-        var visitUsername = IsLoggedIn ? DiscordUsername : "anonim";
-        _ = _visitLogger.LogVisitAsync(visitUsername, ip);
+        if (IsLoggedIn)
+        {
+            var ip = GetClientIp();
+            _ = _visitLogger.LogVisitAsync(DiscordUsername, ip);
+        }
     }
 
     private string GetClientIp()
