@@ -169,6 +169,7 @@ var en = Model.Lang == "en";
         }
         .tile {
             width: 220px;
+            box-sizing: border-box;
             background: #1a1a1e;
             border: 1px solid #2a2a2e;
             border-radius: 14px;
@@ -243,7 +244,7 @@ var en = Model.Lang == "en";
         <p>@(en ? "Mark ore locations on kingdom maps" : "Oznaczanie lokalizacji rudy na mapach królestw")</p>
     </a>
 
-    <a class="tile" href="/baerim/upgrade" style="border-color: rgba(67,181,129,0.55); background: linear-gradient(180deg, rgba(67,181,129,0.08), #1a1a1e 60%);">
+    <a class="tile" href="/baerim/upgrade">
         <div class="icon" style="color: #43b581;">🔨</div>
         <h3>@(en ? "Upgrading" : "Ulepszanie")</h3>
         <p>@(en ? "Item upgrade success chance" : "Szansa na ulepszenie przedmiotu (%)")</p>

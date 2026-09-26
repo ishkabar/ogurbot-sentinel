@@ -53,13 +53,13 @@ var en = Model.Lang == "en";
         .page-logo-img { width: 260px; max-width: 90vw; height: auto; border-radius: 14px; display: block; }
 
         @@media (max-width: 640px) {
-        .page-logo {
-            position: static;
-            display: flex;
-            justify-content: center;
-            margin: 12px auto 16px;
-        }
-        .page-logo-img { width: 160px !important; }
+            .page-logo {
+                position: static;
+                display: flex;
+                justify-content: center;
+                margin: 12px auto 16px;
+            }
+            .page-logo-img { width: 160px !important; }
         }
         .status { font-size: 0.9rem; color: #ddd; }
         .status a { margin-left: 12px; cursor: pointer; }
@@ -275,6 +275,15 @@ var en = Model.Lang == "en";
             border: 1px dashed #3a3a3e;
             margin: 0 auto;
         }
+
+        .item-icon {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
         .item-name { font-weight: 600; }
         .item-sub { font-size: 0.72rem; color: #777; margin-top: 2px; }
 
@@ -343,12 +352,21 @@ var en = Model.Lang == "en";
         <label>@(en ? "Guild bonus" : "Bonus gildii")</label>
         <select id="calcGuildBonus" class="calc-select">
             <option value="0">0%</option>
+            <option value="1">+1%</option>
+            <option value="2">+2%</option>
+            <option value="3">+3%</option>
+            <option value="4">+4%</option>
             <option value="5">+5%</option>
+            <option value="6">+6%</option>
+            <option value="7">+7%</option>
+            <option value="8">+8%</option>
+            <option value="9">+9%</option>
             <option value="10">+10%</option>
+            <option value="11">+11%</option>
+            <option value="12">+12%</option>
+            <option value="13">+13%</option>
+            <option value="14">+14%</option>
             <option value="15">+15%</option>
-            <option value="20">+20%</option>
-            <option value="25">+25%</option>
-            <option value="30">+30%</option>
         </select>
     </div>
 
@@ -483,6 +501,10 @@ var en = Model.Lang == "en";
         return 'chance-low';
     }
 
+    function iconUrl(id) {
+        return `/files/items/${String(id).padStart(5, '0')}.png`;
+    }
+
     function buildEntries(data) {
         return data.groups.flatMap(g => {
             if (isGroupedCategory(g.name)) {
@@ -490,6 +512,7 @@ var en = Model.Lang == "en";
                     name: localizedGroupName(g),
                     sub: localizedItemList(g),
                     chances: g.chances,
+                    icon: g.icons ? g.icons[0] : null,
                     type: g.type,
                     level: g.level,
                     searchText: (g.name + ' ' + (g.name_en || '') + ' ' + g.items.join(' ') + ' ' + (g.items_en || []).join(' ')).toLowerCase()
@@ -499,6 +522,7 @@ var en = Model.Lang == "en";
                 name: localizedItemName(g, i),
                 sub: localizedGroupName(g),
                 chances: g.chances,
+                icon: g.icons ? g.icons[i] : null,
                 type: g.type,
                 level: g.level,
                 searchText: (g.items[i] + ' ' + (g.items_en?.[i] || '') + ' ' + g.name).toLowerCase()
@@ -513,6 +537,7 @@ var en = Model.Lang == "en";
                 name: localizedItemName(g, i),
                 sub: localizedGroupName(g),
                 chances: g.chances,
+                icon: g.icons ? g.icons[i] : null,
                 type: g.type,
                 level: g.level,
                 searchText: (g.items[i] + ' ' + (g.items_en?.[i] || '') + ' ' + g.name).toLowerCase()
@@ -528,8 +553,12 @@ var en = Model.Lang == "en";
                 return `<td class="${chanceClass(v)}">${pct}%</td>`;
             }).join('');
 
+            const iconCell = entry.icon
+                ? `<img src="${iconUrl(entry.icon)}" class="item-icon" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'item-photo-placeholder'}))" />`
+                : '<div class="item-photo-placeholder"></div>';
+
             return `<tr data-search="${entry.searchText}" data-type="${entry.type}" data-level="${entry.level}">
-                <td><div class="item-photo-placeholder"></div></td>
+                <td>${iconCell}</td>
                 <td>
                     <div class="item-name">${entry.name}</div>
                     <div class="item-sub">${entry.sub}</div>
@@ -638,14 +667,8 @@ var en = Model.Lang == "en";
         });
 
         document.getElementById('calcLevelSelect').addEventListener('change', computeCalc);
-        document.getElementById('calcSeal5').addEventListener('change', (e) => {
-            if (e.target.checked) document.getElementById('calcSeal10').checked = false;
-            computeCalc();
-        });
-        document.getElementById('calcSeal10').addEventListener('change', (e) => {
-            if (e.target.checked) document.getElementById('calcSeal5').checked = false;
-            computeCalc();
-        });
+        document.getElementById('calcSeal5').addEventListener('change', computeCalc);
+        document.getElementById('calcSeal10').addEventListener('change', computeCalc);
         document.getElementById('calcEvent').addEventListener('change', computeCalc);
         document.getElementById('calcGuildBonus').addEventListener('change', computeCalc);
     }

@@ -6,11 +6,15 @@ namespace Ogur.Sentinel.Api.Services;
 public record UpgradeGroup(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("items")] List<string> Items,
-    [property: JsonPropertyName("chances")] List<decimal> Chances,
-    [property: JsonPropertyName("name_en")] string? NameEn = null,
-    [property: JsonPropertyName("items_en")] List<string>? ItemsEn = null,
+    [property: JsonPropertyName("chances")]
+    List<decimal> Chances,
+    [property: JsonPropertyName("name_en")]
+    string? NameEn = null,
+    [property: JsonPropertyName("items_en")]
+    List<string>? ItemsEn = null,
     [property: JsonPropertyName("type")] string? Type = null,
-    [property: JsonPropertyName("level")] int? Level = null
+    [property: JsonPropertyName("level")] int? Level = null,
+    [property: JsonPropertyName("icons")] List<int>? Icons = null
 );
 
 public record UpgradeData(
@@ -48,7 +52,8 @@ public class UpgradeChanceService
             try
             {
                 var json = File.ReadAllText(_filePath);
-                var data = JsonSerializer.Deserialize<UpgradeData>(json) ?? new UpgradeData(new List<int>(), new List<UpgradeGroup>());
+                var data = JsonSerializer.Deserialize<UpgradeData>(json) ??
+                           new UpgradeData(new List<int>(), new List<UpgradeGroup>());
                 _cached = data;
                 _cachedAt = lastWrite;
                 return data;

@@ -44,7 +44,16 @@
         "Salvation Fan"
       ],
       "type": "weapon",
-      "level": 65
+      "level": 65,
+      "icons": [
+        140,
+        150,
+        1100,
+        2140,
+        3130,
+        5100,
+        7140
+      ]
     },
     {
       "name": "Bronie 75",
@@ -77,7 +86,15 @@
         "Bamboo Bell"
       ],
       "type": "weapon",
-      "level": 75
+      "level": 75,
+      "icons": [
+        180,
+        190,
+        1130,
+        2170,
+        3160,
+        5120
+      ]
     },
     {
       "name": "Bronie PvP 80",
@@ -112,7 +129,16 @@
         "Demon Fan"
       ],
       "type": "weapon",
-      "level": 80
+      "level": 80,
+      "icons": [
+        270,
+        280,
+        2160,
+        3170,
+        4040,
+        5330,
+        7190
+      ]
     },
     {
       "name": "Bronie PvP 90",
@@ -147,7 +173,16 @@
         "Lying Dragon Fan"
       ],
       "type": "weapon",
-      "level": 90
+      "level": 90,
+      "icons": [
+        460,
+        470,
+        1340,
+        2370,
+        3190,
+        5340,
+        7180
+      ]
     },
     {
       "name": "Zbroja stal",
@@ -176,7 +211,13 @@
         "Black Clothing"
       ],
       "type": "armor",
-      "level": 65
+      "level": 65,
+      "icons": [
+        11290,
+        11490,
+        11690,
+        11890
+      ]
     },
     {
       "name": "Zbroja niebiańska stal",
@@ -205,7 +246,13 @@
         "Dragon Clothing"
       ],
       "type": "armor",
-      "level": 75
+      "level": 75,
+      "icons": [
+        12010,
+        12020,
+        12030,
+        12040
+      ]
     },
     {
       "name": "Zbroja smoka",
@@ -234,7 +281,13 @@
         "Golden Clothing"
       ],
       "type": "armor",
-      "level": 90
+      "level": 90,
+      "icons": [
+        20000,
+        20250,
+        20500,
+        20750
+      ]
     },
     {
       "name": "Zbroja smoka mroku (nowa)",
@@ -285,7 +338,24 @@
         "Exalted Dragon Armour"
       ],
       "type": "armor",
-      "level": 90
+      "level": 90,
+      "icons": [
+        320,
+        340,
+        1190,
+        2210,
+        3230,
+        5170,
+        7310,
+        12780,
+        12800,
+        12820,
+        12840,
+        21210,
+        21230,
+        21250,
+        21270
+      ]
     },
     {
       "name": "Helm 60",
@@ -314,7 +384,13 @@
         "Cardinal's Hat"
       ],
       "type": "helmet",
-      "level": 60
+      "level": 60,
+      "icons": [
+        12260,
+        12390,
+        12530,
+        12670
+      ]
     },
     {
       "name": "Helm 100",
@@ -343,7 +419,13 @@
         "Soul Shard Hat"
       ],
       "type": "helmet",
-      "level": 100
+      "level": 100,
+      "icons": [
+        12280,
+        12400,
+        12540,
+        12680
+      ]
     },
     {
       "name": "Tarcze 61",
@@ -372,7 +454,13 @@
         "Dragon Scale Shield"
       ],
       "type": "shield",
-      "level": 61
+      "level": 61,
+      "icons": [
+        13060,
+        13080,
+        13100,
+        13120
+      ]
     },
     {
       "name": "Tarcza Tytanów",
@@ -395,7 +483,10 @@
         "Titan Shield"
       ],
       "type": "shield",
-      "level": 75
+      "level": 75,
+      "icons": [
+        13140
+      ]
     },
     {
       "name": "Tarcza Trzech Władców",
@@ -418,7 +509,10 @@
         "Three Emperors Shield"
       ],
       "type": "shield",
-      "level": 90
+      "level": 90,
+      "icons": [
+        13160
+      ]
     },
     {
       "name": "Boska Tarcza",
@@ -441,7 +535,10 @@
         "Divine Shield"
       ],
       "type": "shield",
-      "level": 100
+      "level": 100,
+      "icons": [
+        13170
+      ]
     },
     {
       "name": "Buty 55",
@@ -470,7 +567,13 @@
         "Fire Bird Shoes"
       ],
       "type": "boots",
-      "level": 55
+      "level": 55,
+      "icons": [
+        15160,
+        15180,
+        15200,
+        15220
+      ]
     },
     {
       "name": "Buty 75",
@@ -499,7 +602,13 @@
         "Kingfisher Shoes"
       ],
       "type": "boots",
-      "level": 75
+      "level": 75,
+      "icons": [
+        15370,
+        15390,
+        15410,
+        15430
+      ]
     },
     {
       "name": "Buty Enigmy",
@@ -522,7 +631,10 @@
         "Enigma Shoes"
       ],
       "type": "boots",
-      "level": 90
+      "level": 90,
+      "icons": [
+        55340
+      ]
     },
     {
       "name": "Biżuteria 55",
@@ -561,7 +673,18 @@
         "Heaven's Tear Earrings"
       ],
       "type": "jewelry",
-      "level": 55
+      "level": 55,
+      "icons": [
+        14160,
+        14180,
+        14200,
+        16160,
+        16180,
+        16200,
+        17160,
+        17180,
+        17200
+      ]
     },
     {
       "name": "Biżuteria Kryształu Duszy",
@@ -588,7 +711,12 @@
         "Soul Crystal Earrings"
       ],
       "type": "jewelry",
-      "level": 75
+      "level": 75,
+      "icons": [
+        14220,
+        16220,
+        17220
+      ]
     },
     {
       "name": "Biżuteria kolorowa",
@@ -633,7 +761,21 @@
         "Sapphire Earrings"
       ],
       "type": "jewelry",
-      "level": 55
+      "level": 55,
+      "icons": [
+        14500,
+        14520,
+        14540,
+        14560,
+        16500,
+        16520,
+        16540,
+        16560,
+        17500,
+        17520,
+        17540,
+        17560
+      ]
     },
     {
       "name": "Elementalna",
@@ -658,7 +800,11 @@
         "Elemental Necklace"
       ],
       "type": "jewelry",
-      "level": 55
+      "level": 55,
+      "icons": [
+        15310,
+        16640
+      ]
     },
     {
       "name": "Turmalin",
@@ -683,7 +829,11 @@
         "Tourmaline Necklace"
       ],
       "type": "jewelry",
-      "level": 100
+      "level": 100,
+      "icons": [
+        14570,
+        16570
+      ]
     },
     {
       "name": "Pas Lniany",
@@ -706,7 +856,10 @@
         "Linen Belt"
       ],
       "type": "belt",
-      "level": 55
+      "level": 55,
+      "icons": [
+        18000
+      ]
     },
     {
       "name": "Pas Skórzany",
@@ -729,7 +882,10 @@
         "Leather Belt"
       ],
       "type": "belt",
-      "level": 55
+      "level": 55,
+      "icons": [
+        18010
+      ]
     },
     {
       "name": "Pas Niedźwiedzi",
@@ -752,7 +908,10 @@
         "Great Bear Belt"
       ],
       "type": "belt",
-      "level": 90
+      "level": 90,
+      "icons": [
+        18070
+      ]
     },
     {
       "name": "Pas Dusz",
@@ -775,7 +934,10 @@
         "Souls Belt"
       ],
       "type": "belt",
-      "level": 90
+      "level": 90,
+      "icons": [
+        18080
+      ]
     },
     {
       "name": "Bronie Meley",
@@ -801,7 +963,15 @@
       "name_en": "Meley Weapons",
       "items_en": null,
       "type": "weapon",
-      "level": 100
+      "level": 100,
+      "icons": [
+        11000,
+        11010,
+        11020,
+        11030,
+        11040,
+        11050
+      ]
     },
     {
       "name": "Hełmy Dragona",
@@ -830,7 +1000,13 @@
         "Dragoneer Hat"
       ],
       "type": "helmet",
-      "level": 100
+      "level": 100,
+      "icons": [
+        12730,
+        12740,
+        12750,
+        12760
+      ]
     },
     {
       "name": "Pas Przepychu",
@@ -853,7 +1029,10 @@
         "Magnificent Belt"
       ],
       "type": "belt",
-      "level": 55
+      "level": 55,
+      "icons": [
+        18020
+      ]
     },
     {
       "name": "Pas Mądrości",
@@ -876,7 +1055,10 @@
         "Belt of Wisdom"
       ],
       "type": "belt",
-      "level": 75
+      "level": 75,
+      "icons": [
+        18030
+      ]
     },
     {
       "name": "Pas z Turmalinu",
@@ -899,7 +1081,10 @@
         "Tourmaline Belt"
       ],
       "type": "belt",
-      "level": 100
+      "level": 100,
+      "icons": [
+        18090
+      ]
     },
     {
       "name": "Zbroja Meley",
@@ -928,7 +1113,13 @@
         "Fire Clothing"
       ],
       "type": "armor",
-      "level": 100
+      "level": 100,
+      "icons": [
+        20810,
+        20820,
+        20830,
+        20840
+      ]
     }
   ]
 }
