@@ -1,0 +1,554 @@
+﻿@page
+@model Ogur.Sentinel.Api.Pages.Baerim.Costumes.IndexModel
+@{
+    Layout = null;
+    ViewData["Title"] = "Baerim kostiumy";
+    var en = Model.Lang == "en";
+}
+<!DOCTYPE html>
+<html lang="@Model.Lang" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Baerim kostiumy</title>
+    <link rel="icon" type="image/png" href="/files/baerim-og.png" />
+    <meta property="og:site_name" content="Ogur.dev" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Baerim — Kostiumy" />
+    <meta property="og:description" content="@(en ? "Preview costumes and armor in 3D." : "Podgląd kostiumów i zbroi w 3D.")" />
+    <meta property="og:image" content="https://respy.ogur.dev/files/baerim-og.png" />
+    <meta property="og:url" content="https://respy.ogur.dev/baerim/costumes/" />
+    <meta name="theme-color" content="rgb(222,156,47)" />
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background: #0d0d0f;
+            color: #eee;
+            font-family: system-ui, sans-serif;
+            overflow-x: hidden;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            gap: 16px;
+        }
+        .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
+        .topbar a:hover { color: #fff; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .page-logo { margin: 0 0 16px; }
+        .page-logo-img { width: 100%; max-width: 200px; height: auto; border-radius: 10px; display: block; }
+        .status { font-size: 0.9rem; color: #ddd; }
+        .status a { margin-left: 12px; cursor: pointer; }
+
+        .lang-switch { display: flex; gap: 4px; }
+        .lang-switch a {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1px solid #2a2a2e;
+            color: #888;
+        }
+        .lang-switch a.active {
+            color: #eee;
+            border-color: #43b581;
+        }
+
+        .page-content {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+
+        .sidebar {
+            width: 260px;
+            flex-shrink: 0;
+            padding: 20px;
+            border-right: 1px solid #222;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-search input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px 11px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            background: #121216;
+            color: #eee;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+        .sidebar-search input:focus { outline: 1px solid rgb(222,156,47); }
+
+        .cat-title {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgb(222,156,47);
+            opacity: 0.85;
+            margin: 14px 0 6px;
+        }
+        .cat-title:first-of-type { margin-top: 0; }
+
+        .char-select {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 14px;
+        }
+        .char-pill {
+        font-size: 0.78rem;
+        padding: 5px 10px;
+        border-radius: 8px;
+        border: 1px solid #2a2a2e;
+        background: #14141a;
+        color: #bbb;
+        cursor: pointer;
+        }
+        .char-pill:hover { border-color: rgba(222,156,47,0.5); color: #eee; }
+        .char-pill.active {
+        background: #241d12;
+        border-color: rgb(222,156,47);
+        color: #fff;
+        }
+
+        .cos-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #ddd;
+            border: 1px solid transparent;
+        }
+        .cos-item:hover { background: #1c1c22; }
+        .cos-item.active {
+            background: #241d12;
+            border-color: rgba(222,156,47,0.55);
+            color: #fff;
+        }
+        .cos-item .dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: #5a4a25; flex: none;
+        }
+        .cos-item.active .dot { background: rgb(222,156,47); box-shadow: 0 0 7px rgb(222,156,47); }
+
+        .cos-empty { color: #555; font-size: 0.85rem; font-style: italic; padding: 6px 10px; }
+
+        .support-widget-box {
+            width: 100%;
+            max-width: 220px;
+            margin-top: auto;
+            background: #1a1a1e;
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .support-widget-collapsed-view { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
+        .support-widget-collapsed-view p { margin: 0; font-size: 0.78rem; color: #ccc; line-height: 1.3; }
+        .support-widget-header-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .support-widget-btn {
+            background: #43b581; color: #0d0d0f; font-weight: 700; text-decoration: none;
+            padding: 6px 12px; border-radius: 8px; font-size: 0.76rem; white-space: nowrap;
+        }
+        .support-widget-btn:hover { filter: brightness(1.1); }
+        .support-widget-toggle { background: none; border: none; color: #888; cursor: pointer; font-size: 0.9rem; padding: 2px 4px; flex-shrink: 0; }
+        .support-widget-toggle:hover { color: #eee; }
+        .support-widget-expanded-view { position: relative; }
+        .support-widget-toggle-inline { position: absolute; top: 6px; right: 6px; z-index: 1; background: rgba(13,13,15,0.7); border-radius: 6px; }
+        .support-widget-frame { width: 100%; height: 300px; border: 0; display: block; }
+        .support-widget-box.collapsed .support-widget-expanded-view { display: none; }
+        .support-widget-box:not(.collapsed) .support-widget-collapsed-view { display: none; }
+
+        /* ---- scena 3D ---- */
+        .viewer {
+            flex: 1;
+            position: relative;
+            min-width: 0;
+        }
+        #c { display: block; width: 100%; height: 100%; }
+
+        .viewer-hud {
+            position: absolute; left: 0; right: 0; bottom: 0;
+            padding: 16px 20px;
+            display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+            pointer-events: none;
+            background: linear-gradient(0deg, rgba(8,6,10,0.72), transparent);
+        }
+        .viewer-now h2 { margin: 0; font-size: 1.35rem; }
+        .viewer-now p { margin: 4px 0 0; font-size: 0.8rem; color: #999; }
+        .viewer-ctrls { display: flex; gap: 8px; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end; }
+        .vbtn {
+            font-size: 0.8rem; padding: 7px 12px; border-radius: 8px;
+            border: 1px solid #2a2a2e; background: rgba(26,26,30,0.85); color: #ddd;
+            cursor: pointer; backdrop-filter: blur(6px);
+        }
+        .vbtn:hover { border-color: rgba(222,156,47,0.55); color: rgb(222,156,47); }
+        .vbtn.on { border-color: rgb(222,156,47); color: rgb(222,156,47); }
+
+        .viewer-hint {
+            position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+            font-size: 0.78rem; color: #999;
+            background: rgba(20,20,26,0.7); border: 1px solid #2a2a2e; border-radius: 20px;
+            padding: 5px 14px; transition: opacity .5s;
+        }
+        .viewer-load {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+            color: #999; font-size: 0.85rem; display: none;
+        }
+        .viewer-load.show { display: block; }
+        .viewer-drop {
+            position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+            background: rgba(10,7,13,0.82); border: 2px dashed rgba(222,156,47,0.55); z-index: 5;
+            color: rgb(222,156,47); font-size: 1rem;
+        }
+        .viewer-drop.show { display: flex; }
+
+        @@media (max-width: 760px) {
+            .page-content { flex-direction: column; height: auto; }
+            .sidebar { width: auto; border-right: 0; border-bottom: 1px solid #222; max-height: 40vh; }
+            .viewer { height: 60vh; }
+        }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <a href="/baerim/">← Baerim</a>
+    <div class="topbar-right">
+        <div class="lang-switch">
+            <a href="?lang=pl" class="@(en ? "" : "active")">PL</a>
+            <a href="?lang=en" class="@(en ? "active" : "")">EN</a>
+        </div>
+        @if (Model.IsLoggedIn)
+        {
+            <div class="status">
+                <span>👤 @Model.DiscordUsername</span>
+                <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="page-content">
+    <div class="sidebar">
+        <div class="page-logo">
+            <img src="/files/baerim-og.png" alt="Baerim" class="page-logo-img" />
+        </div>
+
+        <div class="char-select" id="charSelect"></div>
+
+        <div class="sidebar-search">
+            <input id="q" type="text" placeholder="@(en ? "Search costume…" : "Szukaj kostiumu…")" autocomplete="off" />
+        </div>
+
+        <div id="cosList"><p class="cos-empty">@(en ? "Loading…" : "Ładowanie…")</p></div>
+
+        <div class="support-widget-box" id="supportWidgetCostumes">
+            <div class="support-widget-collapsed-view">
+                <p>@(en ? "Enjoying the wardrobe? Support the server." : "Podoba Ci się szafa? Wesprzyj serwer.")</p>
+                <div class="support-widget-header-row">
+                    <a class="support-widget-btn" href="https://zrzutka.pl/fhyeca" target="_blank" rel="noopener">@(en ? "Support" : "Wesprzyj")</a>
+                    <button class="support-widget-toggle" type="button" data-action="expand" aria-label="@(en ? "Expand" : "Rozwiń")">▸</button>
+                </div>
+            </div>
+            <div class="support-widget-expanded-view">
+                <button class="support-widget-toggle support-widget-toggle-inline" type="button" data-action="collapse" aria-label="@(en ? "Collapse" : "Zwiń")">▾</button>
+                <iframe class="support-widget-frame" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0" scrolling="no"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <div class="viewer">
+        <canvas id="c"></canvas>
+        <div class="viewer-hint" id="hint">@(en ? "Drag to rotate · right-drag to pan · scroll to zoom · drop a .glb file to load" : "Przeciągnij, aby obrócić · prawy przycisk przesuwa · kółko przybliża")</div>
+        <div class="viewer-load" id="load">@(en ? "Loading model…" : "Wczytywanie modelu…")</div>
+        <div class="viewer-drop" id="drop">@(en ? "Drop .glb / .gltf model" : "Upuść model .glb / .gltf")</div>
+        <div class="viewer-hud">
+            <div class="viewer-now">
+                <h2 id="cName">@(en ? "Mannequin" : "Manekin")</h2>
+                <p id="cMeta">@(en ? "placeholder model · T-pose" : "model zastępczy · T-poza")</p>
+            </div>
+            <div class="viewer-ctrls">
+                <button class="vbtn on" id="rot">@(en ? "Auto-rotate" : "Obrót auto")</button>
+                <button class="vbtn" id="reset">@(en ? "Center" : "Wyśrodkuj")</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // widget wsparcia (jak w Chunjo)
+    (function () {
+        const KEY = 'baerim_support_widget_collapsed_until';
+        const HOURS = 24;
+        const isCollapsed = () => (parseInt(localStorage.getItem(KEY) || '0', 10)) > Date.now();
+        const setCollapsed = (c) => c
+            ? localStorage.setItem(KEY, String(Date.now() + HOURS * 3600 * 1000))
+            : localStorage.removeItem(KEY);
+        const box = document.getElementById('supportWidgetCostumes');
+        if (!box) return;
+        if (isCollapsed()) box.classList.add('collapsed');
+        box.querySelectorAll('[data-action="collapse"]').forEach(b => b.addEventListener('click', () => { box.classList.add('collapsed'); setCollapsed(true); }));
+        box.querySelectorAll('[data-action="expand"]').forEach(b => b.addEventListener('click', () => { box.classList.remove('collapsed'); setCollapsed(false); }));
+    })();
+
+    const LANG = '@(en ? "en" : "pl")';
+    const COSTUMES_URL = '/files/costumes/costumes.json';
+    const COSTUMES_BASE = '/files/costumes/';
+</script>
+<!script type="importmap">
+{ "imports": {
+    "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@@0.160.0/examples/jsm/"
+}}
+</!script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+const T = {
+    mannequin: LANG === 'en' ? 'Mannequin' : 'Manekin',
+    mannequinMeta: LANG === 'en' ? 'placeholder model · T-pose' : 'model zastępczy · T-poza',
+    loaded: LANG === 'en' ? 'loaded .glb' : 'wczytany .glb',
+    loadedLocal: LANG === 'en' ? 'loaded locally' : 'wczytany lokalnie',
+    loadErr: LANG === 'en' ? 'model load error' : 'błąd wczytywania modelu',
+    empty: LANG === 'en' ? 'No costumes yet' : 'Brak kostiumów',
+    listErr: LANG === 'en' ? 'Failed to load list' : 'Nie udało się wczytać listy',
+};
+
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
+camera.position.set(0, 1.4, 4.2);
+
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(0, 1.05, 0);
+controls.minDistance = 1.2;
+controls.maxDistance = 9;
+controls.listenToKeyEvents(window);
+controls.keyPanSpeed = 12;
+
+const key = new THREE.DirectionalLight(0xffd9a0, 2.2); key.position.set(3, 5, 4); scene.add(key);
+const fill = new THREE.DirectionalLight(0x5566aa, 0.8); fill.position.set(-4, 2, -2); scene.add(fill);
+const rim = new THREE.DirectionalLight(0xd7b56b, 1.4); rim.position.set(-2, 3, -5); scene.add(rim);
+scene.add(new THREE.HemisphereLight(0x3a2f45, 0x0a0709, 0.6));
+
+const disc = new THREE.Mesh(
+    new THREE.CircleGeometry(3.2, 64),
+    new THREE.MeshStandardMaterial({ color: 0x140f1a, roughness: 0.9 })
+);
+disc.rotation.x = -Math.PI / 2; scene.add(disc);
+const grid = new THREE.PolarGridHelper(3.1, 8, 6, 64, 0x2c2233, 0x2c2233);
+grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
+
+let current = null, autoRot = true;
+let characters = [];
+let currentCharacterId = null;
+
+function buildMannequin() {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color: 0xbfae93, roughness: 0.55, metalness: 0.05 });
+    const md = new THREE.MeshStandardMaterial({ color: 0x8a7a63, roughness: 0.6 });
+    const add = (geo, m, x, y, z, rz = 0) => { const e = new THREE.Mesh(geo, m); e.position.set(x, y, z); e.rotation.z = rz; g.add(e); };
+    add(new THREE.CapsuleGeometry(0.34, 0.75, 8, 16), mat, 0, 1.35, 0);
+    add(new THREE.CapsuleGeometry(0.3, 0.25, 6, 14), md, 0, 0.82, 0);
+    add(new THREE.SphereGeometry(0.24, 24, 20), mat, 0, 2.15, 0);
+    add(new THREE.CylinderGeometry(0.1, 0.12, 0.18, 12), md, 0, 1.86, 0);
+    add(new THREE.CapsuleGeometry(0.11, 0.62, 6, 12), mat, 0.75, 1.62, 0, Math.PI / 2);
+    add(new THREE.CapsuleGeometry(0.11, 0.62, 6, 12), mat, -0.75, 1.62, 0, Math.PI / 2);
+    add(new THREE.CapsuleGeometry(0.09, 0.55, 6, 12), mat, 1.5, 1.62, 0, Math.PI / 2);
+    add(new THREE.CapsuleGeometry(0.09, 0.55, 6, 12), mat, -1.5, 1.62, 0, Math.PI / 2);
+    add(new THREE.SphereGeometry(0.12, 16, 12), md, 1.86, 1.62, 0);
+    add(new THREE.SphereGeometry(0.12, 16, 12), md, -1.86, 1.62, 0);
+    add(new THREE.CapsuleGeometry(0.14, 0.7, 6, 12), mat, 0.18, 0.35, 0);
+    add(new THREE.CapsuleGeometry(0.14, 0.7, 6, 12), mat, -0.18, 0.35, 0);
+    add(new THREE.BoxGeometry(0.2, 0.1, 0.36), md, 0.18, -0.05, 0.06);
+    add(new THREE.BoxGeometry(0.2, 0.1, 0.36), md, -0.18, -0.05, 0.06);
+    return g;
+}
+
+function clearCurrent() {
+    if (!current) return;
+    scene.remove(current);
+    current.traverse(o => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+    });
+    current = null;
+}
+
+function frameObject(obj) {
+    const box = new THREE.Box3().setFromObject(obj);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    obj.position.x += -center.x;
+    obj.position.z += -center.z;
+    obj.position.y += -box.min.y;
+    const h = size.y || 2;
+    controls.target.set(0, h * 0.55, 0);
+    camera.position.set(0, h * 0.6, Math.max(2.6, h * 1.7));
+    controls.update();
+}
+
+function showMannequin() {
+    clearCurrent();
+    current = buildMannequin();
+    scene.add(current);
+    frameObject(current);
+    document.getElementById("cName").textContent = T.mannequin;
+    document.getElementById("cMeta").textContent = T.mannequinMeta;
+}
+
+const loader = new GLTFLoader();
+function loadURL(url, name, meta) {
+    document.getElementById("load").classList.add("show");
+    loader.load(url, (gltf) => {
+        clearCurrent();
+        current = gltf.scene;      // bez animacji = poza bazowa (T/A-poza)
+        scene.add(current);
+        frameObject(current);
+        document.getElementById("load").classList.remove("show");
+        document.getElementById("cName").textContent = name || "Model";
+        document.getElementById("cMeta").textContent = meta || T.loaded;
+    }, undefined, (err) => {
+        document.getElementById("load").classList.remove("show");
+        document.getElementById("cMeta").textContent = T.loadErr;
+        console.error(err);
+    });
+}
+
+// ---- lista z JSON ----
+let catalog = [];
+const listEl = document.getElementById("cosList");
+
+function nameOf(o) { return (LANG === 'en' ? (o.name_en || o.name_pl) : (o.name_pl || o.name_en)) || o.file || '?'; }
+
+function renderList(filter = "") {
+    listEl.innerHTML = "";
+    const f = filter.trim().toLowerCase();
+    let any = false;
+    for (const group of catalog) {
+        const gname = LANG === 'en' ? (group.name_en || group.name_pl) : (group.name_pl || group.name_en);
+
+                const items = (group.items || []).filter(i => {
+                       if (f && !nameOf(i).toLowerCase().includes(f)) return false;
+                       if (i.compatible && currentCharacterId && !i.compatible.includes(currentCharacterId)) return false;
+                       if (i.files && currentCharacterId && !i.files[currentCharacterId]) return false;
+                       return true;
+                   });
+        if (!items.length) continue;
+        any = true;
+        const c = document.createElement("div"); c.className = "cat-title"; c.textContent = gname; listEl.appendChild(c);
+        for (const it of items) {
+                        const file = it.files ? it.files[currentCharacterId] : it.file;
+            const el = document.createElement("div"); el.className = "cos-item";
+            el.innerHTML = '<span class="dot"></span>' + nameOf(it);
+            el.onclick = () => {
+                document.querySelectorAll(".cos-item").forEach(x => x.classList.remove("active"));
+                el.classList.add("active");
+                                if (file) loadURL(COSTUMES_BASE + file, nameOf(it), it.meta || "");
+                else showMannequin();
+            };
+            listEl.appendChild(el);
+        }
+    }
+    if (!any) listEl.innerHTML = '<p class="cos-empty">' + T.empty + '</p>';
+}
+
+async function loadCatalog() {
+    try {
+        const r = await fetch(COSTUMES_URL, { cache: "no-cache" });
+        if (!r.ok) throw new Error(r.status);
+        const data = await r.json();
+        catalog = data.categories || [];
+                characters = data.characters || [];
+
+                    const initial = characters.find(c => c.file);
+                if (initial) {
+                        selectCharacter(initial.id);
+                    } else {
+                        renderCharacterSelect();
+                        renderList();
+                    }
+    } catch (e) {
+        listEl.innerHTML = '<p class="cos-empty">' + T.listErr + '</p>';
+        console.warn("costumes.json", e);
+    }
+}
+
+document.getElementById("q").addEventListener("input", e => renderList(e.target.value));
+
+// ---- drag & drop ----
+const drop = document.getElementById("drop");
+["dragenter", "dragover"].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("show"); }));
+window.addEventListener("dragleave", e => { if (e.relatedTarget === null) drop.classList.remove("show"); });
+window.addEventListener("drop", e => {
+    e.preventDefault(); drop.classList.remove("show");
+    const file = e.dataTransfer?.files?.[0]; if (!file) return;
+    loadURL(URL.createObjectURL(file), file.name.replace(/\.(glb|gltf)$/i, ""), T.loadedLocal);
+});
+
+// ---- przyciski ----
+document.getElementById("rot").onclick = e => { autoRot = !autoRot; e.target.classList.toggle("on", autoRot); };
+document.getElementById("reset").onclick = () => { if (current) frameObject(current); };
+
+setTimeout(() => { document.getElementById("hint").style.opacity = 0; }, 5000);
+
+function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (canvas.width !== w || canvas.height !== h) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+}
+function tick() {
+    resize();
+    if (autoRot && current) current.rotation.y += 0.004;
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+}
+
+function renderCharacterSelect() {
+    const box = document.getElementById("charSelect");
+    box.innerHTML = "";
+    for (const ch of characters) {
+        if (!ch.file) continue;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "char-pill" + (ch.id === currentCharacterId ? " active" : "");
+        btn.textContent = nameOf(ch);
+        btn.onclick = () => selectCharacter(ch.id);
+        box.appendChild(btn);
+    }
+}
+
+function selectCharacter(id) {
+    const ch = characters.find(c => c.id === id);
+    if (!ch || !ch.file) return;
+    currentCharacterId = id;
+    document.querySelectorAll(".cos-item").forEach(x => x.classList.remove("active"));
+    loadURL(COSTUMES_BASE + ch.file, nameOf(ch), ch.meta || "");
+    renderCharacterSelect();
+    renderList(document.getElementById("q").value);
+}
+
+showMannequin();
+loadCatalog();
+tick();
+</script>
+</body>
+</html>

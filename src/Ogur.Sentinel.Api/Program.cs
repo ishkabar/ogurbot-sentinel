@@ -21,6 +21,7 @@ using Ogur.Sentinel.Core.Auth;
 using Microsoft.AspNetCore.Http;
 using Ogur.Sentinel.Api.Middleware;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.StaticFiles;
 using Ogur.Sentinel.Api.Services;
 
 
@@ -122,7 +123,7 @@ try
             "default-src 'self'; " +
             "connect-src 'self' https://api.github.com; " +
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
             "img-src 'self' data:; " +
             "font-src 'self'; " +
             "frame-src 'self' https://zrzutka.pl;"
@@ -130,11 +131,16 @@ try
         await next();
     });
 
+    var contentTypeProvider = new FileExtensionContentTypeProvider();
+    contentTypeProvider.Mappings[".glb"] = "model/gltf-binary";
+    contentTypeProvider.Mappings[".gltf"] = "model/gltf+json";
+
     app.UseStaticFiles();
 
 // ✅ /files dla downloadów
     app.UseStaticFiles(new StaticFileOptions
     {
+        ContentTypeProvider = contentTypeProvider,
         OnPrepareResponse = ctx =>
         {
             if (ctx.File.Name.EndsWith(".exe") || ctx.File.Name.EndsWith(".zip") || ctx.File.Name.EndsWith(".rar"))

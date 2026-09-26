@@ -1,0 +1,6 @@
+﻿{
+  "characters": [
+    { "id": "ninja_m", "job": "ninja", "gender": "m", "name_pl": "Ninja", "name_en": "Ninja", "file": "bodies/assassin.glb" }
+  ],
+  "categories": []
+}
