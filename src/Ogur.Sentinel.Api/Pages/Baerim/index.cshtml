@@ -1,24 +1,24 @@
 ﻿@page
 @model Ogur.Sentinel.Api.Pages.Baerim.IndexModel
 @{
-Layout = null;
-ViewData["Title"] = "Baerim";
-var en = Model.Lang == "en";
+    Layout = null;
+    ViewData["Title"] = "Baerim";
+    var en = Model.Lang == "en";
 }
 <!DOCTYPE html>
 <html lang="@Model.Lang" data-bs-theme="dark">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Baerim</title>
-    <link rel="icon" type="image/png" href="/files/baerim-og.png" />
-    <meta property="og:site_name" content="Ogur.dev" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Baerim" />
-    <meta property="og:description" content="Narzędzia społeczności Baerim — mapa rudy i inne narzędzia." />
-    <meta property="og:image" content="https://respy.ogur.dev/files/baerim-og.png" />
-    <meta property="og:url" content="https://respy.ogur.dev/baerim/" />
-    <meta name="theme-color" content="#43b581" />
+    <link rel="icon" type="image/png" href="/files/baerim-og.png"/>
+    <meta property="og:site_name" content="Ogur.dev"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:title" content="Baerim"/>
+    <meta property="og:description" content="Narzędzia społeczności Baerim — mapa rudy i inne narzędzia."/>
+    <meta property="og:image" content="https://respy.ogur.dev/files/baerim-og.png"/>
+    <meta property="og:url" content="https://respy.ogur.dev/baerim/"/>
+    <meta name="theme-color" content="#43b581"/>
     <style>
         html, body {
             height: 100%;
@@ -29,6 +29,7 @@ var en = Model.Lang == "en";
             color: #eee;
             font-family: system-ui, sans-serif;
         }
+
         .topbar {
             display: flex;
             justify-content: space-between;
@@ -36,9 +37,23 @@ var en = Model.Lang == "en";
             padding: 14px 20px;
             gap: 16px;
         }
-        .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
-        .topbar a:hover { color: #fff; }
-        .topbar-right { display: flex; align-items: center; gap: 16px; }
+
+        .topbar a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .topbar a:hover {
+            color: #fff;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
         .page-logo {
             position: absolute;
             top: 64px;
@@ -50,16 +65,25 @@ var en = Model.Lang == "en";
             padding: 0;
         }
 
-        .page-logo-img { width: 260px; max-width: 90vw; height: auto; border-radius: 14px; display: block; }
+        .page-logo-img {
+            width: 260px;
+            max-width: 90vw;
+            height: auto;
+            border-radius: 14px;
+            display: block;
+        }
 
         @@media (max-width: 640px) {
-        .page-logo {
-            position: static;
-            display: flex;
-            justify-content: center;
-            margin: 12px auto 16px;
-        }
-        .page-logo-img { width: 160px !important; }
+            .page-logo {
+                position: static;
+                display: flex;
+                justify-content: center;
+                margin: 12px auto 16px;
+            }
+
+            .page-logo-img {
+                width: 160px !important;
+            }
         }
 
         .support-widget-box {
@@ -72,14 +96,16 @@ var en = Model.Lang == "en";
             border: 1px solid #2a2a2e;
             border-radius: 14px;
             overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
         }
+
         .support-widget-collapsed-view {
             display: flex;
             align-items: center;
             gap: 8px;
             padding: 12px 14px;
         }
+
         .support-widget-collapsed-view p {
             margin: 0;
             font-size: 0.8rem;
@@ -87,6 +113,7 @@ var en = Model.Lang == "en";
             line-height: 1.3;
             flex: 1;
         }
+
         .support-widget-btn {
             background: #43b581;
             color: #0d0d0f;
@@ -98,7 +125,11 @@ var en = Model.Lang == "en";
             white-space: nowrap;
             flex-shrink: 0;
         }
-        .support-widget-btn:hover { filter: brightness(1.1); }
+
+        .support-widget-btn:hover {
+            filter: brightness(1.1);
+        }
+
         .support-widget-toggle {
             background: none;
             border: none;
@@ -108,30 +139,69 @@ var en = Model.Lang == "en";
             padding: 2px 4px;
             flex-shrink: 0;
         }
-        .support-widget-toggle:hover { color: #eee; }
-        .support-widget-expanded-view { position: relative; }
+
+        .support-widget-toggle:hover {
+            color: #eee;
+        }
+
+        .support-widget-expanded-view {
+            position: relative;
+        }
+
         .support-widget-toggle-inline {
             position: absolute;
             top: 6px;
             right: 6px;
             z-index: 1;
-            background: rgba(13,13,15,0.7);
+            background: rgba(13, 13, 15, 0.7);
             border-radius: 6px;
         }
-        .support-widget-frame { width: 100%; height: 380px; border: 0; display: block; }
-        .support-widget-box.collapsed .support-widget-expanded-view { display: none; }
-        .support-widget-box:not(.collapsed) .support-widget-collapsed-view { display: none; }
-        .status { font-size: 0.9rem; color: #ddd; }
-        .status a { margin-left: 12px; cursor: pointer; }
-        .status-badge { font-size: 0.85rem; color: #666; }
+
+        .support-widget-frame {
+            width: 100%;
+            height: 380px;
+            border: 0;
+            display: block;
+        }
+
+        .support-widget-box.collapsed .support-widget-expanded-view {
+            display: none;
+        }
+
+        .support-widget-box:not(.collapsed) .support-widget-collapsed-view {
+            display: none;
+        }
+
+        .status {
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        .status a {
+            margin-left: 12px;
+            cursor: pointer;
+        }
+
+        .status-badge {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
         .login-link {
             color: #5865F2;
             text-decoration: none;
             font-weight: 600;
         }
-        .login-link:hover { color: #4752c4; }
 
-        .lang-switch { display: flex; gap: 4px; }
+        .login-link:hover {
+            color: #4752c4;
+        }
+
+        .lang-switch {
+            display: flex;
+            gap: 4px;
+        }
+
         .lang-switch a {
             font-size: 0.75rem;
             font-weight: 600;
@@ -140,6 +210,7 @@ var en = Model.Lang == "en";
             border: 1px solid #2a2a2e;
             color: #888;
         }
+
         .lang-switch a.active {
             color: #eee;
             border-color: #43b581;
@@ -149,10 +220,12 @@ var en = Model.Lang == "en";
             text-align: center;
             padding: 40px 20px 10px;
         }
+
         .hero h1 {
             margin: 0 0 8px;
             font-size: 2rem;
         }
+
         .hero p {
             margin: 0;
             color: #999;
@@ -167,6 +240,7 @@ var en = Model.Lang == "en";
             max-width: 980px;
             margin: 0 auto;
         }
+
         .tile {
             width: 220px;
             box-sizing: border-box;
@@ -178,19 +252,34 @@ var en = Model.Lang == "en";
             color: #eee;
             transition: border-color 0.15s ease, transform 0.15s ease;
         }
+
         .tile:hover {
             border-color: #43b581;
             transform: translateY(-2px);
         }
-        .tile .icon { font-size: 2rem; margin-bottom: 12px; }
-        .tile h3 { margin: 0 0 6px; font-size: 1.1rem; }
-        .tile p { margin: 0; font-size: 0.85rem; color: #999; }
+
+        .tile .icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .tile h3 {
+            margin: 0 0 6px;
+            font-size: 1.1rem;
+        }
+
+        .tile p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #999;
+        }
 
         .tile.disabled {
             opacity: 0.5;
             cursor: default;
             pointer-events: none;
         }
+
         .tile .soon {
             display: inline-block;
             margin-top: 10px;
@@ -214,22 +303,23 @@ var en = Model.Lang == "en";
         </div>
         @if (Model.IsLoggedIn)
         {
-        <div class="status">
-            <span>👤 @Model.DiscordUsername</span>
-            <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
-        </div>
+            <div class="status">
+                <span>👤 @Model.DiscordUsername</span>
+                <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
+            </div>
         }
         else
         {
-        <div class="status">
-            <span class="status-badge">@(en ? "Not logged in" : "Niezalogowany")</span>
-            <a class="login-link" href="/auth/discord/login?returnTo=/baerim/">@(en ? "Log in with Discord" : "Zaloguj przez Discord")</a>
-        </div>
+            <div class="status">
+                <span class="status-badge">@(en ? "Not logged in" : "Niezalogowany")</span>
+                <a class="login-link"
+                   href="/auth/discord/login?returnTo=/baerim/">@(en ? "Log in with Discord" : "Zaloguj przez Discord")</a>
+            </div>
         }
     </div>
 </div>
 <div class="page-logo">
-    <img src="/files/baerim-og.png" alt="Baerim" class="page-logo-img" />
+    <img src="/files/baerim-og.png" alt="Baerim" class="page-logo-img"/>
 </div>
 
 <div class="hero">
@@ -263,22 +353,34 @@ var en = Model.Lang == "en";
         <p>@(en ? "Stone upgrade success chance" : "Szansa na ulepszenie kamieni (%)")</p>
         <span class="soon">@(en ? "Soon" : "Wkrótce")</span>
     </div>
+    <div class="tile disabled">
+        <div class="icon">🎡</div>
+        <h3>@(en ? "Wheel of Fortune" : "Koło losu")</h3>
+        <p>@(en ? "Spin for rewards" : "Losowanie nagród")</p>
+        <span class="soon">@(en ? "Soon" : "Wkrótce")</span>
+    </div>
 </div>
 
 <div class="support-widget-box" id="supportWidgetHub">
     <div class="support-widget-collapsed-view">
         <p>@(en ? "Enjoying the site? Support the server." : "Podoba Ci się strona? Wesprzyj serwer.")</p>
-        <a class="support-widget-btn" href="https://zrzutka.pl/fhyeca" target="_blank" rel="noopener">@(en ? "Support" : "Wesprzyj")</a>
-        <button class="support-widget-toggle" type="button" data-action="expand" aria-label="@(en ? "Expand" : "Rozwiń")">▸</button>
+        <a class="support-widget-btn" href="https://zrzutka.pl/fhyeca" target="_blank"
+           rel="noopener">@(en ? "Support" : "Wesprzyj")</a>
+        <button class="support-widget-toggle" type="button" data-action="expand"
+                aria-label="@(en ? "Expand" : "Rozwiń")">▸
+        </button>
     </div>
     <div class="support-widget-expanded-view">
-        <button class="support-widget-toggle support-widget-toggle-inline" type="button" data-action="collapse" aria-label="@(en ? "Collapse" : "Zwiń")">▾</button>
-        <iframe class="support-widget-frame" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0" scrolling="no"></iframe>
+        <button class="support-widget-toggle support-widget-toggle-inline" type="button" data-action="collapse"
+                aria-label="@(en ? "Collapse" : "Zwiń")">▾
+        </button>
+        <iframe class="support-widget-frame" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0"
+                scrolling="no"></iframe>
     </div>
 </div>
 
 <script>
-    (function() {
+    (function () {
         const COLLAPSED_UNTIL_KEY = 'baerim_support_widget_collapsed_until';
         const USER_EXPANDED_KEY = 'baerim_support_widget_user_expanded';
         const HOURS = 24;
@@ -290,6 +392,7 @@ var en = Model.Lang == "en";
             if (localStorage.getItem(USER_EXPANDED_KEY) === '1') return false;
             return isMobile();
         }
+
         function setCollapsed(collapsed) {
             if (collapsed) {
                 localStorage.setItem(COLLAPSED_UNTIL_KEY, String(Date.now() + HOURS * 60 * 60 * 1000));
@@ -299,14 +402,21 @@ var en = Model.Lang == "en";
                 localStorage.setItem(USER_EXPANDED_KEY, '1');
             }
         }
+
         const box = document.getElementById('supportWidgetHub');
         if (!box) return;
         if (isCollapsed()) box.classList.add('collapsed');
         box.querySelectorAll('[data-action="collapse"]').forEach(btn =>
-            btn.addEventListener('click', () => { box.classList.add('collapsed'); setCollapsed(true); })
+            btn.addEventListener('click', () => {
+                box.classList.add('collapsed');
+                setCollapsed(true);
+            })
         );
         box.querySelectorAll('[data-action="expand"]').forEach(btn =>
-            btn.addEventListener('click', () => { box.classList.remove('collapsed'); setCollapsed(false); })
+            btn.addEventListener('click', () => {
+                box.classList.remove('collapsed');
+                setCollapsed(false);
+            })
         );
     })();
 </script>
