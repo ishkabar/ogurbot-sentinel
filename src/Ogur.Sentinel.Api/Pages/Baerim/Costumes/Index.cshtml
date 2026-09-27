@@ -64,7 +64,7 @@
         }
 
         .sidebar {
-            width: 260px;
+            width: 310px;
             flex-shrink: 0;
             padding: 20px;
             border-right: 1px solid #222;
@@ -94,6 +94,26 @@
             margin: 14px 0 6px;
         }
         .cat-title:first-of-type { margin-top: 0; }
+
+                .slot-toggle {
+                    width: 100%;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background: none;
+                    border: none;
+                    border-bottom: 1px solid #222;
+                    color: rgb(222,156,47);
+                    font-size: 0.72rem;
+                    text-transform: uppercase;
+                    letter-spacing: 0.08em;
+                    padding: 8px 2px;
+                    cursor: pointer;
+                }
+                .slot-arrow { transition: transform 0.15s ease; font-size: 0.85rem; }
+                .slot-section.collapsed .slot-arrow { transform: rotate(-90deg); }
+                .slot-section.collapsed .slot-body { display: none; }
+                .slot-body { padding-top: 6px; }
 
         .selector-block { margin-bottom: 14px; }
         .selector-label {
@@ -238,7 +258,7 @@
                     border: 1px solid #2a2a2e;
                     border-radius: 10px;
                     padding: 12px 14px;
-                    width: 220px;
+                    width: 280px;
                 }
                 .light-controls.show { display: flex; flex-direction: column; gap: 10px; }
                 .light-controls label {
@@ -246,6 +266,34 @@
                     display: flex; flex-direction: column; gap: 4px;
                 }
                 .light-controls input[type="range"] { width: 100%; accent-color: rgb(222,156,47); }
+
+                .light-presets {
+                    display: flex; flex-wrap: wrap; gap: 6px;
+                    margin-bottom: 4px;
+                }
+                .light-preset-btn {
+                    font-size: 0.72rem;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    border: 1px solid #2a2a2e;
+                    background: #14141a;
+                    color: #bbb;
+                    cursor: pointer;
+                }
+                .light-preset-btn:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
+        
+                .bg-presets {
+                    display: flex; flex-wrap: wrap; gap: 6px;
+                }
+                .bg-preset-btn {
+                    width: 40px; height: 28px;
+                    border-radius: 6px;
+                    border: 1px solid #2a2a2e;
+                    background-size: cover;
+                    background-position: center;
+                    cursor: pointer;
+                }
+                .bg-preset-btn.active { border-color: rgb(222,156,47); }
 
         @@media (max-width: 760px) {
             .page-content { flex-direction: column; height: auto; }
@@ -291,18 +339,27 @@
             <input id="q" type="text" placeholder="@(en ? "Search costume…" : "Szukaj kostiumu…")" autocomplete="off" />
         </div>
 
-        <div class="slot-section">
-            <div class="cat-title">@(en ? "Hairstyles" : "Fryzura")</div>
-            <div id="hairList"><p class="cos-empty">@(en ? "Loading…" : "Ładowanie…")</p></div>
-        </div>
-        <div class="slot-section">
-            <div class="cat-title">@(en ? "Outfit" : "Ubranie")</div>
-            <div id="outfitList"><p class="cos-empty">@(en ? "Loading…" : "Ładowanie…")</p></div>
-        </div>
-        <div class="slot-section">
-            <div class="cat-title">@(en ? "Wings" : "Skrzydła")</div>
-            <div id="wingsList"><p class="cos-empty">@(en ? "Coming soon" : "Wkrótce")</p></div>
-        </div>
+        <div class="slot-section collapsed">
+                        <button type="button" class="slot-toggle" data-target="outfitList">
+                                <span>@(en ? "Outfit" : "Ubranie")</span>
+                                <span class="slot-arrow">▾</span>
+                            </button>
+                        <div class="slot-body" id="outfitList"><p class="cos-empty">@(en ? "Loading…" : "Ładowanie…")</p></div>
+                    </div>
+        <div class="slot-section collapsed">
+                        <button type="button" class="slot-toggle" data-target="hairList">
+                                <span>@(en ? "Hairstyles" : "Fryzura")</span>
+                                <span class="slot-arrow">▾</span>
+                            </button>
+                        <div class="slot-body" id="hairList"><p class="cos-empty">@(en ? "Loading…" : "Ładowanie…")</p></div>
+                    </div>
+                <div class="slot-section">
+                        <button type="button" class="slot-toggle" data-target="wingsList">
+                                <span>@(en ? "Wings" : "Skrzydła")</span>
+                                <span class="slot-arrow">▾</span>
+                            </button>
+                        <div class="slot-body" id="wingsList"><p class="cos-empty">@(en ? "Coming soon" : "Wkrótce")</p></div>
+                    </div>
 
         <div class="support-widget-box" id="supportWidgetCostumes">
             <div class="support-widget-collapsed-view">
@@ -327,14 +384,22 @@
                 <div class="light-panel" id="lightPanel">
                         <button class="light-toggle" id="lightToggle" type="button">⚙</button>
                         <div class="light-controls" id="lightControls">
-                                <label>@(en ? "Exposure" : "Ekspozycja")<input type="range" id="lExposure" min="0.2" max="2.5" step="0.05" value="1.05"></label>
-                                <label>@(en ? "Key light" : "Światło główne")<input type="range" id="lKey" min="0" max="4" step="0.1" value="2.2"></label>
-                                <label>@(en ? "Fill light" : "Światło uzupełniające")<input type="range" id="lFill" min="0" max="3" step="0.1" value="0.8"></label>
-                                <label>@(en ? "Rim light" : "Światło konturowe")<input type="range" id="lRim" min="0" max="3" step="0.1" value="1.4"></label>
-                                <label>@(en ? "Ambient" : "Otoczenie")<input type="range" id="lAmbient" min="0" max="2" step="0.1" value="0.6"></label>
-                                <label>@(en ? "Contrast" : "Kontrast")<input type="range" id="lContrast" min="60" max="160" step="2" value="100"></label>
-                                <label>@(en ? "Brightness" : "Jasność")<input type="range" id="lBrightness" min="60" max="160" step="2" value="100"></label>
-                            </div>
+                                            <div class="light-presets" id="lightPresets">
+                                                    <button type="button" class="light-preset-btn" data-preset="default">@(en ? "Default" : "Domyślne")</button>
+                                                    <button type="button" class="light-preset-btn" data-preset="bright">@(en ? "Bright" : "Jasne")</button>
+                                                    <button type="button" class="light-preset-btn" data-preset="moody">@(en ? "Moody" : "Klimatyczne")</button>
+                                                    <button type="button" class="light-preset-btn" data-preset="studio">@(en ? "Studio" : "Studyjne")</button>
+                                                </div>
+                            <label>@(en ? "Exposure" : "Ekspozycja")<input type="range" id="lExposure" min="0.2" max="2.5" step="0.05" value="1.05"></label>
+                            <label>@(en ? "Key light" : "Światło główne")<input type="range" id="lKey" min="0" max="4" step="0.1" value="2.2"></label>
+                            <label>@(en ? "Fill light" : "Światło uzupełniające")<input type="range" id="lFill" min="0" max="3" step="0.1" value="0.8"></label>
+                            <label>@(en ? "Rim light" : "Światło konturowe")<input type="range" id="lRim" min="0" max="3" step="0.1" value="1.4"></label>
+                            <label>@(en ? "Ambient" : "Otoczenie")<input type="range" id="lAmbient" min="0" max="2" step="0.1" value="0.6"></label>
+                            <label>@(en ? "Contrast" : "Kontrast")<input type="range" id="lContrast" min="60" max="160" step="2" value="100"></label>
+                            <label>@(en ? "Brightness" : "Jasność")<input type="range" id="lBrightness" min="60" max="160" step="2" value="100"></label>
+                                            <div class="selector-label" style="margin-top:4px;">@(en ? "Background" : "Tło")</div>
+                                            <div class="bg-presets" id="bgPresets"></div>
+                        </div>
                     </div>
         <div class="viewer-hud">
             <div class="viewer-now">
@@ -398,9 +463,34 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
-new THREE.TextureLoader().load('/files/costumes/bg.jpg', tex => {
-        scene.background = tex;
-    });
+const bgLoader = new THREE.TextureLoader();
+const BACKGROUNDS = ['bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg','bg5.jpg'];
+let currentBg = BACKGROUNDS[0];
+
+    function setBackground(name) {
+            bgLoader.load('/files/costumes/' + name, tex => {
+                    scene.background = tex;
+                    currentBg = name;
+                    renderBgPresets();
+                });
+        }
+
+function renderBgPresets() {
+        const box = document.getElementById("bgPresets");
+        box.innerHTML = "";
+        for (const name of BACKGROUNDS) {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "bg-preset-btn" + (name === currentBg ? " active" : "");
+                btn.style.backgroundImage = `url(/files/costumes/${name})`;
+                btn.title = name;
+                btn.onclick = () => setBackground(name);
+                box.appendChild(btn);
+            }
+    }
+
+setBackground(currentBg);
+
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
 camera.position.set(0, 2, 3.8);
 
@@ -438,8 +528,43 @@ function applyCanvasFilter() {
 document.getElementById("lContrast").addEventListener("input", applyCanvasFilter);
 document.getElementById("lBrightness").addEventListener("input", applyCanvasFilter);
 
+const LIGHT_PRESETS = {
+        default: { exposure: 1.05, keyI: 2.2, fillI: 0.8, rimI: 1.4, ambI: 0.6, contrast: 100, brightness: 100 },
+    bright:  { exposure: 1.4,  keyI: 3.0, fillI: 1.4, rimI: 1.6, ambI: 1.0, contrast: 105, brightness: 110 },
+    moody:   { exposure: 0.75, keyI: 1.4, fillI: 0.4, rimI: 1.8, ambI: 0.3, contrast: 115, brightness: 90 },
+    studio:  { exposure: 1.15, keyI: 2.6, fillI: 1.8, rimI: 0.6, ambI: 0.8, contrast: 100, brightness: 105 },
+};
+
+    function applyLightPreset(name) {
+            const p = LIGHT_PRESETS[name];
+            if (!p) return;
+            renderer.toneMappingExposure = p.exposure;
+            key.intensity = p.keyI;
+            fill.intensity = p.fillI;
+            rim.intensity = p.rimI;
+            hemi.intensity = p.ambI;
+            document.getElementById("lExposure").value = p.exposure;
+            document.getElementById("lKey").value = p.keyI;
+            document.getElementById("lFill").value = p.fillI;
+            document.getElementById("lRim").value = p.rimI;
+            document.getElementById("lAmbient").value = p.ambI;
+            document.getElementById("lContrast").value = p.contrast;
+            document.getElementById("lBrightness").value = p.brightness;
+            applyCanvasFilter();
+        }
+
+document.querySelectorAll(".light-preset-btn").forEach(btn => {
+        btn.addEventListener("click", () => applyLightPreset(btn.dataset.preset));
+    });
+
 const grid = new THREE.PolarGridHelper(3.1, 8, 6, 64, 0x2c2233, 0x2c2233);
 grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
+
+document.querySelectorAll(".slot-toggle").forEach(btn => {
+        btn.addEventListener("click", () => {
+                btn.closest(".slot-section").classList.toggle("collapsed");
+            });
+    });
 
 let currentBody = null;
 let currentHair = null;
