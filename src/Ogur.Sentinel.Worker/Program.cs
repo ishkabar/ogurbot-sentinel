@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Text.Json.Nodes;
 using NLog;
 using NLog.Extensions.Logging;
 using Ogur.Sentinel.Abstractions;
@@ -17,6 +18,7 @@ using Ogur.Sentinel.Worker.Discord;
 using Ogur.Sentinel.Worker.Http;
 using Ogur.Sentinel.Worker.Services;
 using Ogur.Sentinel.Core.Ore;
+
 
 // ✅ Create NLog logger early for startup logging
 var nlogConfigPath = Path.Combine(AppContext.BaseDirectory, "appsettings", "nlog.config");

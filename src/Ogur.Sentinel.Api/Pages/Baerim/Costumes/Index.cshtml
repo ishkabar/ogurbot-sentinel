@@ -1,9 +1,9 @@
 ﻿@page
 @model Ogur.Sentinel.Api.Pages.Baerim.Costumes.IndexModel
 @{
-    Layout = null;
-    ViewData["Title"] = "Baerim kostiumy";
-    var en = Model.Lang == "en";
+Layout = null;
+ViewData["Title"] = "Baerim kostiumy";
+var en = Model.Lang == "en";
 }
 <!DOCTYPE html>
 <html lang="@Model.Lang" data-bs-theme="dark">
@@ -95,25 +95,25 @@
         }
         .cat-title:first-of-type { margin-top: 0; }
 
-                .slot-toggle {
-                    width: 100%;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    background: none;
-                    border: none;
-                    border-bottom: 1px solid #222;
-                    color: rgb(222,156,47);
-                    font-size: 0.72rem;
-                    text-transform: uppercase;
-                    letter-spacing: 0.08em;
-                    padding: 8px 2px;
-                    cursor: pointer;
-                }
-                .slot-arrow { transition: transform 0.15s ease; font-size: 0.85rem; }
-                .slot-section.collapsed .slot-arrow { transform: rotate(-90deg); }
-                .slot-section.collapsed .slot-body { display: none; }
-                .slot-body { padding-top: 6px; }
+        .slot-toggle {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: none;
+            border: none;
+            border-bottom: 1px solid #222;
+            color: rgb(222,156,47);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 8px 2px;
+            cursor: pointer;
+        }
+        .slot-arrow { transition: transform 0.15s ease; font-size: 0.85rem; }
+        .slot-section.collapsed .slot-arrow { transform: rotate(-90deg); }
+        .slot-section.collapsed .slot-body { display: none; }
+        .slot-body { padding-top: 6px; }
 
         .selector-block { margin-bottom: 14px; }
         .selector-label {
@@ -126,26 +126,20 @@
         .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
         .slot-section { margin-bottom: 18px; }
 
-        .char-select {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 14px;
-        }
         .char-pill {
-        font-size: 0.78rem;
-        padding: 5px 10px;
-        border-radius: 8px;
-        border: 1px solid #2a2a2e;
-        background: #14141a;
-        color: #bbb;
-        cursor: pointer;
+            font-size: 0.78rem;
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            background: #14141a;
+            color: #bbb;
+            cursor: pointer;
         }
         .char-pill:hover { border-color: rgba(222,156,47,0.5); color: #eee; }
         .char-pill.active {
-        background: #241d12;
-        border-color: rgb(222,156,47);
-        color: #fff;
+            background: #241d12;
+            border-color: rgb(222,156,47);
+            color: #fff;
         }
 
         .cos-item {
@@ -242,58 +236,92 @@
         }
         .viewer-drop.show { display: flex; }
 
-                .light-panel {
-                    position: absolute; top: 14px; right: 14px; z-index: 10;
-                }
-                .light-toggle {
-                    width: 34px; height: 34px; border-radius: 8px;
-                    border: 1px solid #2a2a2e; background: rgba(20,20,26,0.85);
-                    color: #ccc; font-size: 1rem; cursor: pointer;
-                }
-                .light-toggle:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
-                .light-controls {
-                    display: none;
-                    margin-top: 8px;
-                    background: rgba(20,20,26,0.92);
-                    border: 1px solid #2a2a2e;
-                    border-radius: 10px;
-                    padding: 12px 14px;
-                    width: 280px;
-                }
-                .light-controls.show { display: flex; flex-direction: column; gap: 10px; }
-                .light-controls label {
-                    font-size: 0.75rem; color: #999;
-                    display: flex; flex-direction: column; gap: 4px;
-                }
-                .light-controls input[type="range"] { width: 100%; accent-color: rgb(222,156,47); }
+        /* ---- toolbar (światła + kalibracja obok siebie) ---- */
+        .tools-row {
+            position: absolute; top: 14px; right: 14px; z-index: 20;
+            display: flex; gap: 8px; align-items: flex-start;
+        }
+        .light-panel, .calib-panel {
+            position: relative;
+        }
+        .light-toggle {
+            width: 34px; height: 34px; border-radius: 8px;
+            border: 1px solid #2a2a2e; background: rgba(20,20,26,0.85);
+            color: #ccc; font-size: 1rem; cursor: pointer;
+        }
+        .light-toggle:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
+        .light-controls {
+            display: none;
+            position: absolute; top: 42px; right: 0;
+            background: rgba(20,20,26,0.92);
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            padding: 12px 14px;
+            width: 280px;
+        }
+        .light-controls.show { display: flex; flex-direction: column; gap: 10px; }
+        .light-controls label {
+            font-size: 0.75rem; color: #999;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .light-controls input[type="range"] { width: 100%; accent-color: rgb(222,156,47); }
 
-                .light-presets {
-                    display: flex; flex-wrap: wrap; gap: 6px;
-                    margin-bottom: 4px;
-                }
-                .light-preset-btn {
-                    font-size: 0.72rem;
-                    padding: 4px 8px;
-                    border-radius: 6px;
-                    border: 1px solid #2a2a2e;
-                    background: #14141a;
-                    color: #bbb;
-                    cursor: pointer;
-                }
-                .light-preset-btn:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
-        
-                .bg-presets {
-                    display: flex; flex-wrap: wrap; gap: 6px;
-                }
-                .bg-preset-btn {
-                    width: 40px; height: 28px;
-                    border-radius: 6px;
-                    border: 1px solid #2a2a2e;
-                    background-size: cover;
-                    background-position: center;
-                    cursor: pointer;
-                }
-                .bg-preset-btn.active { border-color: rgb(222,156,47); }
+        .light-presets {
+            display: flex; flex-wrap: wrap; gap: 6px;
+            margin-bottom: 4px;
+        }
+        .light-preset-btn {
+            font-size: 0.72rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #2a2a2e;
+            background: #14141a;
+            color: #bbb;
+            cursor: pointer;
+        }
+        .light-preset-btn:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
+
+        .bg-presets {
+            display: flex; flex-wrap: wrap; gap: 6px;
+        }
+        .bg-preset-btn {
+            width: 40px; height: 28px;
+            border-radius: 6px;
+            border: 1px solid #2a2a2e;
+            background-size: cover;
+            background-position: center;
+            cursor: pointer;
+        }
+        .bg-preset-btn.active { border-color: rgb(222,156,47); }
+
+        /* ---- panel kalibracji ---- */
+        .calib-controls {
+            display: none;
+            position: absolute; top: 42px; right: 0;
+            background: rgba(20,20,26,0.92);
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            padding: 12px 14px;
+            width: 300px;
+        }
+        .calib-controls.show { display: flex; flex-direction: column; gap: 10px; }
+        .calib-controls select {
+            background: #14141a; color: #eee; border: 1px solid #2a2a2e;
+            border-radius: 6px; padding: 6px; font-size: 0.8rem;
+        }
+        .calib-row { display: flex; align-items: center; gap: 8px; }
+        .calib-row label { width: 46px; font-size: 0.75rem; color: #999; flex-shrink: 0; }
+        .calib-row input[type="range"] { flex: 1; accent-color: rgb(222,156,47); }
+        .calib-row input[type="number"] {
+            width: 60px; background: #14141a; color: #eee;
+            border: 1px solid #2a2a2e; border-radius: 6px; padding: 4px; font-size: 0.75rem;
+        }
+        .calib-btns { display: flex; gap: 8px; }
+        .calib-btns button {
+            flex: 1; font-size: 0.75rem; padding: 6px; border-radius: 6px;
+            border: 1px solid #2a2a2e; background: #14141a; color: #bbb; cursor: pointer;
+        }
+        .calib-btns button:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
 
         @@media (max-width: 760px) {
             .page-content { flex-direction: column; height: auto; }
@@ -312,10 +340,10 @@
         </div>
         @if (Model.IsLoggedIn)
         {
-            <div class="status">
-                <span>👤 @Model.DiscordUsername</span>
-                <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
-            </div>
+        <div class="status">
+            <span>👤 @Model.DiscordUsername</span>
+            <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
+        </div>
         }
     </div>
 </div>
@@ -340,26 +368,26 @@
         </div>
 
         <div class="slot-section collapsed">
-                        <button type="button" class="slot-toggle" data-target="outfitList">
-                                <span>@(en ? "Outfit" : "Ubranie")</span>
-                                <span class="slot-arrow">▾</span>
-                            </button>
-                        <div class="slot-body" id="outfitList"><p class="cos-empty">@(en ? "Loading…" : "Ładowanie…")</p></div>
-                    </div>
+            <button type="button" class="slot-toggle" data-target="outfitList">
+                <span>@(en ? "Outfit" : "Ubranie")</span>
+                <span class="slot-arrow">▾</span>
+            </button>
+            <div class="slot-body" id="outfitList"><p class="cos-empty">@(en ? "Loading…" : "Ładowanie…")</p></div>
+        </div>
         <div class="slot-section collapsed">
-                        <button type="button" class="slot-toggle" data-target="hairList">
-                                <span>@(en ? "Hairstyles" : "Fryzura")</span>
-                                <span class="slot-arrow">▾</span>
-                            </button>
-                        <div class="slot-body" id="hairList"><p class="cos-empty">@(en ? "Loading…" : "Ładowanie…")</p></div>
-                    </div>
-                <div class="slot-section">
-                        <button type="button" class="slot-toggle" data-target="wingsList">
-                                <span>@(en ? "Wings" : "Skrzydła")</span>
-                                <span class="slot-arrow">▾</span>
-                            </button>
-                        <div class="slot-body" id="wingsList"><p class="cos-empty">@(en ? "Coming soon" : "Wkrótce")</p></div>
-                    </div>
+            <button type="button" class="slot-toggle" data-target="hairList">
+                <span>@(en ? "Hairstyles" : "Fryzura")</span>
+                <span class="slot-arrow">▾</span>
+            </button>
+            <div class="slot-body" id="hairList"><p class="cos-empty">@(en ? "Loading…" : "Ładowanie…")</p></div>
+        </div>
+        <div class="slot-section">
+            <button type="button" class="slot-toggle" data-target="wingsList">
+                <span>@(en ? "Wings" : "Skrzydła")</span>
+                <span class="slot-arrow">▾</span>
+            </button>
+            <div class="slot-body" id="wingsList"><p class="cos-empty">@(en ? "Coming soon" : "Wkrótce")</p></div>
+        </div>
 
         <div class="support-widget-box" id="supportWidgetCostumes">
             <div class="support-widget-collapsed-view">
@@ -381,26 +409,55 @@
         <div class="viewer-hint" id="hint">@(en ? "Drag to rotate · right-drag to pan · scroll to zoom" : "Przeciągnij, aby obrócić · prawy przycisk przesuwa · kółko przybliża")</div>
         <div class="viewer-load" id="load">@(en ? "Loading model…" : "Wczytywanie modelu…")</div>
         <div class="viewer-drop" id="drop">@(en ? "Drop .glb / .gltf model" : "Upuść model .glb / .gltf")</div>
-                <div class="light-panel" id="lightPanel">
-                        <button class="light-toggle" id="lightToggle" type="button">⚙</button>
-                        <div class="light-controls" id="lightControls">
-                                            <div class="light-presets" id="lightPresets">
-                                                    <button type="button" class="light-preset-btn" data-preset="default">@(en ? "Default" : "Domyślne")</button>
-                                                    <button type="button" class="light-preset-btn" data-preset="bright">@(en ? "Bright" : "Jasne")</button>
-                                                    <button type="button" class="light-preset-btn" data-preset="moody">@(en ? "Moody" : "Klimatyczne")</button>
-                                                    <button type="button" class="light-preset-btn" data-preset="studio">@(en ? "Studio" : "Studyjne")</button>
-                                                </div>
-                            <label>@(en ? "Exposure" : "Ekspozycja")<input type="range" id="lExposure" min="0.2" max="2.5" step="0.05" value="1.05"></label>
-                            <label>@(en ? "Key light" : "Światło główne")<input type="range" id="lKey" min="0" max="4" step="0.1" value="2.2"></label>
-                            <label>@(en ? "Fill light" : "Światło uzupełniające")<input type="range" id="lFill" min="0" max="3" step="0.1" value="0.8"></label>
-                            <label>@(en ? "Rim light" : "Światło konturowe")<input type="range" id="lRim" min="0" max="3" step="0.1" value="1.4"></label>
-                            <label>@(en ? "Ambient" : "Otoczenie")<input type="range" id="lAmbient" min="0" max="2" step="0.1" value="0.6"></label>
-                            <label>@(en ? "Contrast" : "Kontrast")<input type="range" id="lContrast" min="60" max="160" step="2" value="100"></label>
-                            <label>@(en ? "Brightness" : "Jasność")<input type="range" id="lBrightness" min="60" max="160" step="2" value="100"></label>
-                                            <div class="selector-label" style="margin-top:4px;">@(en ? "Background" : "Tło")</div>
-                                            <div class="bg-presets" id="bgPresets"></div>
-                        </div>
+
+        <div class="tools-row">
+            <div class="light-panel" id="lightPanel">
+                <button class="light-toggle" id="lightToggle" type="button">⚙</button>
+                <div class="light-controls" id="lightControls">
+                    <div class="light-presets" id="lightPresets">
+                        <button type="button" class="light-preset-btn" data-preset="default">@(en ? "Default" : "Domyślne")</button>
+                        <button type="button" class="light-preset-btn" data-preset="bright">@(en ? "Bright" : "Jasne")</button>
+                        <button type="button" class="light-preset-btn" data-preset="moody">@(en ? "Moody" : "Klimatyczne")</button>
+                        <button type="button" class="light-preset-btn" data-preset="studio">@(en ? "Studio" : "Studyjne")</button>
                     </div>
+                    <label>@(en ? "Exposure" : "Ekspozycja")<input type="range" id="lExposure" min="0.2" max="2.5" step="0.05" value="1.05"></label>
+                    <label>@(en ? "Key light" : "Światło główne")<input type="range" id="lKey" min="0" max="4" step="0.1" value="2.2"></label>
+                    <label>@(en ? "Fill light" : "Światło uzupełniające")<input type="range" id="lFill" min="0" max="3" step="0.1" value="0.8"></label>
+                    <label>@(en ? "Rim light" : "Światło konturowe")<input type="range" id="lRim" min="0" max="3" step="0.1" value="1.4"></label>
+                    <label>@(en ? "Ambient" : "Otoczenie")<input type="range" id="lAmbient" min="0" max="2" step="0.1" value="0.6"></label>
+                    <label>@(en ? "Contrast" : "Kontrast")<input type="range" id="lContrast" min="60" max="160" step="2" value="100"></label>
+                    <label>@(en ? "Brightness" : "Jasność")<input type="range" id="lBrightness" min="60" max="160" step="2" value="100"></label>
+                    <div class="selector-label" style="margin-top:4px;">@(en ? "Background" : "Tło")</div>
+                    <div class="bg-presets" id="bgPresets"></div>
+                </div>
+            </div>
+
+            <div class="calib-panel" id="calibPanel">
+                <button class="light-toggle" id="calibToggle" type="button">🎯</button>
+                <div class="calib-controls" id="calibControls">
+                    <div class="selector-label">@(en ? "Calibration target" : "Cel kalibracji")</div>
+                    <select id="calibTarget">
+                        <option value="body">@(en ? "Character / Outfit" : "Postać / Kostium")</option>
+                        <option value="hair">@(en ? "Hairstyle" : "Fryzura")</option>
+                    </select>
+
+                    <div id="calibReference" style="font-size:0.75rem; color:#999;"></div>
+
+                    <div class="calib-row"><label>X</label><input type="range" id="calibXRange" min="-3" max="3" step="0.005" value="0"><input type="number" id="calibXNum" step="0.005" value="0"></div>
+                    <div class="calib-row"><label>Y</label><input type="range" id="calibYRange" min="-3" max="3" step="0.005" value="0"><input type="number" id="calibYNum" step="0.005" value="0"></div>
+                    <div class="calib-row"><label>Z</label><input type="range" id="calibZRange" min="-3" max="3" step="0.005" value="0"><input type="number" id="calibZNum" step="0.005" value="0"></div>
+                    <div class="calib-row"><label>@(en ? "Scale" : "Skala")</label><input type="range" id="calibScaleRange" min="0.1" max="5" step="0.01" value="1"><input type="number" id="calibScaleNum" step="0.01" value="1"></div>
+
+                    <div class="calib-btns">
+                        <button type="button" id="calibReset">@(en ? "Reset" : "Reset")</button>
+                        <button type="button" id="calibSave">@(en ? "Save to file" : "Zapisz do pliku")</button>
+                    </div>
+
+                    <div id="calibStatus" style="font-size:0.75rem;"></div>
+                </div>
+            </div>
+        </div>
+
         <div class="viewer-hud">
             <div class="viewer-now">
                 <h2 id="cName">@(en ? "Mannequin" : "Manekin")</h2>
@@ -435,438 +492,595 @@
     const COSTUMES_BASE = '/files/costumes/';
 </script>
 <!script type="importmap">
-{ "imports": {
+    { "imports": {
     "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@@0.160.0/examples/jsm/"
-}}
+    }}
 </!script>
 <script type="module">
-import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-const T = {
-    mannequin: LANG === 'en' ? 'Mannequin' : 'Manekin',
-    mannequinMeta: LANG === 'en' ? 'placeholder model · T-pose' : 'model zastępczy · T-poza',
-    loaded: LANG === 'en' ? 'loaded .glb' : 'wczytany .glb',
-    loadedLocal: LANG === 'en' ? 'loaded locally' : 'wczytany lokalnie',
-    loadErr: LANG === 'en' ? 'model load error' : 'błąd wczytywania modelu',
-    empty: LANG === 'en' ? 'No costumes yet' : 'Brak kostiumów',
-    listErr: LANG === 'en' ? 'Failed to load list' : 'Nie udało się wczytać listy',
-};
+    const T = {
+        mannequin: LANG === 'en' ? 'Mannequin' : 'Manekin',
+        mannequinMeta: LANG === 'en' ? 'placeholder model · T-pose' : 'model zastępczy · T-poza',
+        loaded: LANG === 'en' ? 'loaded .glb' : 'wczytany .glb',
+        loadedLocal: LANG === 'en' ? 'loaded locally' : 'wczytany lokalnie',
+        loadErr: LANG === 'en' ? 'model load error' : 'błąd wczytywania modelu',
+        empty: LANG === 'en' ? 'No costumes yet' : 'Brak kostiumów',
+        listErr: LANG === 'en' ? 'Failed to load list' : 'Nie udało się wczytać listy',
+    };
 
-const canvas = document.getElementById("c");
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+    const canvas = document.getElementById("c");
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
 
-const scene = new THREE.Scene();
-const bgLoader = new THREE.TextureLoader();
-const BACKGROUNDS = ['bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg','bg5.jpg'];
-let currentBg = BACKGROUNDS[0];
+    const scene = new THREE.Scene();
+    const bgLoader = new THREE.TextureLoader();
+    const BACKGROUNDS = ['bg1.jpg', 'bg2.jpg', 'bg3.jpg', 'bg4.jpg', 'bg5.jpg'];
+    let currentBg = BACKGROUNDS[0];
 
     function setBackground(name) {
-            bgLoader.load('/files/costumes/' + name, tex => {
-                    scene.background = tex;
-                    currentBg = name;
-                    renderBgPresets();
-                });
-        }
+        bgLoader.load('/files/costumes/' + name, tex => {
+            scene.background = tex;
+            currentBg = name;
+            renderBgPresets();
+        });
+    }
 
-function renderBgPresets() {
+    function renderBgPresets() {
         const box = document.getElementById("bgPresets");
         box.innerHTML = "";
         for (const name of BACKGROUNDS) {
-                const btn = document.createElement("button");
-                btn.type = "button";
-                btn.className = "bg-preset-btn" + (name === currentBg ? " active" : "");
-                btn.style.backgroundImage = `url(/files/costumes/${name})`;
-                btn.title = name;
-                btn.onclick = () => setBackground(name);
-                box.appendChild(btn);
-            }
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "bg-preset-btn" + (name === currentBg ? " active" : "");
+            btn.style.backgroundImage = `url(/files/costumes/${name})`;
+            btn.title = name;
+            btn.onclick = () => setBackground(name);
+            box.appendChild(btn);
+        }
     }
 
-setBackground(currentBg);
+    setBackground(currentBg);
 
-const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
-camera.position.set(0, 2, 3.8);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
+    camera.position.set(0, 2, 3.8);
 
-const controls = new OrbitControls(camera, canvas);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.target.set(0, 1.05, 0);
-controls.minDistance = 1.2;
-controls.maxDistance = 9;
-controls.listenToKeyEvents(window);
-controls.keyPanSpeed = 12;
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.target.set(0, 1.05, 0);
+    controls.minDistance = 1.2;
+    controls.maxDistance = 9;
+    controls.listenToKeyEvents(window);
+    controls.keyPanSpeed = 12;
 
-const key = new THREE.DirectionalLight(0xffd9a0, 2.2); key.position.set(3, 5, 4); scene.add(key);
-const fill = new THREE.DirectionalLight(0x5566aa, 0.8); fill.position.set(-4, 2, -2); scene.add(fill);
-const rim = new THREE.DirectionalLight(0xd7b56b, 1.4); rim.position.set(-2, 3, -5); scene.add(rim);
-
-const hemi = new THREE.HemisphereLight(0x3a2f45, 0x0a0709, 0.6);
-scene.add(hemi);
+    const key = new THREE.DirectionalLight(0xffd9a0, 2.2); key.position.set(3, 5, 4); scene.add(key);
+    const fill = new THREE.DirectionalLight(0x5566aa, 0.8); fill.position.set(-4, 2, -2); scene.add(fill);
+    const rim = new THREE.DirectionalLight(0xd7b56b, 1.4); rim.position.set(-2, 3, -5); scene.add(rim);
+    const hemi = new THREE.HemisphereLight(0x3a2f45, 0x0a0709, 0.6);
+    scene.add(hemi);
 
     document.getElementById("lightToggle").onclick = () => {
+        document.getElementById("calibControls").classList.remove("show");
         document.getElementById("lightControls").classList.toggle("show");
     };
-document.getElementById("lExposure").addEventListener("input", e => {
+    document.getElementById("lExposure").addEventListener("input", e => {
         renderer.toneMappingExposure = parseFloat(e.target.value);
     });
-document.getElementById("lKey").addEventListener("input", e => { key.intensity = parseFloat(e.target.value); });
-document.getElementById("lFill").addEventListener("input", e => { fill.intensity = parseFloat(e.target.value); });
-document.getElementById("lRim").addEventListener("input", e => { rim.intensity = parseFloat(e.target.value); });
-document.getElementById("lAmbient").addEventListener("input", e => { hemi.intensity = parseFloat(e.target.value); });
-function applyCanvasFilter() {
+    document.getElementById("lKey").addEventListener("input", e => { key.intensity = parseFloat(e.target.value); });
+    document.getElementById("lFill").addEventListener("input", e => { fill.intensity = parseFloat(e.target.value); });
+    document.getElementById("lRim").addEventListener("input", e => { rim.intensity = parseFloat(e.target.value); });
+    document.getElementById("lAmbient").addEventListener("input", e => { hemi.intensity = parseFloat(e.target.value); });
+    function applyCanvasFilter() {
         const c = document.getElementById("lContrast").value;
         const b = document.getElementById("lBrightness").value;
         canvas.style.filter = `contrast(${c}%) brightness(${b}%)`;
     }
-document.getElementById("lContrast").addEventListener("input", applyCanvasFilter);
-document.getElementById("lBrightness").addEventListener("input", applyCanvasFilter);
+    document.getElementById("lContrast").addEventListener("input", applyCanvasFilter);
+    document.getElementById("lBrightness").addEventListener("input", applyCanvasFilter);
 
-const LIGHT_PRESETS = {
+    const LIGHT_PRESETS = {
         default: { exposure: 1.05, keyI: 2.2, fillI: 0.8, rimI: 1.4, ambI: 0.6, contrast: 100, brightness: 100 },
-    bright:  { exposure: 1.4,  keyI: 3.0, fillI: 1.4, rimI: 1.6, ambI: 1.0, contrast: 105, brightness: 110 },
-    moody:   { exposure: 0.75, keyI: 1.4, fillI: 0.4, rimI: 1.8, ambI: 0.3, contrast: 115, brightness: 90 },
-    studio:  { exposure: 1.15, keyI: 2.6, fillI: 1.8, rimI: 0.6, ambI: 0.8, contrast: 100, brightness: 105 },
-};
+        bright:  { exposure: 1.4,  keyI: 3.0, fillI: 1.4, rimI: 1.6, ambI: 1.0, contrast: 105, brightness: 110 },
+        moody:   { exposure: 0.75, keyI: 1.4, fillI: 0.4, rimI: 1.8, ambI: 0.3, contrast: 115, brightness: 90 },
+        studio:  { exposure: 1.15, keyI: 2.6, fillI: 1.8, rimI: 0.6, ambI: 0.8, contrast: 100, brightness: 105 },
+    };
 
     function applyLightPreset(name) {
-            const p = LIGHT_PRESETS[name];
-            if (!p) return;
-            renderer.toneMappingExposure = p.exposure;
-            key.intensity = p.keyI;
-            fill.intensity = p.fillI;
-            rim.intensity = p.rimI;
-            hemi.intensity = p.ambI;
-            document.getElementById("lExposure").value = p.exposure;
-            document.getElementById("lKey").value = p.keyI;
-            document.getElementById("lFill").value = p.fillI;
-            document.getElementById("lRim").value = p.rimI;
-            document.getElementById("lAmbient").value = p.ambI;
-            document.getElementById("lContrast").value = p.contrast;
-            document.getElementById("lBrightness").value = p.brightness;
-            applyCanvasFilter();
-        }
+        const p = LIGHT_PRESETS[name];
+        if (!p) return;
+        renderer.toneMappingExposure = p.exposure;
+        key.intensity = p.keyI;
+        fill.intensity = p.fillI;
+        rim.intensity = p.rimI;
+        hemi.intensity = p.ambI;
+        document.getElementById("lExposure").value = p.exposure;
+        document.getElementById("lKey").value = p.keyI;
+        document.getElementById("lFill").value = p.fillI;
+        document.getElementById("lRim").value = p.rimI;
+        document.getElementById("lAmbient").value = p.ambI;
+        document.getElementById("lContrast").value = p.contrast;
+        document.getElementById("lBrightness").value = p.brightness;
+        applyCanvasFilter();
+    }
 
-document.querySelectorAll(".light-preset-btn").forEach(btn => {
+    document.querySelectorAll(".light-preset-btn").forEach(btn => {
         btn.addEventListener("click", () => applyLightPreset(btn.dataset.preset));
     });
 
-const grid = new THREE.PolarGridHelper(3.1, 8, 6, 64, 0x2c2233, 0x2c2233);
-grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
+    const grid = new THREE.PolarGridHelper(3.1, 8, 6, 64, 0x2c2233, 0x2c2233);
+    grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
 
-document.querySelectorAll(".slot-toggle").forEach(btn => {
+    document.querySelectorAll(".slot-toggle").forEach(btn => {
         btn.addEventListener("click", () => {
-                btn.closest(".slot-section").classList.toggle("collapsed");
-            });
+            btn.closest(".slot-section").classList.toggle("collapsed");
+        });
     });
 
-let currentBody = null;
-let currentHair = null;
-let autoRot = false;
-let hasFramed = false;
+    let currentBody = null;
+    let currentHair = null;
+    let autoRot = false;
+    let hasFramed = false;
 
-let currentHairItem = null;
-let currentOutfitItem = null;
-let currentGender = 'm';
-let currentJob = 'warrior';
+    let currentHairItem = null;
+    let currentOutfitItem = null;
+    let currentGender = 'm';
+    let currentJob = 'warrior';
 
-const GENDERS = [
-    { id: 'm', label_pl: 'Mężczyzna', label_en: 'Male' },
-    { id: 'f', label_pl: 'Kobieta', label_en: 'Female' },
-];
-const JOBS = [
-    { id: 'warrior', label_pl: 'Wojownik', label_en: 'Warrior' },
-    { id: 'ninja', label_pl: 'Ninja', label_en: 'Ninja' },
-    { id: 'sura', label_pl: 'Sura', label_en: 'Sura' },
-    { id: 'shaman', label_pl: 'Szaman', label_en: 'Shaman' },
-];
+    const GENDERS = [
+        { id: 'm', label_pl: 'Mężczyzna', label_en: 'Male' },
+        { id: 'f', label_pl: 'Kobieta', label_en: 'Female' },
+    ];
+    const JOBS = [
+        { id: 'warrior', label_pl: 'Wojownik', label_en: 'Warrior' },
+        { id: 'ninja', label_pl: 'Ninja', label_en: 'Ninja' },
+        { id: 'sura', label_pl: 'Sura', label_en: 'Sura' },
+        { id: 'shaman', label_pl: 'Szaman', label_en: 'Shaman' },
+    ];
 
-function currentCharacterId() {
-    return `${currentJob}_${currentGender}`;
-}
+    function currentCharacterId() {
+        return `${currentJob}_${currentGender}`;
+    }
 
-function buildMannequin() {
-    const g = new THREE.Group();
-    const mat = new THREE.MeshStandardMaterial({ color: 0xbfae93, roughness: 0.55, metalness: 0.05 });
-    const md = new THREE.MeshStandardMaterial({ color: 0x8a7a63, roughness: 0.6 });
-    const add = (geo, m, x, y, z, rz = 0) => { const e = new THREE.Mesh(geo, m); e.position.set(x, y, z); e.rotation.z = rz; g.add(e); };
-    add(new THREE.CapsuleGeometry(0.34, 0.75, 8, 16), mat, 0, 1.35, 0);
-    add(new THREE.CapsuleGeometry(0.3, 0.25, 6, 14), md, 0, 0.82, 0);
-    add(new THREE.SphereGeometry(0.24, 24, 20), mat, 0, 2.15, 0);
-    add(new THREE.CylinderGeometry(0.1, 0.12, 0.18, 12), md, 0, 1.86, 0);
-    add(new THREE.CapsuleGeometry(0.11, 0.62, 6, 12), mat, 0.75, 1.62, 0, Math.PI / 2);
-    add(new THREE.CapsuleGeometry(0.11, 0.62, 6, 12), mat, -0.75, 1.62, 0, Math.PI / 2);
-    add(new THREE.CapsuleGeometry(0.09, 0.55, 6, 12), mat, 1.5, 1.62, 0, Math.PI / 2);
-    add(new THREE.CapsuleGeometry(0.09, 0.55, 6, 12), mat, -1.5, 1.62, 0, Math.PI / 2);
-    add(new THREE.SphereGeometry(0.12, 16, 12), md, 1.86, 1.62, 0);
-    add(new THREE.SphereGeometry(0.12, 16, 12), md, -1.86, 1.62, 0);
-    add(new THREE.CapsuleGeometry(0.14, 0.7, 6, 12), mat, 0.18, 0.35, 0);
-    add(new THREE.CapsuleGeometry(0.14, 0.7, 6, 12), mat, -0.18, 0.35, 0);
-    add(new THREE.BoxGeometry(0.2, 0.1, 0.36), md, 0.18, -0.05, 0.06);
-    add(new THREE.BoxGeometry(0.2, 0.1, 0.36), md, -0.18, -0.05, 0.06);
-    return g;
-}
+    function buildMannequin() {
+        const g = new THREE.Group();
+        const mat = new THREE.MeshStandardMaterial({ color: 0xbfae93, roughness: 0.55, metalness: 0.05 });
+        const md = new THREE.MeshStandardMaterial({ color: 0x8a7a63, roughness: 0.6 });
+        const add = (geo, m, x, y, z, rz = 0) => { const e = new THREE.Mesh(geo, m); e.position.set(x, y, z); e.rotation.z = rz; g.add(e); };
+        add(new THREE.CapsuleGeometry(0.34, 0.75, 8, 16), mat, 0, 1.35, 0);
+        add(new THREE.CapsuleGeometry(0.3, 0.25, 6, 14), md, 0, 0.82, 0);
+        add(new THREE.SphereGeometry(0.24, 24, 20), mat, 0, 2.15, 0);
+        add(new THREE.CylinderGeometry(0.1, 0.12, 0.18, 12), md, 0, 1.86, 0);
+        add(new THREE.CapsuleGeometry(0.11, 0.62, 6, 12), mat, 0.75, 1.62, 0, Math.PI / 2);
+        add(new THREE.CapsuleGeometry(0.11, 0.62, 6, 12), mat, -0.75, 1.62, 0, Math.PI / 2);
+        add(new THREE.CapsuleGeometry(0.09, 0.55, 6, 12), mat, 1.5, 1.62, 0, Math.PI / 2);
+        add(new THREE.CapsuleGeometry(0.09, 0.55, 6, 12), mat, -1.5, 1.62, 0, Math.PI / 2);
+        add(new THREE.SphereGeometry(0.12, 16, 12), md, 1.86, 1.62, 0);
+        add(new THREE.SphereGeometry(0.12, 16, 12), md, -1.86, 1.62, 0);
+        add(new THREE.CapsuleGeometry(0.14, 0.7, 6, 12), mat, 0.18, 0.35, 0);
+        add(new THREE.CapsuleGeometry(0.14, 0.7, 6, 12), mat, -0.18, 0.35, 0);
+        add(new THREE.BoxGeometry(0.2, 0.1, 0.36), md, 0.18, -0.05, 0.06);
+        add(new THREE.BoxGeometry(0.2, 0.1, 0.36), md, -0.18, -0.05, 0.06);
+        return g;
+    }
 
+    function clearSlot(obj) {
+        if (!obj) return;
+        scene.remove(obj);
+        obj.traverse(o => {
+            if (o.geometry) o.geometry.dispose();
+            if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
+        });
+    }
 
-function clearSlot(obj) {
-    if (!obj) return;
-    scene.remove(obj);
-    obj.traverse(o => {
-        if (o.geometry) o.geometry.dispose();
-        if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
-    });
-}
-
-
-function frameObject(obj) {
-    const box = new THREE.Box3().setFromObject(obj);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    obj.position.x += -center.x;
-    obj.position.z += -center.z;
-    obj.position.y += -box.min.y;
+    function frameObject(obj) {
+        const box = new THREE.Box3().setFromObject(obj);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        obj.position.x += -center.x;
+        obj.position.z += -center.z;
+        obj.position.y += -box.min.y;
         if (!hasFramed) {
-                const h = size.y || 2;
-                controls.target.set(0, h * 0.55, 0);
-                camera.position.set(0, 2, 3.8);
-                hasFramed = true;
-            }
+            const h = size.y || 2;
+            controls.target.set(0, h * 0.55, 0);
+            camera.position.set(0, 2, 3.8);
+            hasFramed = true;
+        }
         controls.update();
-}
+    }
 
-function showMannequin() {
-    clearSlot(currentBody);
-    clearSlot(currentHair);
-    currentHair = null;
-    currentBody = buildMannequin();
-    scene.add(currentBody);
-    frameObject(currentBody);
-    document.getElementById("cName").textContent = T.mannequin;
-    document.getElementById("cMeta").textContent = T.mannequinMeta;
-}
+    // ---- kalibracja: baza transformu per slot + delty z suwaków ----
+    const calibState = {
+        body: { dx: 0, dy: 0, dz: 0, scale: 1, basePos: new THREE.Vector3(), baseScale: 1 },
+        hair: { dx: 0, dy: 0, dz: 0, scale: 1, basePos: new THREE.Vector3(), baseScale: 1 },
+    };
 
-const loader = new GLTFLoader();
+    function calibTargetObj(target) {
+        return target === 'body' ? currentBody : currentHair;
+    }
 
-function loadBody(url, name, meta) {
-    document.getElementById("load").classList.add("show");
-    loader.load(url, (gltf) => {
+    function snapshotCalibBase(target) {
+        const obj = calibTargetObj(target);
+        if (!obj) return;
+        const s = calibState[target];
+        s.basePos = obj.position.clone();
+        s.baseScale = obj.scale.x;
+        s.dx = 0; s.dy = 0; s.dz = 0; s.scale = 1;
+        if (document.getElementById("calibTarget").value === target) updateCalibInputs();
+    }
+
+    function applyCalib(target) {
+        const obj = calibTargetObj(target);
+        if (!obj) return;
+        const s = calibState[target];
+        obj.position.set(s.basePos.x + s.dx, s.basePos.y + s.dy, s.basePos.z + s.dz);
+        obj.scale.setScalar(s.baseScale * s.scale);
+    }
+
+    const ADMIN_TOKEN = "6I3cERL1c9srPdTS";
+
+    function updateCalibInputs() {
+        const target = document.getElementById("calibTarget").value;
+        const s = calibState[target];
+        document.getElementById("calibXRange").value = s.dx;
+        document.getElementById("calibXNum").value = s.dx;
+        document.getElementById("calibYRange").value = s.dy;
+        document.getElementById("calibYNum").value = s.dy;
+        document.getElementById("calibZRange").value = s.dz;
+        document.getElementById("calibZNum").value = s.dz;
+        document.getElementById("calibScaleRange").value = s.scale;
+        document.getElementById("calibScaleNum").value = s.scale;
+        updateCalibReference();
+    }
+
+    function updateCalibReference() {
+        const target = document.getElementById("calibTarget").value;
+        const box = document.getElementById("calibReference");
+        if (target === 'hair') {
+            const label = currentOutfitItem ? nameOf(currentOutfitItem) : (LANG === 'en' ? 'default outfit' : 'domyślny strój');
+            box.textContent = (LANG === 'en' ? 'Fitting hair to costume: ' : 'Dopasowujemy fryzurę do kostiumu: ') + '(' + label + ')';
+        } else {
+            const label = currentHairItem ? nameOf(currentHairItem) : (LANG === 'en' ? 'no hair' : 'brak fryzury');
+            box.textContent = (LANG === 'en' ? 'Fitting costume with hair: ' : 'Dopasowujemy kostium do fryzury: ') + '(' + label + ')';
+        }
+    }
+
+    function wireCalibAxis(rangeId, numId, key) {
+        const rangeEl = document.getElementById(rangeId);
+        const numEl = document.getElementById(numId);
+        const onChange = (val) => {
+            const target = document.getElementById("calibTarget").value;
+            calibState[target][key] = parseFloat(val) || 0;
+            rangeEl.value = val;
+            numEl.value = val;
+            applyCalib(target);
+        };
+        rangeEl.addEventListener("input", e => onChange(e.target.value));
+        numEl.addEventListener("input", e => onChange(e.target.value));
+    }
+    wireCalibAxis("calibXRange", "calibXNum", "dx");
+    wireCalibAxis("calibYRange", "calibYNum", "dy");
+    wireCalibAxis("calibZRange", "calibZNum", "dz");
+    wireCalibAxis("calibScaleRange", "calibScaleNum", "scale");
+
+    document.getElementById("calibTarget").addEventListener("change", updateCalibInputs);
+
+    document.getElementById("calibToggle").onclick = () => {
+        document.getElementById("lightControls").classList.remove("show");
+        document.getElementById("calibControls").classList.toggle("show");
+    };
+
+    document.getElementById("calibReset").onclick = () => {
+        const target = document.getElementById("calibTarget").value;
+        calibState[target].dx = 0; calibState[target].dy = 0; calibState[target].dz = 0; calibState[target].scale = 1;
+        applyCalib(target);
+        updateCalibInputs();
+    };
+
+    document.getElementById("calibSave").onclick = async () => {
+        const target = document.getElementById("calibTarget").value;
+        const statusEl = document.getElementById("calibStatus");
+        const s = calibState[target];
+        const charId = currentCharacterId();
+        const item = target === 'hair' ? currentHairItem : currentOutfitItem;
+        const slotForServer = target === 'body' ? 'outfit' : target;
+
+        if (!item || !item.id) {
+            statusEl.style.color = "#ed4245";
+            statusEl.textContent = LANG === 'en' ? 'No item selected for this slot.' : 'Brak wybranego itemu dla tego slotu.';
+            return;
+        }
+
+        const finalPos = [
+            Math.round((s.basePos.x + s.dx) * 1000) / 1000,
+            Math.round((s.basePos.y + s.dy) * 1000) / 1000,
+            Math.round((s.basePos.z + s.dz) * 1000) / 1000,
+        ];
+        const finalScale = Math.round(s.baseScale * s.scale * 1000) / 1000;
+
+        statusEl.style.color = "#999";
+        statusEl.textContent = LANG === 'en' ? 'Saving…' : 'Zapisywanie…';
+
+        try {
+            const resp = await fetch('/baerim/costumes-calibration', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Admin-Token': ADMIN_TOKEN },
+                body: JSON.stringify({
+                    itemId: item.id,
+                    characterId: charId,
+                    slot: slotForServer,
+                    pos: finalPos,
+                    scale: finalScale,
+                }),
+            });
+            if (!resp.ok) {
+                const err = await resp.json().catch(() => ({}));
+                statusEl.style.color = "#ed4245";
+                statusEl.textContent = (LANG === 'en' ? 'Error: ' : 'Błąd: ') + (err.error || resp.status);
+                return;
+            }
+            statusEl.style.color = "#43b581";
+            statusEl.textContent = LANG === 'en' ? 'Saved.' : 'Zapisano.';
+        } catch (e) {
+            statusEl.style.color = "#ed4245";
+            statusEl.textContent = LANG === 'en' ? 'Network error.' : 'Błąd sieci.';
+            console.error(e);
+        }
+    };
+
+    function showMannequin() {
         clearSlot(currentBody);
-        currentBody = gltf.scene;
+        clearSlot(currentHair);
+        currentHair = null;
+        currentBody = buildMannequin();
         scene.add(currentBody);
         frameObject(currentBody);
-        document.getElementById("load").classList.remove("show");
-        document.getElementById("cName").textContent = name || "Model";
-        document.getElementById("cMeta").textContent = meta || T.loaded;
-    }, undefined, (err) => {
-        document.getElementById("load").classList.remove("show");
-        document.getElementById("cMeta").textContent = T.loadErr;
-        console.error(err);
-    });
-}
-
-function fileFor(item, charId) {
-        if (!item) return null;
-        return item.files ? item.files[charId] : item.file;
+        snapshotCalibBase('body');
+        document.getElementById("cName").textContent = T.mannequin;
+        document.getElementById("cMeta").textContent = T.mannequinMeta;
     }
 
-function loadHair(url) {
+    const loader = new GLTFLoader();
+
+    function loadBody(url, name, meta, extraPos, extraScale) {
+        extraPos = extraPos || [0, 0, 0];
+        extraScale = extraScale ?? 1;
+        document.getElementById("load").classList.add("show");
         loader.load(url, (gltf) => {
-                clearSlot(currentHair);
-                currentHair = gltf.scene;
-                scene.add(currentHair);
-            }, undefined, (err) => {
-                console.error(err);
-            });
+            clearSlot(currentBody);
+            currentBody = gltf.scene;
+            scene.add(currentBody);
+            frameObject(currentBody);
+            currentBody.position.x += extraPos[0];
+            currentBody.position.y += extraPos[1];
+            currentBody.position.z += extraPos[2];
+            currentBody.scale.multiplyScalar(extraScale);
+            snapshotCalibBase('body');
+            document.getElementById("load").classList.remove("show");
+            document.getElementById("cName").textContent = name || "Model";
+            document.getElementById("cMeta").textContent = meta || T.loaded;
+        }, undefined, (err) => {
+            document.getElementById("load").classList.remove("show");
+            document.getElementById("cMeta").textContent = T.loadErr;
+            console.error(err);
+        });
     }
 
-function applyHair(charId) {
-        const file = fileFor(currentHairItem, charId);
-        if (file) {
-                loadHair(COSTUMES_BASE + file);
+    function fileFor(item, charId) {
+        if (!item) return null;
+        const f = item.files ? item.files[charId] : item.file;
+        if (!f) return null;
+        if (typeof f === 'string') return { path: f, pos: [0, 0, 0], scale: 1 };
+        return { path: f.file, pos: f.pos || [0, 0, 0], scale: f.scale ?? 1 };
+    }
+
+    function chFileInfo(ch) {
+        if (!ch || !ch.file) return null;
+        return { path: ch.file, pos: ch.pos || [0, 0, 0], scale: ch.scale ?? 1 };
+    }
+
+    function loadHair(url, pos, scale) {
+        pos = pos || [0, 0, 0];
+        scale = scale ?? 1;
+        loader.load(url, (gltf) => {
+            clearSlot(currentHair);
+            currentHair = gltf.scene;
+            currentHair.position.set(pos[0], pos[1], pos[2]);
+            currentHair.scale.setScalar(scale);
+            scene.add(currentHair);
+            snapshotCalibBase('hair');
+        }, undefined, (err) => {
+            console.error(err);
+        });
+    }
+
+    function applyHair(charId) {
+        const f = fileFor(currentHairItem, charId);
+        if (f) {
+            loadHair(COSTUMES_BASE + f.path, f.pos, f.scale);
+        } else {
+            clearSlot(currentHair);
+            currentHair = null;
+        }
+    }
+
+    function applyActiveLook(charId) {
+        const outfitF = fileFor(currentOutfitItem, charId);
+        if (outfitF) {
+            loadBody(COSTUMES_BASE + outfitF.path, nameOf(currentOutfitItem), currentOutfitItem.meta || "", outfitF.pos, outfitF.scale);
+        } else {
+            const ch = characters.find(c => c.id === charId);
+            const chF = chFileInfo(ch);
+            if (chF) {
+                loadBody(COSTUMES_BASE + chF.path, nameOf(ch), ch.meta || "", chF.pos, chF.scale);
             } else {
-                clearSlot(currentHair);
-                currentHair = null;
+                showMannequin();
             }
-    }
-
-function applyActiveLook(charId) {
-        const outfitFile = fileFor(currentOutfitItem, charId);
-        if (outfitFile) {
-                loadBody(COSTUMES_BASE + outfitFile, nameOf(currentOutfitItem), currentOutfitItem.meta || "");
-                } else {
-                    const ch = characters.find(c => c.id === charId);
-                    if (ch && ch.file) {
-                            loadBody(COSTUMES_BASE + ch.file, nameOf(ch), ch.meta || "");
-                        } else {
-                            showMannequin();
-                        }
         }
         applyHair(charId);
-
     }
 
-// ---- lista z JSON ----
-let catalog = [];
+    // ---- lista z JSON ----
+    let catalog = [];
 
-function nameOf(o) { return (LANG === 'en' ? (o.name_en || o.name_pl) : (o.name_pl || o.name_en)) || o.file || '?'; }
+    function nameOf(o) { return (LANG === 'en' ? (o.name_en || o.name_pl) : (o.name_pl || o.name_en)) || o.file || '?'; }
 
+    function renderSlotSection(slot, containerId, filter = "") {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+        const charId = currentCharacterId();
+        const f = filter.trim().toLowerCase();
+        let any = false;
 
-function renderSlotSection(slot, containerId, filter = "") {
-    const container = document.getElementById(containerId);
-    container.innerHTML = "";
-    const charId = currentCharacterId();
-    const f = filter.trim().toLowerCase();
-    let any = false;
-
-    for (const group of catalog) {
-        if (group.slot !== slot) continue;
-        const items = (group.items || []).filter(i => {
-            if (f && !nameOf(i).toLowerCase().includes(f)) return false;
-            if (i.compatible && !i.compatible.includes(charId)) return false;
-            if (i.files && !i.files[charId]) return false;
-            return true;
-        });
-        if (!items.length) continue;
-        any = true;
-        for (const it of items) {
-            const isActive = (slot === 'hair' && it === currentHairItem) || (slot === 'outfit' && it === currentOutfitItem);
-            const el = document.createElement("div");
-            el.className = "cos-item" + (isActive ? " active" : "");
-            el.innerHTML = '<span class="dot"></span>' + nameOf(it);
-            el.onclick = () => {
-                                if (slot === 'hair') {
-                                        currentHairItem = (currentHairItem === it) ? null : it;
-                                    applyHair(currentCharacterId());
-                                    } else if (slot === 'outfit') {
-                                        currentOutfitItem = (currentOutfitItem === it) ? null : it;
-                                    applyActiveLook(currentCharacterId());
-                                    }
-                renderSlotSection(slot, containerId, document.getElementById("q").value);
-            };
-            container.appendChild(el);
-        }
-    }
-
-    if (!any) {
-        container.innerHTML = slot === 'wings'
-            ? '<p class="cos-empty">' + (LANG === 'en' ? 'Coming soon' : 'Wkrótce') + '</p>'
-            : '<p class="cos-empty">' + T.empty + '</p>';
-    }
-}
-
-function renderGenderSelect() {
-    const box = document.getElementById("genderSelect");
-    box.innerHTML = "";
-    for (const g of GENDERS) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "char-pill" + (g.id === currentGender ? " active" : "");
-        btn.textContent = LANG === 'en' ? g.label_en : g.label_pl;
-        btn.onclick = () => { currentGender = g.id; onCharacterChanged(); };
-        box.appendChild(btn);
-    }
-}
-
-function renderJobSelect() {
-    const box = document.getElementById("jobSelect");
-    box.innerHTML = "";
-    for (const j of JOBS) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "char-pill" + (j.id === currentJob ? " active" : "");
-        btn.textContent = LANG === 'en' ? j.label_en : j.label_pl;
-        btn.onclick = () => { currentJob = j.id; onCharacterChanged(); };
-        box.appendChild(btn);
-    }
-}
-
-
-function onCharacterChanged() {
-    renderGenderSelect();
-    renderJobSelect();
-    const charId = currentCharacterId();
-    applyActiveLook(charId);
-    const q = document.getElementById("q").value;
-    renderSlotSection('hair', 'hairList', q);
-    renderSlotSection('outfit', 'outfitList', q);
-    renderSlotSection('wings', 'wingsList', q);
-}
-
-async function loadCatalog() {
-    try {
-        const r = await fetch(COSTUMES_URL, { cache: "no-cache" });
-        if (!r.ok) throw new Error(r.status);
-        const data = await r.json();
-        catalog = data.categories || [];
-        characters = data.characters || [];
-
-        const initialCharId = currentCharacterId();
-        const hairGroup = catalog.find(g => g.slot === 'hair');
-        if (hairGroup) {
-            currentHairItem = (hairGroup.items || []).find(i => !i.compatible || i.compatible.includes(initialCharId)) || null;
-        }
-
-        onCharacterChanged();
-    } catch (e) {
-        console.error(T.listErr);
-        console.warn("costumes.json", e);
-    }
-}
-
-let characters = [];
-
-
-document.getElementById("q").addEventListener("input", e => {
-    const f = e.target.value;
-    renderSlotSection('hair', 'hairList', f);
-    renderSlotSection('outfit', 'outfitList', f);
-    renderSlotSection('wings', 'wingsList', f);
-});
-
-// ---- drag & drop ----
-const drop = document.getElementById("drop");
-["dragenter", "dragover"].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("show"); }));
-window.addEventListener("dragleave", e => { if (e.relatedTarget === null) drop.classList.remove("show"); });
-window.addEventListener("drop", e => {
-    e.preventDefault(); drop.classList.remove("show");
-    const file = e.dataTransfer?.files?.[0]; if (!file) return;
-    loadBody(URL.createObjectURL(file), file.name.replace(/\.(glb|gltf)$/i, ""), T.loadedLocal);
-});
-
-// ---- przyciski ----
-document.getElementById("rot").onclick = e => { autoRot = !autoRot; e.target.classList.toggle("on", autoRot); };
-document.getElementById("reset").onclick = () => {
-    if (!currentBody) return;
-    hasFramed = false;
-    frameObject(currentBody);
-};
-
-setTimeout(() => { document.getElementById("hint").style.opacity = 0; }, 5000);
-
-function resize() {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    if (canvas.width !== w || canvas.height !== h) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
-}
-function tick() {
-    resize();
-        if (autoRot) {
-                if (currentBody) currentBody.rotation.y += 0.004;
-                if (currentHair) currentHair.rotation.y += 0.004;
+        for (const group of catalog) {
+            if (group.slot !== slot) continue;
+            const items = (group.items || []).filter(i => {
+                if (f && !nameOf(i).toLowerCase().includes(f)) return false;
+                if (i.compatible && !i.compatible.includes(charId)) return false;
+                if (i.files && !i.files[charId]) return false;
+                return true;
+            });
+            if (!items.length) continue;
+            any = true;
+            for (const it of items) {
+                const isActive = (slot === 'hair' && it === currentHairItem) || (slot === 'outfit' && it === currentOutfitItem);
+                const el = document.createElement("div");
+                el.className = "cos-item" + (isActive ? " active" : "");
+                el.innerHTML = '<span class="dot"></span>' + nameOf(it);
+                el.onclick = () => {
+                    if (slot === 'hair') {
+                        currentHairItem = (currentHairItem === it) ? null : it;
+                        applyHair(currentCharacterId());
+                    } else if (slot === 'outfit') {
+                        currentOutfitItem = (currentOutfitItem === it) ? null : it;
+                        applyActiveLook(currentCharacterId());
+                    }
+                    renderSlotSection(slot, containerId, document.getElementById("q").value);
+                    updateCalibReference();
+                };
+                container.appendChild(el);
             }
-    controls.update();
-    renderer.render(scene, camera);
-    requestAnimationFrame(tick);
-}
+        }
 
-showMannequin();
-loadCatalog();
-tick();
+        if (!any) {
+            container.innerHTML = slot === 'wings'
+                ? '<p class="cos-empty">' + (LANG === 'en' ? 'Coming soon' : 'Wkrótce') + '</p>'
+                : '<p class="cos-empty">' + T.empty + '</p>';
+        }
+    }
+
+    function renderGenderSelect() {
+        const box = document.getElementById("genderSelect");
+        box.innerHTML = "";
+        for (const g of GENDERS) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "char-pill" + (g.id === currentGender ? " active" : "");
+            btn.textContent = LANG === 'en' ? g.label_en : g.label_pl;
+            btn.onclick = () => { currentGender = g.id; onCharacterChanged(); };
+            box.appendChild(btn);
+        }
+    }
+
+    function renderJobSelect() {
+        const box = document.getElementById("jobSelect");
+        box.innerHTML = "";
+        for (const j of JOBS) {
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "char-pill" + (j.id === currentJob ? " active" : "");
+            btn.textContent = LANG === 'en' ? j.label_en : j.label_pl;
+            btn.onclick = () => { currentJob = j.id; onCharacterChanged(); };
+            box.appendChild(btn);
+        }
+    }
+
+    function onCharacterChanged() {
+        renderGenderSelect();
+        renderJobSelect();
+        const charId = currentCharacterId();
+        applyActiveLook(charId);
+        const q = document.getElementById("q").value;
+        renderSlotSection('hair', 'hairList', q);
+        renderSlotSection('outfit', 'outfitList', q);
+        renderSlotSection('wings', 'wingsList', q);
+        updateCalibReference();
+    }
+
+    let characters = [];
+
+    async function loadCatalog() {
+        try {
+            const r = await fetch(COSTUMES_URL, { cache: "no-cache" });
+            if (!r.ok) throw new Error(r.status);
+            const data = await r.json();
+            catalog = data.categories || [];
+            characters = data.characters || [];
+
+            const initialCharId = currentCharacterId();
+            const hairGroup = catalog.find(g => g.slot === 'hair');
+            if (hairGroup) {
+                currentHairItem = (hairGroup.items || []).find(i => !i.compatible || i.compatible.includes(initialCharId)) || null;
+            }
+
+            onCharacterChanged();
+        } catch (e) {
+            console.error(T.listErr);
+            console.warn("costumes.json", e);
+        }
+    }
+
+    document.getElementById("q").addEventListener("input", e => {
+        const f = e.target.value;
+        renderSlotSection('hair', 'hairList', f);
+        renderSlotSection('outfit', 'outfitList', f);
+        renderSlotSection('wings', 'wingsList', f);
+    });
+
+    // ---- drag & drop ----
+    const drop = document.getElementById("drop");
+    ["dragenter", "dragover"].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("show"); }));
+    window.addEventListener("dragleave", e => { if (e.relatedTarget === null) drop.classList.remove("show"); });
+    window.addEventListener("drop", e => {
+        e.preventDefault(); drop.classList.remove("show");
+        const file = e.dataTransfer?.files?.[0]; if (!file) return;
+        loadBody(URL.createObjectURL(file), file.name.replace(/\.(glb|gltf)$/i, ""), T.loadedLocal);
+    });
+
+    // ---- przyciski ----
+    document.getElementById("rot").onclick = e => { autoRot = !autoRot; e.target.classList.toggle("on", autoRot); };
+    document.getElementById("reset").onclick = () => {
+        if (!currentBody) return;
+        hasFramed = false;
+        frameObject(currentBody);
+    };
+
+    setTimeout(() => { document.getElementById("hint").style.opacity = 0; }, 5000);
+
+    function resize() {
+        const w = canvas.clientWidth, h = canvas.clientHeight;
+        if (canvas.width !== w || canvas.height !== h) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+    }
+    function tick() {
+        resize();
+        if (autoRot) {
+            if (currentBody) currentBody.rotation.y += 0.004;
+            if (currentHair) currentHair.rotation.y += 0.004;
+        }
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(tick);
+    }
+
+    showMannequin();
+    loadCatalog();
+    tick();
 </script>
 </body>
 </html>

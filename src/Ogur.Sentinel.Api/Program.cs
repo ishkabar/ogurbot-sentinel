@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Ogur.Sentinel.Abstractions;
 using Ogur.Sentinel.Core;
 using Ogur.Sentinel.Api.Http;
+using System.Text.Json.Nodes;
 using NLog.Extensions.Logging;
 using NLog;
 using NLog.Web;
@@ -47,6 +48,14 @@ try
     var usersFilePath = builder.Environment.IsDevelopment()
         ? Path.Combine(builder.Environment.ContentRootPath, "appsettings", "users.json")
         : "/app/appsettings/users.json";
+
+        var costumesJsonPath = builder.Environment.IsDevelopment()
+                                        ? Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "files", "costumes", "costumes.json")
+                                                   : "/app/files/costumes/costumes.json";
+    
+            var costumesAdminTokenPath = builder.Environment.IsDevelopment()
+                                                  ? Path.Combine(builder.Environment.ContentRootPath, "appsettings", "costumes-admin-token.txt")
+                                                             : "/app/appsettings/costumes-admin-token.txt";
 
     logger.Info("👥 Users file path: {Path}", usersFilePath);
     logger.Info("👥 File exists before registration: {Exists}", File.Exists(usersFilePath));
@@ -276,6 +285,80 @@ try
 
     app.MapGet("/baerim/upgrade-data", (UpgradeChanceService service) => Results.Ok(service.GetData()));
 
+        app.MapPost("/baerim/costumes-calibration", async (HttpContext context) =>
+    {
+        var token = context.Request.Headers["X-Admin-Token"].ToString();
+        if (!File.Exists(costumesAdminTokenPath))
+        {
+            return Results.Problem("Admin token file missing on server.");
+        }
+        var expectedToken = (await File.ReadAllTextAsync(costumesAdminTokenPath)).Trim();
+        if (string.IsNullOrEmpty(token) || token != expectedToken)
+        {
+            return Results.Unauthorized();
+        }
+
+        var body = await context.Request.ReadFromJsonAsync<CalibrationRequest>();
+        if (body is null || string.IsNullOrEmpty(body.ItemId) || string.IsNullOrEmpty(body.CharacterId) || string.IsNullOrEmpty(body.Slot))
+        {
+            return Results.BadRequest(new { error = "Invalid request body" });
+        }
+
+        var json = await File.ReadAllTextAsync(costumesJsonPath);
+        var doc = JsonNode.Parse(json)!.AsObject();
+        var categories = doc["categories"]!.AsArray();
+
+        JsonObject? targetItem = null;
+        foreach (var category in categories)
+        {
+            if (category!["slot"]!.ToString() != body.Slot) continue;
+            foreach (var item in category["items"]!.AsArray())
+            {
+                if (item!["id"]?.ToString() == body.ItemId)
+                {
+                    targetItem = item.AsObject();
+                    break;
+                }
+            }
+            if (targetItem != null) break;
+        }
+
+        if (targetItem is null)
+        {
+            return Results.NotFound(new { error = $"Item '{body.ItemId}' not found in slot '{body.Slot}'" });
+        }
+
+        var filesNode = targetItem["files"]?.AsObject();
+        if (filesNode is null)
+        {
+            return Results.BadRequest(new { error = "Item has no 'files' map" });
+        }
+
+        var currentFileNode = filesNode[body.CharacterId];
+        if (currentFileNode is null)
+        {
+            return Results.BadRequest(new { error = $"No file entry for character '{body.CharacterId}'" });
+        }
+
+        var existingFilePath = currentFileNode is JsonObject existingObj
+            ? existingObj["file"]!.ToString()
+            : currentFileNode.ToString();
+
+        filesNode[body.CharacterId] = new JsonObject
+        {
+            ["file"] = existingFilePath,
+            ["pos"] = new JsonArray(body.Pos.Select(p => (JsonNode)JsonValue.Create(p)).ToArray()),
+            ["scale"] = body.Scale
+        };
+
+        await File.WriteAllTextAsync(costumesJsonPath, doc.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+
+        logger.Info("💾 Costume calibration saved: {Slot}/{ItemId}/{Char} pos=[{X},{Y},{Z}] scale={Scale}",
+            body.Slot, body.ItemId, body.CharacterId, body.Pos[0], body.Pos[1], body.Pos[2], body.Scale);
+
+        return Results.Ok(new { message = "Saved" });
+    });
+
     // === Proxy Endpoints to Worker ===
     app.MapProxyEndpoints();
     app.MapDiscordAuthEndpoints();
@@ -294,3 +377,4 @@ finally
 {
     LogManager.Shutdown();
 }
+record CalibrationRequest(string ItemId, string CharacterId, string Slot, double[] Pos, double Scale);
