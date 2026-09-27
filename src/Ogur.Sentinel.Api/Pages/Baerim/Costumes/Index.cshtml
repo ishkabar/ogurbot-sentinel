@@ -441,8 +441,13 @@ document.getElementById("lBrightness").addEventListener("input", applyCanvasFilt
 const grid = new THREE.PolarGridHelper(3.1, 8, 6, 64, 0x2c2233, 0x2c2233);
 grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
 
-let current = null, autoRot = false;
-let characters = [];
+let currentBody = null;
+let currentHair = null;
+let autoRot = false;
+let hasFramed = false;
+
+let currentHairItem = null;
+let currentOutfitItem = null;
 let currentGender = 'm';
 let currentJob = 'warrior';
 
@@ -483,17 +488,16 @@ function buildMannequin() {
     return g;
 }
 
-function clearCurrent() {
-    if (!current) return;
-    scene.remove(current);
-    current.traverse(o => {
+
+function clearSlot(obj) {
+    if (!obj) return;
+    scene.remove(obj);
+    obj.traverse(o => {
         if (o.geometry) o.geometry.dispose();
         if (o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => m.dispose());
     });
-    current = null;
 }
 
-let hasFramed = false;
 
 function frameObject(obj) {
     const box = new THREE.Box3().setFromObject(obj);
@@ -512,22 +516,25 @@ function frameObject(obj) {
 }
 
 function showMannequin() {
-    clearCurrent();
-    current = buildMannequin();
-    scene.add(current);
-    frameObject(current);
+    clearSlot(currentBody);
+    clearSlot(currentHair);
+    currentHair = null;
+    currentBody = buildMannequin();
+    scene.add(currentBody);
+    frameObject(currentBody);
     document.getElementById("cName").textContent = T.mannequin;
     document.getElementById("cMeta").textContent = T.mannequinMeta;
 }
 
 const loader = new GLTFLoader();
-function loadURL(url, name, meta) {
+
+function loadBody(url, name, meta) {
     document.getElementById("load").classList.add("show");
     loader.load(url, (gltf) => {
-        clearCurrent();
-        current = gltf.scene;
-        scene.add(current);
-        frameObject(current);
+        clearSlot(currentBody);
+        currentBody = gltf.scene;
+        scene.add(currentBody);
+        frameObject(currentBody);
         document.getElementById("load").classList.remove("show");
         document.getElementById("cName").textContent = name || "Model";
         document.getElementById("cMeta").textContent = meta || T.loaded;
@@ -538,10 +545,52 @@ function loadURL(url, name, meta) {
     });
 }
 
+function fileFor(item, charId) {
+        if (!item) return null;
+        return item.files ? item.files[charId] : item.file;
+    }
+
+function loadHair(url) {
+        loader.load(url, (gltf) => {
+                clearSlot(currentHair);
+                currentHair = gltf.scene;
+                scene.add(currentHair);
+            }, undefined, (err) => {
+                console.error(err);
+            });
+    }
+
+function applyHair(charId) {
+        const file = fileFor(currentHairItem, charId);
+        if (file) {
+                loadHair(COSTUMES_BASE + file);
+            } else {
+                clearSlot(currentHair);
+                currentHair = null;
+            }
+    }
+
+function applyActiveLook(charId) {
+        const outfitFile = fileFor(currentOutfitItem, charId);
+        if (outfitFile) {
+                loadBody(COSTUMES_BASE + outfitFile, nameOf(currentOutfitItem), currentOutfitItem.meta || "");
+                } else {
+                    const ch = characters.find(c => c.id === charId);
+                    if (ch && ch.file) {
+                            loadBody(COSTUMES_BASE + ch.file, nameOf(ch), ch.meta || "");
+                        } else {
+                            showMannequin();
+                        }
+        }
+        applyHair(charId);
+
+    }
+
 // ---- lista z JSON ----
 let catalog = [];
 
 function nameOf(o) { return (LANG === 'en' ? (o.name_en || o.name_pl) : (o.name_pl || o.name_en)) || o.file || '?'; }
+
 
 function renderSlotSection(slot, containerId, filter = "") {
     const container = document.getElementById(containerId);
@@ -561,14 +610,19 @@ function renderSlotSection(slot, containerId, filter = "") {
         if (!items.length) continue;
         any = true;
         for (const it of items) {
-            const file = it.files ? it.files[charId] : it.file;
+            const isActive = (slot === 'hair' && it === currentHairItem) || (slot === 'outfit' && it === currentOutfitItem);
             const el = document.createElement("div");
-            el.className = "cos-item";
+            el.className = "cos-item" + (isActive ? " active" : "");
             el.innerHTML = '<span class="dot"></span>' + nameOf(it);
             el.onclick = () => {
-                container.querySelectorAll(".cos-item").forEach(x => x.classList.remove("active"));
-                el.classList.add("active");
-                if (file) loadURL(COSTUMES_BASE + file, nameOf(it), it.meta || "");
+                                if (slot === 'hair') {
+                                        currentHairItem = (currentHairItem === it) ? null : it;
+                                    applyHair(currentCharacterId());
+                                    } else if (slot === 'outfit') {
+                                        currentOutfitItem = (currentOutfitItem === it) ? null : it;
+                                    applyActiveLook(currentCharacterId());
+                                    }
+                renderSlotSection(slot, containerId, document.getElementById("q").value);
             };
             container.appendChild(el);
         }
@@ -607,15 +661,12 @@ function renderJobSelect() {
     }
 }
 
+
 function onCharacterChanged() {
     renderGenderSelect();
     renderJobSelect();
-    const ch = characters.find(c => c.id === currentCharacterId());
-    if (ch && ch.file) {
-        loadURL(COSTUMES_BASE + ch.file, nameOf(ch), ch.meta || "");
-    } else {
-        showMannequin();
-    }
+    const charId = currentCharacterId();
+    applyActiveLook(charId);
     const q = document.getElementById("q").value;
     renderSlotSection('hair', 'hairList', q);
     renderSlotSection('outfit', 'outfitList', q);
@@ -629,12 +680,22 @@ async function loadCatalog() {
         const data = await r.json();
         catalog = data.categories || [];
         characters = data.characters || [];
+
+        const initialCharId = currentCharacterId();
+        const hairGroup = catalog.find(g => g.slot === 'hair');
+        if (hairGroup) {
+            currentHairItem = (hairGroup.items || []).find(i => !i.compatible || i.compatible.includes(initialCharId)) || null;
+        }
+
         onCharacterChanged();
     } catch (e) {
         console.error(T.listErr);
         console.warn("costumes.json", e);
     }
 }
+
+let characters = [];
+
 
 document.getElementById("q").addEventListener("input", e => {
     const f = e.target.value;
@@ -650,16 +711,16 @@ window.addEventListener("dragleave", e => { if (e.relatedTarget === null) drop.c
 window.addEventListener("drop", e => {
     e.preventDefault(); drop.classList.remove("show");
     const file = e.dataTransfer?.files?.[0]; if (!file) return;
-    loadURL(URL.createObjectURL(file), file.name.replace(/\.(glb|gltf)$/i, ""), T.loadedLocal);
+    loadBody(URL.createObjectURL(file), file.name.replace(/\.(glb|gltf)$/i, ""), T.loadedLocal);
 });
 
 // ---- przyciski ----
 document.getElementById("rot").onclick = e => { autoRot = !autoRot; e.target.classList.toggle("on", autoRot); };
 document.getElementById("reset").onclick = () => {
-        if (!current) return;
-        hasFramed = false;
-        frameObject(current);
-    };
+    if (!currentBody) return;
+    hasFramed = false;
+    frameObject(currentBody);
+};
 
 setTimeout(() => { document.getElementById("hint").style.opacity = 0; }, 5000);
 
@@ -669,36 +730,14 @@ function resize() {
 }
 function tick() {
     resize();
-    if (autoRot && current) current.rotation.y += 0.004;
+        if (autoRot) {
+                if (currentBody) currentBody.rotation.y += 0.004;
+                if (currentHair) currentHair.rotation.y += 0.004;
+            }
     controls.update();
     renderer.render(scene, camera);
     requestAnimationFrame(tick);
 }
-
-function renderCharacterSelect() {
-    const box = document.getElementById("charSelect");
-    box.innerHTML = "";
-    for (const ch of characters) {
-        if (!ch.file) continue;
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "char-pill" + (ch.id === currentCharacterId ? " active" : "");
-        btn.textContent = nameOf(ch);
-        btn.onclick = () => selectCharacter(ch.id);
-        box.appendChild(btn);
-    }
-}
-
-function selectCharacter(id) {
-    const ch = characters.find(c => c.id === id);
-    if (!ch || !ch.file) return;
-    currentCharacterId = id;
-    document.querySelectorAll(".cos-item").forEach(x => x.classList.remove("active"));
-    loadURL(COSTUMES_BASE + ch.file, nameOf(ch), ch.meta || "");
-    renderCharacterSelect();
-    renderList(document.getElementById("q").value);
-}
-
 
 showMannequin();
 loadCatalog();
