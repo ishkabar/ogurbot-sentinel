@@ -1,13 +1,36 @@
 ﻿{
   "characters": [
-    { "id": "warrior_m", "job": "warrior", "gender": "m", "name_pl": "Wojownik", "name_en": "Warrior", "file": "bodies/warrior_m.glb" },
+    { "id": "warrior_m", "job": "warrior", "gender": "m", "name_pl": "Wojownik",   "name_en": "Warrior", "file": "bodies/warrior_m.glb" },
     { "id": "warrior_f", "job": "warrior", "gender": "f", "name_pl": "Wojowniczka", "name_en": "Warrior", "file": "bodies/warrior_f.glb" },
-    { "id": "ninja_m", "job": "ninja", "gender": "m", "name_pl": "Ninja", "name_en": "Ninja", "file": "bodies/assassin_f.glb" },
-    { "id": "ninja_f", "job": "ninja", "gender": "f", "name_pl": "Ninja", "name_en": "Ninja", "file": "bodies/assassin_m.glb" },
-    { "id": "sura_m", "job": "sura", "gender": "m", "name_pl": "Sura", "name_en": "Sura", "file": "bodies/sura_m.glb" },
-    { "id": "sura_f", "job": "sura", "gender": "f", "name_pl": "Sura", "name_en": "Sura", "file": "bodies/sura_f.glb" },
-    { "id": "shaman_m", "job": "shaman", "gender": "m", "name_pl": "Szaman", "name_en": "Shaman", "file": "bodies/shaman_f.glb" },
-    { "id": "shaman_f", "job": "shaman", "gender": "f", "name_pl": "Szamanka", "name_en": "Shaman", "file": "bodies/shaman_m.glb" }
+    { "id": "ninja_m",   "job": "ninja",   "gender": "m", "name_pl": "Ninja",       "name_en": "Ninja",   "file": "bodies/assassin_f.glb" },
+    { "id": "ninja_f",   "job": "ninja",   "gender": "f", "name_pl": "Ninja",       "name_en": "Ninja",   "file": "bodies/assassin_m.glb" },
+    { "id": "sura_m",    "job": "sura",    "gender": "m", "name_pl": "Sura",        "name_en": "Sura",    "file": "bodies/sura_m.glb" },
+    { "id": "sura_f",    "job": "sura",    "gender": "f", "name_pl": "Sura",        "name_en": "Sura",    "file": "bodies/sura_f.glb" },
+    { "id": "shaman_m",  "job": "shaman",  "gender": "m", "name_pl": "Szaman",      "name_en": "Shaman",  "file": "bodies/shaman_f.glb" },
+    { "id": "shaman_f",  "job": "shaman",  "gender": "f", "name_pl": "Szamanka",    "name_en": "Shaman",  "file": "bodies/shaman_m.glb" }
   ],
-  "categories": []
+  "categories": [
+    {
+            "name_pl": "Kostiumy",
+          "name_en": "Costumes",
+          "slot": "outfit",
+          "items": [
+              {
+                "name_pl": "Kostium Pustyni Sakury",
+              "name_en": "Sakura Desert Costume",
+              "compatible": ["warrior_m","warrior_f","ninja_m","ninja_f","sura_m","sura_f","shaman_m","shaman_f"],
+              "files": {
+                  "warrior_m": "costumes/sakuradesert_warrior_m.glb",
+                "warrior_f": "costumes/sakuradesert_warrior_f.glb",
+                "ninja_m":   "costumes/sakuradesert_assassin_f.glb",
+                "ninja_f":   "costumes/sakuradesert_assassin_m.glb",
+                "sura_m":    "costumes/sakuradesert_sura_m.glb",
+                "sura_f":    "costumes/sakuradesert_sura_f.glb",
+                "shaman_m":  "costumes/sakuradesert_shaman_f.glb",
+                "shaman_f":  "costumes/sakuradesert_shaman_m.glb"
+              }
+            }
+          ]
+    }
+  ]
 }

@@ -121,7 +121,7 @@ try
         context.Response.Headers.Append(
             "Content-Security-Policy",
             "default-src 'self'; " +
-            "connect-src 'self' https://api.github.com; " +
+            "connect-src 'self' https://api.github.com blob:; " +
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
             "img-src 'self' data:; " +

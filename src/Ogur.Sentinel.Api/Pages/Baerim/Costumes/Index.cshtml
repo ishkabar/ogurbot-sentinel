@@ -222,6 +222,31 @@
         }
         .viewer-drop.show { display: flex; }
 
+                .light-panel {
+                    position: absolute; top: 14px; right: 14px; z-index: 10;
+                }
+                .light-toggle {
+                    width: 34px; height: 34px; border-radius: 8px;
+                    border: 1px solid #2a2a2e; background: rgba(20,20,26,0.85);
+                    color: #ccc; font-size: 1rem; cursor: pointer;
+                }
+                .light-toggle:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
+                .light-controls {
+                    display: none;
+                    margin-top: 8px;
+                    background: rgba(20,20,26,0.92);
+                    border: 1px solid #2a2a2e;
+                    border-radius: 10px;
+                    padding: 12px 14px;
+                    width: 220px;
+                }
+                .light-controls.show { display: flex; flex-direction: column; gap: 10px; }
+                .light-controls label {
+                    font-size: 0.75rem; color: #999;
+                    display: flex; flex-direction: column; gap: 4px;
+                }
+                .light-controls input[type="range"] { width: 100%; accent-color: rgb(222,156,47); }
+
         @@media (max-width: 760px) {
             .page-content { flex-direction: column; height: auto; }
             .sidebar { width: auto; border-right: 0; border-bottom: 1px solid #222; max-height: 40vh; }
@@ -296,9 +321,21 @@
 
     <div class="viewer">
         <canvas id="c"></canvas>
-        <div class="viewer-hint" id="hint">@(en ? "Drag to rotate · right-drag to pan · scroll to zoom · drop a .glb file to load" : "Przeciągnij, aby obrócić · prawy przycisk przesuwa · kółko przybliża")</div>
+        <div class="viewer-hint" id="hint">@(en ? "Drag to rotate · right-drag to pan · scroll to zoom" : "Przeciągnij, aby obrócić · prawy przycisk przesuwa · kółko przybliża")</div>
         <div class="viewer-load" id="load">@(en ? "Loading model…" : "Wczytywanie modelu…")</div>
         <div class="viewer-drop" id="drop">@(en ? "Drop .glb / .gltf model" : "Upuść model .glb / .gltf")</div>
+                <div class="light-panel" id="lightPanel">
+                        <button class="light-toggle" id="lightToggle" type="button">⚙</button>
+                        <div class="light-controls" id="lightControls">
+                                <label>@(en ? "Exposure" : "Ekspozycja")<input type="range" id="lExposure" min="0.2" max="2.5" step="0.05" value="1.05"></label>
+                                <label>@(en ? "Key light" : "Światło główne")<input type="range" id="lKey" min="0" max="4" step="0.1" value="2.2"></label>
+                                <label>@(en ? "Fill light" : "Światło uzupełniające")<input type="range" id="lFill" min="0" max="3" step="0.1" value="0.8"></label>
+                                <label>@(en ? "Rim light" : "Światło konturowe")<input type="range" id="lRim" min="0" max="3" step="0.1" value="1.4"></label>
+                                <label>@(en ? "Ambient" : "Otoczenie")<input type="range" id="lAmbient" min="0" max="2" step="0.1" value="0.6"></label>
+                                <label>@(en ? "Contrast" : "Kontrast")<input type="range" id="lContrast" min="60" max="160" step="2" value="100"></label>
+                                <label>@(en ? "Brightness" : "Jasność")<input type="range" id="lBrightness" min="60" max="160" step="2" value="100"></label>
+                            </div>
+                    </div>
         <div class="viewer-hud">
             <div class="viewer-now">
                 <h2 id="cName">@(en ? "Mannequin" : "Manekin")</h2>
@@ -361,6 +398,9 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 
 const scene = new THREE.Scene();
+new THREE.TextureLoader().load('/files/costumes/bg.jpg', tex => {
+        scene.background = tex;
+    });
 const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1000);
 camera.position.set(0, 2, 3.8);
 
@@ -376,13 +416,28 @@ controls.keyPanSpeed = 12;
 const key = new THREE.DirectionalLight(0xffd9a0, 2.2); key.position.set(3, 5, 4); scene.add(key);
 const fill = new THREE.DirectionalLight(0x5566aa, 0.8); fill.position.set(-4, 2, -2); scene.add(fill);
 const rim = new THREE.DirectionalLight(0xd7b56b, 1.4); rim.position.set(-2, 3, -5); scene.add(rim);
-scene.add(new THREE.HemisphereLight(0x3a2f45, 0x0a0709, 0.6));
 
-const disc = new THREE.Mesh(
-    new THREE.CircleGeometry(3.2, 64),
-    new THREE.MeshStandardMaterial({ color: 0x140f1a, roughness: 0.9 })
-);
-disc.rotation.x = -Math.PI / 2; scene.add(disc);
+const hemi = new THREE.HemisphereLight(0x3a2f45, 0x0a0709, 0.6);
+scene.add(hemi);
+
+    document.getElementById("lightToggle").onclick = () => {
+        document.getElementById("lightControls").classList.toggle("show");
+    };
+document.getElementById("lExposure").addEventListener("input", e => {
+        renderer.toneMappingExposure = parseFloat(e.target.value);
+    });
+document.getElementById("lKey").addEventListener("input", e => { key.intensity = parseFloat(e.target.value); });
+document.getElementById("lFill").addEventListener("input", e => { fill.intensity = parseFloat(e.target.value); });
+document.getElementById("lRim").addEventListener("input", e => { rim.intensity = parseFloat(e.target.value); });
+document.getElementById("lAmbient").addEventListener("input", e => { hemi.intensity = parseFloat(e.target.value); });
+function applyCanvasFilter() {
+        const c = document.getElementById("lContrast").value;
+        const b = document.getElementById("lBrightness").value;
+        canvas.style.filter = `contrast(${c}%) brightness(${b}%)`;
+    }
+document.getElementById("lContrast").addEventListener("input", applyCanvasFilter);
+document.getElementById("lBrightness").addEventListener("input", applyCanvasFilter);
+
 const grid = new THREE.PolarGridHelper(3.1, 8, 6, 64, 0x2c2233, 0x2c2233);
 grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
 
@@ -438,6 +493,8 @@ function clearCurrent() {
     current = null;
 }
 
+let hasFramed = false;
+
 function frameObject(obj) {
     const box = new THREE.Box3().setFromObject(obj);
     const size = box.getSize(new THREE.Vector3());
@@ -445,10 +502,13 @@ function frameObject(obj) {
     obj.position.x += -center.x;
     obj.position.z += -center.z;
     obj.position.y += -box.min.y;
-    const h = size.y || 2;
-    controls.target.set(0, h * 0.55, 0);
-    camera.position.set(0, 2, 3.8);
-    controls.update();
+        if (!hasFramed) {
+                const h = size.y || 2;
+                controls.target.set(0, h * 0.55, 0);
+                camera.position.set(0, 2, 3.8);
+                hasFramed = true;
+            }
+        controls.update();
 }
 
 function showMannequin() {
@@ -465,7 +525,7 @@ function loadURL(url, name, meta) {
     document.getElementById("load").classList.add("show");
     loader.load(url, (gltf) => {
         clearCurrent();
-        current = gltf.scene;      // bez animacji = poza bazowa (T/A-poza)
+        current = gltf.scene;
         scene.add(current);
         frameObject(current);
         document.getElementById("load").classList.remove("show");
@@ -595,7 +655,11 @@ window.addEventListener("drop", e => {
 
 // ---- przyciski ----
 document.getElementById("rot").onclick = e => { autoRot = !autoRot; e.target.classList.toggle("on", autoRot); };
-document.getElementById("reset").onclick = () => { if (current) frameObject(current); };
+document.getElementById("reset").onclick = () => {
+        if (!current) return;
+        hasFramed = false;
+        frameObject(current);
+    };
 
 setTimeout(() => { document.getElementById("hint").style.opacity = 0; }, 5000);
 
