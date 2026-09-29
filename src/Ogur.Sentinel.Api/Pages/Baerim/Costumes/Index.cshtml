@@ -1,24 +1,26 @@
 ﻿@page
 @model Ogur.Sentinel.Api.Pages.Baerim.Costumes.IndexModel
 @{
-Layout = null;
-ViewData["Title"] = "Baerim kostiumy";
-var en = Model.Lang == "en";
+    Layout = null;
+    ViewData["Title"] = "Baerim kostiumy";
+    var en = Model.Lang == "en";
+    var calib = Model.HttpContext.Items["CalibUnlocked"] is true;
 }
 <!DOCTYPE html>
 <html lang="@Model.Lang" data-bs-theme="dark">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <title>Baerim kostiumy</title>
-    <link rel="icon" type="image/png" href="/files/baerim-og.png" />
-    <meta property="og:site_name" content="Ogur.dev" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="Baerim — Kostiumy" />
-    <meta property="og:description" content="@(en ? "Preview costumes and armor in 3D." : "Podgląd kostiumów i zbroi w 3D.")" />
-    <meta property="og:image" content="https://respy.ogur.dev/files/baerim-og.png" />
-    <meta property="og:url" content="https://respy.ogur.dev/baerim/costumes/" />
-    <meta name="theme-color" content="rgb(222,156,47)" />
+    <link rel="icon" type="image/png" href="/files/baerim-og.png"/>
+    <meta property="og:site_name" content="Ogur.dev"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:title" content="Baerim — Kostiumy"/>
+    <meta property="og:description"
+          content="@(en ? "Preview costumes and armor in 3D." : "Podgląd kostiumów i zbroi w 3D.")"/>
+    <meta property="og:image" content="https://respy.ogur.dev/files/baerim-og.png"/>
+    <meta property="og:url" content="https://respy.ogur.dev/baerim/costumes/"/>
+    <meta name="theme-color" content="rgb(222,156,47)"/>
     <style>
         html, body {
             height: 100%;
@@ -29,6 +31,7 @@ var en = Model.Lang == "en";
             font-family: system-ui, sans-serif;
             overflow-x: hidden;
         }
+
         .topbar {
             display: flex;
             justify-content: space-between;
@@ -36,15 +39,50 @@ var en = Model.Lang == "en";
             padding: 14px 20px;
             gap: 16px;
         }
-        .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
-        .topbar a:hover { color: #fff; }
-        .topbar-right { display: flex; align-items: center; gap: 16px; }
-        .page-logo { margin: 0 0 16px; }
-        .page-logo-img { width: 100%; max-width: 200px; height: auto; border-radius: 10px; display: block; }
-        .status { font-size: 0.9rem; color: #ddd; }
-        .status a { margin-left: 12px; cursor: pointer; }
 
-        .lang-switch { display: flex; gap: 4px; }
+        .topbar a {
+            color: #aaa;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .topbar a:hover {
+            color: #fff;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .page-logo {
+            margin: 0 0 16px;
+        }
+
+        .page-logo-img {
+            width: 100%;
+            max-width: 200px;
+            height: auto;
+            border-radius: 10px;
+            display: block;
+        }
+
+        .status {
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        .status a {
+            margin-left: 12px;
+            cursor: pointer;
+        }
+
+        .lang-switch {
+            display: flex;
+            gap: 4px;
+        }
+
         .lang-switch a {
             font-size: 0.75rem;
             font-weight: 600;
@@ -53,6 +91,7 @@ var en = Model.Lang == "en";
             border: 1px solid #2a2a2e;
             color: #888;
         }
+
         .lang-switch a.active {
             color: #eee;
             border-color: #43b581;
@@ -72,6 +111,7 @@ var en = Model.Lang == "en";
             display: flex;
             flex-direction: column;
         }
+
         .sidebar-search input {
             width: 100%;
             box-sizing: border-box;
@@ -83,17 +123,23 @@ var en = Model.Lang == "en";
             font-size: 0.9rem;
             margin-bottom: 12px;
         }
-        .sidebar-search input:focus { outline: 1px solid rgb(222,156,47); }
+
+        .sidebar-search input:focus {
+            outline: 1px solid rgb(222, 156, 47);
+        }
 
         .cat-title {
             font-size: 0.72rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: rgb(222,156,47);
+            color: rgb(222, 156, 47);
             opacity: 0.85;
             margin: 14px 0 6px;
         }
-        .cat-title:first-of-type { margin-top: 0; }
+
+        .cat-title:first-of-type {
+            margin-top: 0;
+        }
 
         .slot-toggle {
             width: 100%;
@@ -103,19 +149,35 @@ var en = Model.Lang == "en";
             background: none;
             border: none;
             border-bottom: 1px solid #222;
-            color: rgb(222,156,47);
+            color: rgb(222, 156, 47);
             font-size: 0.72rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             padding: 8px 2px;
             cursor: pointer;
         }
-        .slot-arrow { transition: transform 0.15s ease; font-size: 0.85rem; }
-        .slot-section.collapsed .slot-arrow { transform: rotate(-90deg); }
-        .slot-section.collapsed .slot-body { display: none; }
-        .slot-body { padding-top: 6px; }
 
-        .selector-block { margin-bottom: 14px; }
+        .slot-arrow {
+            transition: transform 0.15s ease;
+            font-size: 0.85rem;
+        }
+
+        .slot-section.collapsed .slot-arrow {
+            transform: rotate(-90deg);
+        }
+
+        .slot-section.collapsed .slot-body {
+            display: none;
+        }
+
+        .slot-body {
+            padding-top: 6px;
+        }
+
+        .selector-block {
+            margin-bottom: 14px;
+        }
+
         .selector-label {
             font-size: 0.72rem;
             text-transform: uppercase;
@@ -123,8 +185,16 @@ var en = Model.Lang == "en";
             color: #888;
             margin-bottom: 6px;
         }
-        .pill-row { display: flex; flex-wrap: wrap; gap: 6px; }
-        .slot-section { margin-bottom: 18px; }
+
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .slot-section {
+            margin-bottom: 18px;
+        }
 
         .char-pill {
             font-size: 0.78rem;
@@ -135,10 +205,15 @@ var en = Model.Lang == "en";
             color: #bbb;
             cursor: pointer;
         }
-        .char-pill:hover { border-color: rgba(222,156,47,0.5); color: #eee; }
+
+        .char-pill:hover {
+            border-color: rgba(222, 156, 47, 0.5);
+            color: #eee;
+        }
+
         .char-pill.active {
             background: #241d12;
-            border-color: rgb(222,156,47);
+            border-color: rgb(222, 156, 47);
             color: #fff;
         }
 
@@ -153,19 +228,36 @@ var en = Model.Lang == "en";
             color: #ddd;
             border: 1px solid transparent;
         }
-        .cos-item:hover { background: #1c1c22; }
+
+        .cos-item:hover {
+            background: #1c1c22;
+        }
+
         .cos-item.active {
             background: #241d12;
-            border-color: rgba(222,156,47,0.55);
+            border-color: rgba(222, 156, 47, 0.55);
             color: #fff;
         }
-        .cos-item .dot {
-            width: 7px; height: 7px; border-radius: 50%;
-            background: #5a4a25; flex: none;
-        }
-        .cos-item.active .dot { background: rgb(222,156,47); box-shadow: 0 0 7px rgb(222,156,47); }
 
-        .cos-empty { color: #555; font-size: 0.85rem; font-style: italic; padding: 6px 10px; }
+        .cos-item .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #5a4a25;
+            flex: none;
+        }
+
+        .cos-item.active .dot {
+            background: rgb(222, 156, 47);
+            box-shadow: 0 0 7px rgb(222, 156, 47);
+        }
+
+        .cos-empty {
+            color: #555;
+            font-size: 0.85rem;
+            font-style: italic;
+            padding: 6px 10px;
+        }
 
         .support-widget-box {
             width: 100%;
@@ -176,21 +268,84 @@ var en = Model.Lang == "en";
             border-radius: 10px;
             overflow: hidden;
         }
-        .support-widget-collapsed-view { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
-        .support-widget-collapsed-view p { margin: 0; font-size: 0.78rem; color: #ccc; line-height: 1.3; }
-        .support-widget-header-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .support-widget-btn {
-            background: #43b581; color: #0d0d0f; font-weight: 700; text-decoration: none;
-            padding: 6px 12px; border-radius: 8px; font-size: 0.76rem; white-space: nowrap;
+
+        .support-widget-collapsed-view {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 10px 12px;
         }
-        .support-widget-btn:hover { filter: brightness(1.1); }
-        .support-widget-toggle { background: none; border: none; color: #888; cursor: pointer; font-size: 0.9rem; padding: 2px 4px; flex-shrink: 0; }
-        .support-widget-toggle:hover { color: #eee; }
-        .support-widget-expanded-view { position: relative; }
-        .support-widget-toggle-inline { position: absolute; top: 6px; right: 6px; z-index: 1; background: rgba(13,13,15,0.7); border-radius: 6px; }
-        .support-widget-frame { width: 100%; height: 300px; border: 0; display: block; }
-        .support-widget-box.collapsed .support-widget-expanded-view { display: none; }
-        .support-widget-box:not(.collapsed) .support-widget-collapsed-view { display: none; }
+
+        .support-widget-collapsed-view p {
+            margin: 0;
+            font-size: 0.78rem;
+            color: #ccc;
+            line-height: 1.3;
+        }
+
+        .support-widget-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .support-widget-btn {
+            background: #43b581;
+            color: #0d0d0f;
+            font-weight: 700;
+            text-decoration: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.76rem;
+            white-space: nowrap;
+        }
+
+        .support-widget-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .support-widget-toggle {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 2px 4px;
+            flex-shrink: 0;
+        }
+
+        .support-widget-toggle:hover {
+            color: #eee;
+        }
+
+        .support-widget-expanded-view {
+            position: relative;
+        }
+
+        .support-widget-toggle-inline {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            z-index: 1;
+            background: rgba(13, 13, 15, 0.7);
+            border-radius: 6px;
+        }
+
+        .support-widget-frame {
+            width: 100%;
+            height: 300px;
+            border: 0;
+            display: block;
+        }
+
+        .support-widget-box.collapsed .support-widget-expanded-view {
+            display: none;
+        }
+
+        .support-widget-box:not(.collapsed) .support-widget-collapsed-view {
+            display: none;
+        }
 
         /* ---- scena 3D ---- */
         .viewer {
@@ -198,78 +353,181 @@ var en = Model.Lang == "en";
             position: relative;
             min-width: 0;
         }
-        #c { display: block; width: 100%; height: 100%; }
+
+        #c {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
 
         .viewer-hud {
-            position: absolute; left: 0; right: 0; bottom: 0;
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
             padding: 16px 20px;
-            display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 16px;
             pointer-events: none;
-            background: linear-gradient(0deg, rgba(8,6,10,0.72), transparent);
+            background: linear-gradient(0deg, rgba(8, 6, 10, 0.72), transparent);
         }
-        .viewer-now h2 { margin: 0; font-size: 1.35rem; }
-        .viewer-now p { margin: 4px 0 0; font-size: 0.8rem; color: #999; }
-        .viewer-ctrls { display: flex; gap: 8px; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end; }
+
+        .viewer-now h2 {
+            margin: 0;
+            font-size: 1.35rem;
+        }
+
+        .viewer-now p {
+            margin: 4px 0 0;
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .viewer-ctrls {
+            display: flex;
+            gap: 8px;
+            pointer-events: auto;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
         .vbtn {
-            font-size: 0.8rem; padding: 7px 12px; border-radius: 8px;
-            border: 1px solid #2a2a2e; background: rgba(26,26,30,0.85); color: #ddd;
-            cursor: pointer; backdrop-filter: blur(6px);
+            font-size: 0.8rem;
+            padding: 7px 12px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            background: rgba(26, 26, 30, 0.85);
+            color: #ddd;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
         }
-        .vbtn:hover { border-color: rgba(222,156,47,0.55); color: rgb(222,156,47); }
-        .vbtn.on { border-color: rgb(222,156,47); color: rgb(222,156,47); }
+
+        .vbtn:hover {
+            border-color: rgba(222, 156, 47, 0.55);
+            color: rgb(222, 156, 47);
+        }
+
+        .vbtn.on {
+            border-color: rgb(222, 156, 47);
+            color: rgb(222, 156, 47);
+        }
 
         .viewer-hint {
-            position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-            font-size: 0.78rem; color: #999;
-            background: rgba(20,20,26,0.7); border: 1px solid #2a2a2e; border-radius: 20px;
-            padding: 5px 14px; transition: opacity .5s;
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.78rem;
+            color: #999;
+            background: rgba(20, 20, 26, 0.7);
+            border: 1px solid #2a2a2e;
+            border-radius: 20px;
+            padding: 5px 14px;
+            transition: opacity .5s;
         }
+
         .viewer-load {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-            color: #999; font-size: 0.85rem; display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #999;
+            font-size: 0.85rem;
+            display: none;
         }
-        .viewer-load.show { display: block; }
+
+        .viewer-load.show {
+            display: block;
+        }
+
         .viewer-drop {
-            position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
-            background: rgba(10,7,13,0.82); border: 2px dashed rgba(222,156,47,0.55); z-index: 5;
-            color: rgb(222,156,47); font-size: 1rem;
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(10, 7, 13, 0.82);
+            border: 2px dashed rgba(222, 156, 47, 0.55);
+            z-index: 5;
+            color: rgb(222, 156, 47);
+            font-size: 1rem;
         }
-        .viewer-drop.show { display: flex; }
+
+        .viewer-drop.show {
+            display: flex;
+        }
 
         /* ---- toolbar (światła + kalibracja obok siebie) ---- */
         .tools-row {
-            position: absolute; top: 14px; right: 14px; z-index: 20;
-            display: flex; gap: 8px; align-items: flex-start;
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 20;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
         }
+
         .light-panel, .calib-panel {
             position: relative;
         }
+
         .light-toggle {
-            width: 34px; height: 34px; border-radius: 8px;
-            border: 1px solid #2a2a2e; background: rgba(20,20,26,0.85);
-            color: #ccc; font-size: 1rem; cursor: pointer;
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2e;
+            background: rgba(20, 20, 26, 0.85);
+            color: #ccc;
+            font-size: 1rem;
+            cursor: pointer;
         }
-        .light-toggle:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
+
+        .light-toggle:hover {
+            border-color: rgb(222, 156, 47);
+            color: rgb(222, 156, 47);
+        }
+
         .light-controls {
             display: none;
-            position: absolute; top: 42px; right: 0;
-            background: rgba(20,20,26,0.92);
+            position: absolute;
+            top: 42px;
+            right: 0;
+            background: rgba(20, 20, 26, 0.92);
             border: 1px solid #2a2a2e;
             border-radius: 10px;
             padding: 12px 14px;
             width: 280px;
         }
-        .light-controls.show { display: flex; flex-direction: column; gap: 10px; }
-        .light-controls label {
-            font-size: 0.75rem; color: #999;
-            display: flex; flex-direction: column; gap: 4px;
+
+        .light-controls.show {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-        .light-controls input[type="range"] { width: 100%; accent-color: rgb(222,156,47); }
+
+        .light-controls label {
+            font-size: 0.75rem;
+            color: #999;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .light-controls input[type="range"] {
+            width: 100%;
+            accent-color: rgb(222, 156, 47);
+        }
 
         .light-presets {
-            display: flex; flex-wrap: wrap; gap: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
             margin-bottom: 4px;
         }
+
         .light-preset-btn {
             font-size: 0.72rem;
             padding: 4px 8px;
@@ -279,54 +537,125 @@ var en = Model.Lang == "en";
             color: #bbb;
             cursor: pointer;
         }
-        .light-preset-btn:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
+
+        .light-preset-btn:hover {
+            border-color: rgb(222, 156, 47);
+            color: rgb(222, 156, 47);
+        }
 
         .bg-presets {
-            display: flex; flex-wrap: wrap; gap: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
         }
+
         .bg-preset-btn {
-            width: 40px; height: 28px;
+            width: 40px;
+            height: 28px;
             border-radius: 6px;
             border: 1px solid #2a2a2e;
             background-size: cover;
             background-position: center;
             cursor: pointer;
         }
-        .bg-preset-btn.active { border-color: rgb(222,156,47); }
+
+        .bg-preset-btn.active {
+            border-color: rgb(222, 156, 47);
+        }
 
         /* ---- panel kalibracji ---- */
         .calib-controls {
             display: none;
-            position: absolute; top: 42px; right: 0;
-            background: rgba(20,20,26,0.92);
+            position: absolute;
+            top: 42px;
+            right: 0;
+            background: rgba(20, 20, 26, 0.92);
             border: 1px solid #2a2a2e;
             border-radius: 10px;
             padding: 12px 14px;
             width: 300px;
         }
-        .calib-controls.show { display: flex; flex-direction: column; gap: 10px; }
+
+        .calib-controls.show {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
         .calib-controls select {
-            background: #14141a; color: #eee; border: 1px solid #2a2a2e;
-            border-radius: 6px; padding: 6px; font-size: 0.8rem;
+            background: #14141a;
+            color: #eee;
+            border: 1px solid #2a2a2e;
+            border-radius: 6px;
+            padding: 6px;
+            font-size: 0.8rem;
         }
-        .calib-row { display: flex; align-items: center; gap: 8px; }
-        .calib-row label { width: 46px; font-size: 0.75rem; color: #999; flex-shrink: 0; }
-        .calib-row input[type="range"] { flex: 1; accent-color: rgb(222,156,47); }
+
+        .calib-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .calib-row label {
+            width: 46px;
+            font-size: 0.75rem;
+            color: #999;
+            flex-shrink: 0;
+        }
+
+        .calib-row input[type="range"] {
+            flex: 1;
+            accent-color: rgb(222, 156, 47);
+        }
+
         .calib-row input[type="number"] {
-            width: 60px; background: #14141a; color: #eee;
-            border: 1px solid #2a2a2e; border-radius: 6px; padding: 4px; font-size: 0.75rem;
+            width: 60px;
+            background: #14141a;
+            color: #eee;
+            border: 1px solid #2a2a2e;
+            border-radius: 6px;
+            padding: 4px;
+            font-size: 0.75rem;
         }
-        .calib-btns { display: flex; gap: 8px; }
+
+        .calib-btns {
+            display: flex;
+            gap: 8px;
+        }
+
         .calib-btns button {
-            flex: 1; font-size: 0.75rem; padding: 6px; border-radius: 6px;
-            border: 1px solid #2a2a2e; background: #14141a; color: #bbb; cursor: pointer;
+            flex: 1;
+            font-size: 0.75rem;
+            padding: 6px;
+            border-radius: 6px;
+            border: 1px solid #2a2a2e;
+            background: #14141a;
+            color: #bbb;
+            cursor: pointer;
         }
-        .calib-btns button:hover { border-color: rgb(222,156,47); color: rgb(222,156,47); }
+
+        .calib-btns button:hover {
+            border-color: rgb(222, 156, 47);
+            color: rgb(222, 156, 47);
+        }
 
         @@media (max-width: 760px) {
-            .page-content { flex-direction: column; height: auto; }
-            .sidebar { width: auto; border-right: 0; border-bottom: 1px solid #222; max-height: 40vh; }
-            .viewer { height: 60vh; }
+            .page-content {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .sidebar {
+                width: auto;
+                border-right: 0;
+                border-bottom: 1px solid #222;
+                max-height: 40vh;
+            }
+
+            .viewer {
+                height: 60vh;
+            }
         }
     </style>
 </head>
@@ -340,10 +669,10 @@ var en = Model.Lang == "en";
         </div>
         @if (Model.IsLoggedIn)
         {
-        <div class="status">
-            <span>👤 @Model.DiscordUsername</span>
-            <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
-        </div>
+            <div class="status">
+                <span>👤 @Model.DiscordUsername</span>
+                <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
+            </div>
         }
     </div>
 </div>
@@ -351,7 +680,7 @@ var en = Model.Lang == "en";
 <div class="page-content">
     <div class="sidebar">
         <div class="page-logo">
-            <img src="/files/baerim-og.png" alt="Baerim" class="page-logo-img" />
+            <img src="/files/baerim-og.png" alt="Baerim" class="page-logo-img"/>
         </div>
 
         <div class="selector-block">
@@ -364,7 +693,7 @@ var en = Model.Lang == "en";
         </div>
 
         <div class="sidebar-search">
-            <input id="q" type="text" placeholder="@(en ? "Search costume…" : "Szukaj kostiumu…")" autocomplete="off" />
+            <input id="q" type="text" placeholder="@(en ? "Search costume…" : "Szukaj kostiumu…")" autocomplete="off"/>
         </div>
 
         <div class="slot-section collapsed">
@@ -393,20 +722,27 @@ var en = Model.Lang == "en";
             <div class="support-widget-collapsed-view">
                 <p>@(en ? "Enjoying the wardrobe? Support the server." : "Podoba Ci się szafa? Wesprzyj serwer.")</p>
                 <div class="support-widget-header-row">
-                    <a class="support-widget-btn" href="https://zrzutka.pl/fhyeca" target="_blank" rel="noopener">@(en ? "Support" : "Wesprzyj")</a>
-                    <button class="support-widget-toggle" type="button" data-action="expand" aria-label="@(en ? "Expand" : "Rozwiń")">▸</button>
+                    <a class="support-widget-btn" href="https://zrzutka.pl/fhyeca" target="_blank"
+                       rel="noopener">@(en ? "Support" : "Wesprzyj")</a>
+                    <button class="support-widget-toggle" type="button" data-action="expand"
+                            aria-label="@(en ? "Expand" : "Rozwiń")">▸
+                    </button>
                 </div>
             </div>
             <div class="support-widget-expanded-view">
-                <button class="support-widget-toggle support-widget-toggle-inline" type="button" data-action="collapse" aria-label="@(en ? "Collapse" : "Zwiń")">▾</button>
-                <iframe class="support-widget-frame" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0" scrolling="no"></iframe>
+                <button class="support-widget-toggle support-widget-toggle-inline" type="button" data-action="collapse"
+                        aria-label="@(en ? "Collapse" : "Zwiń")">▾
+                </button>
+                <iframe class="support-widget-frame" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0"
+                        scrolling="no"></iframe>
             </div>
         </div>
     </div>
 
     <div class="viewer">
         <canvas id="c"></canvas>
-        <div class="viewer-hint" id="hint">@(en ? "Drag to rotate · right-drag to pan · scroll to zoom" : "Przeciągnij, aby obrócić · prawy przycisk przesuwa · kółko przybliża")</div>
+        <div class="viewer-hint"
+             id="hint">@(en ? "Drag to rotate · right-drag to pan · scroll to zoom" : "Przeciągnij, aby obrócić · prawy przycisk przesuwa · kółko przybliża")</div>
         <div class="viewer-load" id="load">@(en ? "Loading model…" : "Wczytywanie modelu…")</div>
         <div class="viewer-drop" id="drop">@(en ? "Drop .glb / .gltf model" : "Upuść model .glb / .gltf")</div>
 
@@ -415,18 +751,29 @@ var en = Model.Lang == "en";
                 <button class="light-toggle" id="lightToggle" type="button">⚙</button>
                 <div class="light-controls" id="lightControls">
                     <div class="light-presets" id="lightPresets">
-                        <button type="button" class="light-preset-btn" data-preset="default">@(en ? "Default" : "Domyślne")</button>
-                        <button type="button" class="light-preset-btn" data-preset="bright">@(en ? "Bright" : "Jasne")</button>
-                        <button type="button" class="light-preset-btn" data-preset="moody">@(en ? "Moody" : "Klimatyczne")</button>
-                        <button type="button" class="light-preset-btn" data-preset="studio">@(en ? "Studio" : "Studyjne")</button>
+                        <button type="button" class="light-preset-btn"
+                                data-preset="default">@(en ? "Default" : "Domyślne")</button>
+                        <button type="button" class="light-preset-btn"
+                                data-preset="bright">@(en ? "Bright" : "Jasne")</button>
+                        <button type="button" class="light-preset-btn"
+                                data-preset="moody">@(en ? "Moody" : "Klimatyczne")</button>
+                        <button type="button" class="light-preset-btn"
+                                data-preset="studio">@(en ? "Studio" : "Studyjne")</button>
                     </div>
-                    <label>@(en ? "Exposure" : "Ekspozycja")<input type="range" id="lExposure" min="0.2" max="2.5" step="0.05" value="1.05"></label>
-                    <label>@(en ? "Key light" : "Światło główne")<input type="range" id="lKey" min="0" max="4" step="0.1" value="2.2"></label>
-                    <label>@(en ? "Fill light" : "Światło uzupełniające")<input type="range" id="lFill" min="0" max="3" step="0.1" value="0.8"></label>
-                    <label>@(en ? "Rim light" : "Światło konturowe")<input type="range" id="lRim" min="0" max="3" step="0.1" value="1.4"></label>
-                    <label>@(en ? "Ambient" : "Otoczenie")<input type="range" id="lAmbient" min="0" max="2" step="0.1" value="0.6"></label>
-                    <label>@(en ? "Contrast" : "Kontrast")<input type="range" id="lContrast" min="60" max="160" step="2" value="100"></label>
-                    <label>@(en ? "Brightness" : "Jasność")<input type="range" id="lBrightness" min="60" max="160" step="2" value="100"></label>
+                    <label>@(en ? "Exposure" : "Ekspozycja")<input type="range" id="lExposure" min="0.2" max="2.5"
+                                                                   step="0.05" value="1.05"></label>
+                    <label>@(en ? "Key light" : "Światło główne")<input type="range" id="lKey" min="0" max="4"
+                                                                        step="0.1" value="2.2"></label>
+                    <label>@(en ? "Fill light" : "Światło uzupełniające")<input type="range" id="lFill" min="0" max="3"
+                                                                                step="0.1" value="0.8"></label>
+                    <label>@(en ? "Rim light" : "Światło konturowe")<input type="range" id="lRim" min="0" max="3"
+                                                                           step="0.1" value="1.4"></label>
+                    <label>@(en ? "Ambient" : "Otoczenie")<input type="range" id="lAmbient" min="0" max="2" step="0.1"
+                                                                 value="0.6"></label>
+                    <label>@(en ? "Contrast" : "Kontrast")<input type="range" id="lContrast" min="60" max="160" step="2"
+                                                                 value="100"></label>
+                    <label>@(en ? "Brightness" : "Jasność")<input type="range" id="lBrightness" min="60" max="160"
+                                                                  step="2" value="100"></label>
                     <div class="selector-label" style="margin-top:4px;">@(en ? "Background" : "Tło")</div>
                     <div class="bg-presets" id="bgPresets"></div>
                 </div>
@@ -443,14 +790,32 @@ var en = Model.Lang == "en";
 
                     <div id="calibReference" style="font-size:0.75rem; color:#999;"></div>
 
-                    <div class="calib-row"><label>X</label><input type="range" id="calibXRange" min="-3" max="3" step="0.005" value="0"><input type="number" id="calibXNum" step="0.005" value="0"></div>
-                    <div class="calib-row"><label>Y</label><input type="range" id="calibYRange" min="-3" max="3" step="0.005" value="0"><input type="number" id="calibYNum" step="0.005" value="0"></div>
-                    <div class="calib-row"><label>Z</label><input type="range" id="calibZRange" min="-3" max="3" step="0.005" value="0"><input type="number" id="calibZNum" step="0.005" value="0"></div>
-                    <div class="calib-row"><label>@(en ? "Scale" : "Skala")</label><input type="range" id="calibScaleRange" min="0.1" max="5" step="0.01" value="1"><input type="number" id="calibScaleNum" step="0.01" value="1"></div>
+                    <div class="calib-row"><label>X</label><input type="range" id="calibXRange" min="-3" max="3"
+                                                                  step="0.005" value="0"><input type="number"
+                                                                                                id="calibXNum"
+                                                                                                step="0.005" value="0">
+                    </div>
+                    <div class="calib-row"><label>Y</label><input type="range" id="calibYRange" min="-3" max="3"
+                                                                  step="0.005" value="0"><input type="number"
+                                                                                                id="calibYNum"
+                                                                                                step="0.005" value="0">
+                    </div>
+                    <div class="calib-row"><label>Z</label><input type="range" id="calibZRange" min="-3" max="3"
+                                                                  step="0.005" value="0"><input type="number"
+                                                                                                id="calibZNum"
+                                                                                                step="0.005" value="0">
+                    </div>
+                    <div class="calib-row"><label>@(en ? "Scale" : "Skala")</label><input type="range"
+                                                                                          id="calibScaleRange" min="0.1"
+                                                                                          max="5" step="0.01" value="1"><input
+                            type="number" id="calibScaleNum" step="0.01" value="1"></div>
 
                     <div class="calib-btns">
                         <button type="button" id="calibReset">@(en ? "Reset" : "Reset")</button>
-                        <button type="button" id="calibSave">@(en ? "Save to file" : "Zapisz do pliku")</button>
+                        @if (calib)
+                        {
+                            <button type="button" id="calibSave">@(en ? "Save to file" : "Zapisz do pliku")</button>
+                        }
                     </div>
 
                     <div id="calibStatus" style="font-size:0.75rem;"></div>
@@ -483,11 +848,18 @@ var en = Model.Lang == "en";
         const box = document.getElementById('supportWidgetCostumes');
         if (!box) return;
         if (isCollapsed()) box.classList.add('collapsed');
-        box.querySelectorAll('[data-action="collapse"]').forEach(b => b.addEventListener('click', () => { box.classList.add('collapsed'); setCollapsed(true); }));
-        box.querySelectorAll('[data-action="expand"]').forEach(b => b.addEventListener('click', () => { box.classList.remove('collapsed'); setCollapsed(false); }));
+        box.querySelectorAll('[data-action="collapse"]').forEach(b => b.addEventListener('click', () => {
+            box.classList.add('collapsed');
+            setCollapsed(true);
+        }));
+        box.querySelectorAll('[data-action="expand"]').forEach(b => b.addEventListener('click', () => {
+            box.classList.remove('collapsed');
+            setCollapsed(false);
+        }));
     })();
 
     const LANG = '@(en ? "en" : "pl")';
+    const CALIB = @(calib ? "true" : "false");
     const COSTUMES_URL = '/files/costumes/costumes.json';
     const COSTUMES_BASE = '/files/costumes/';
 </script>
@@ -499,8 +871,8 @@ var en = Model.Lang == "en";
 </!script>
 <script type="module">
     import * as THREE from "three";
-    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+    import {OrbitControls} from "three/addons/controls/OrbitControls.js";
+    import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 
     const T = {
         mannequin: LANG === 'en' ? 'Mannequin' : 'Manekin',
@@ -513,7 +885,7 @@ var en = Model.Lang == "en";
     };
 
     const canvas = document.getElementById("c");
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    const renderer = new THREE.WebGLRenderer({canvas, antialias: true});
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -560,9 +932,15 @@ var en = Model.Lang == "en";
     controls.listenToKeyEvents(window);
     controls.keyPanSpeed = 12;
 
-    const key = new THREE.DirectionalLight(0xffd9a0, 2.2); key.position.set(3, 5, 4); scene.add(key);
-    const fill = new THREE.DirectionalLight(0x5566aa, 0.8); fill.position.set(-4, 2, -2); scene.add(fill);
-    const rim = new THREE.DirectionalLight(0xd7b56b, 1.4); rim.position.set(-2, 3, -5); scene.add(rim);
+    const key = new THREE.DirectionalLight(0xffd9a0, 2.2);
+    key.position.set(3, 5, 4);
+    scene.add(key);
+    const fill = new THREE.DirectionalLight(0x5566aa, 0.8);
+    fill.position.set(-4, 2, -2);
+    scene.add(fill);
+    const rim = new THREE.DirectionalLight(0xd7b56b, 1.4);
+    rim.position.set(-2, 3, -5);
+    scene.add(rim);
     const hemi = new THREE.HemisphereLight(0x3a2f45, 0x0a0709, 0.6);
     scene.add(hemi);
 
@@ -573,23 +951,33 @@ var en = Model.Lang == "en";
     document.getElementById("lExposure").addEventListener("input", e => {
         renderer.toneMappingExposure = parseFloat(e.target.value);
     });
-    document.getElementById("lKey").addEventListener("input", e => { key.intensity = parseFloat(e.target.value); });
-    document.getElementById("lFill").addEventListener("input", e => { fill.intensity = parseFloat(e.target.value); });
-    document.getElementById("lRim").addEventListener("input", e => { rim.intensity = parseFloat(e.target.value); });
-    document.getElementById("lAmbient").addEventListener("input", e => { hemi.intensity = parseFloat(e.target.value); });
+    document.getElementById("lKey").addEventListener("input", e => {
+        key.intensity = parseFloat(e.target.value);
+    });
+    document.getElementById("lFill").addEventListener("input", e => {
+        fill.intensity = parseFloat(e.target.value);
+    });
+    document.getElementById("lRim").addEventListener("input", e => {
+        rim.intensity = parseFloat(e.target.value);
+    });
+    document.getElementById("lAmbient").addEventListener("input", e => {
+        hemi.intensity = parseFloat(e.target.value);
+    });
+
     function applyCanvasFilter() {
         const c = document.getElementById("lContrast").value;
         const b = document.getElementById("lBrightness").value;
         canvas.style.filter = `contrast(${c}%) brightness(${b}%)`;
     }
+
     document.getElementById("lContrast").addEventListener("input", applyCanvasFilter);
     document.getElementById("lBrightness").addEventListener("input", applyCanvasFilter);
 
     const LIGHT_PRESETS = {
-        default: { exposure: 1.05, keyI: 2.2, fillI: 0.8, rimI: 1.4, ambI: 0.6, contrast: 100, brightness: 100 },
-        bright:  { exposure: 1.4,  keyI: 3.0, fillI: 1.4, rimI: 1.6, ambI: 1.0, contrast: 105, brightness: 110 },
-        moody:   { exposure: 0.75, keyI: 1.4, fillI: 0.4, rimI: 1.8, ambI: 0.3, contrast: 115, brightness: 90 },
-        studio:  { exposure: 1.15, keyI: 2.6, fillI: 1.8, rimI: 0.6, ambI: 0.8, contrast: 100, brightness: 105 },
+        default: {exposure: 1.05, keyI: 2.2, fillI: 0.8, rimI: 1.4, ambI: 0.6, contrast: 100, brightness: 100},
+        bright: {exposure: 1.4, keyI: 3.0, fillI: 1.4, rimI: 1.6, ambI: 1.0, contrast: 105, brightness: 110},
+        moody: {exposure: 0.75, keyI: 1.4, fillI: 0.4, rimI: 1.8, ambI: 0.3, contrast: 115, brightness: 90},
+        studio: {exposure: 1.15, keyI: 2.6, fillI: 1.8, rimI: 0.6, ambI: 0.8, contrast: 100, brightness: 105},
     };
 
     function applyLightPreset(name) {
@@ -615,7 +1003,9 @@ var en = Model.Lang == "en";
     });
 
     const grid = new THREE.PolarGridHelper(3.1, 8, 6, 64, 0x2c2233, 0x2c2233);
-    grid.material.opacity = 0.35; grid.material.transparent = true; scene.add(grid);
+    grid.material.opacity = 0.35;
+    grid.material.transparent = true;
+    scene.add(grid);
 
     document.querySelectorAll(".slot-toggle").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -634,14 +1024,14 @@ var en = Model.Lang == "en";
     let currentJob = 'warrior';
 
     const GENDERS = [
-        { id: 'm', label_pl: 'Mężczyzna', label_en: 'Male' },
-        { id: 'f', label_pl: 'Kobieta', label_en: 'Female' },
+        {id: 'm', label_pl: 'Mężczyzna', label_en: 'Male'},
+        {id: 'f', label_pl: 'Kobieta', label_en: 'Female'},
     ];
     const JOBS = [
-        { id: 'warrior', label_pl: 'Wojownik', label_en: 'Warrior' },
-        { id: 'ninja', label_pl: 'Ninja', label_en: 'Ninja' },
-        { id: 'sura', label_pl: 'Sura', label_en: 'Sura' },
-        { id: 'shaman', label_pl: 'Szaman', label_en: 'Shaman' },
+        {id: 'warrior', label_pl: 'Wojownik', label_en: 'Warrior'},
+        {id: 'ninja', label_pl: 'Ninja', label_en: 'Ninja'},
+        {id: 'sura', label_pl: 'Sura', label_en: 'Sura'},
+        {id: 'shaman', label_pl: 'Szaman', label_en: 'Shaman'},
     ];
 
     function currentCharacterId() {
@@ -650,9 +1040,14 @@ var en = Model.Lang == "en";
 
     function buildMannequin() {
         const g = new THREE.Group();
-        const mat = new THREE.MeshStandardMaterial({ color: 0xbfae93, roughness: 0.55, metalness: 0.05 });
-        const md = new THREE.MeshStandardMaterial({ color: 0x8a7a63, roughness: 0.6 });
-        const add = (geo, m, x, y, z, rz = 0) => { const e = new THREE.Mesh(geo, m); e.position.set(x, y, z); e.rotation.z = rz; g.add(e); };
+        const mat = new THREE.MeshStandardMaterial({color: 0xbfae93, roughness: 0.55, metalness: 0.05});
+        const md = new THREE.MeshStandardMaterial({color: 0x8a7a63, roughness: 0.6});
+        const add = (geo, m, x, y, z, rz = 0) => {
+            const e = new THREE.Mesh(geo, m);
+            e.position.set(x, y, z);
+            e.rotation.z = rz;
+            g.add(e);
+        };
         add(new THREE.CapsuleGeometry(0.34, 0.75, 8, 16), mat, 0, 1.35, 0);
         add(new THREE.CapsuleGeometry(0.3, 0.25, 6, 14), md, 0, 0.82, 0);
         add(new THREE.SphereGeometry(0.24, 24, 20), mat, 0, 2.15, 0);
@@ -697,8 +1092,8 @@ var en = Model.Lang == "en";
 
     // ---- kalibracja: baza transformu per slot + delty z suwaków ----
     const calibState = {
-        body: { dx: 0, dy: 0, dz: 0, scale: 1, basePos: new THREE.Vector3(), baseScale: 1 },
-        hair: { dx: 0, dy: 0, dz: 0, scale: 1, basePos: new THREE.Vector3(), baseScale: 1 },
+        body: {dx: 0, dy: 0, dz: 0, scale: 1, basePos: new THREE.Vector3(), baseScale: 1},
+        hair: {dx: 0, dy: 0, dz: 0, scale: 1, basePos: new THREE.Vector3(), baseScale: 1},
     };
 
     function calibTargetObj(target) {
@@ -711,7 +1106,10 @@ var en = Model.Lang == "en";
         const s = calibState[target];
         s.basePos = obj.position.clone();
         s.baseScale = obj.scale.x;
-        s.dx = 0; s.dy = 0; s.dz = 0; s.scale = 1;
+        s.dx = 0;
+        s.dy = 0;
+        s.dz = 0;
+        s.scale = 1;
         if (document.getElementById("calibTarget").value === target) updateCalibInputs();
     }
 
@@ -723,7 +1121,6 @@ var en = Model.Lang == "en";
         obj.scale.setScalar(s.baseScale * s.scale);
     }
 
-    const ADMIN_TOKEN = "6I3cERL1c9srPdTS";
 
     function updateCalibInputs() {
         const target = document.getElementById("calibTarget").value;
@@ -764,6 +1161,7 @@ var en = Model.Lang == "en";
         rangeEl.addEventListener("input", e => onChange(e.target.value));
         numEl.addEventListener("input", e => onChange(e.target.value));
     }
+
     wireCalibAxis("calibXRange", "calibXNum", "dx");
     wireCalibAxis("calibYRange", "calibYNum", "dy");
     wireCalibAxis("calibZRange", "calibZNum", "dz");
@@ -778,12 +1176,15 @@ var en = Model.Lang == "en";
 
     document.getElementById("calibReset").onclick = () => {
         const target = document.getElementById("calibTarget").value;
-        calibState[target].dx = 0; calibState[target].dy = 0; calibState[target].dz = 0; calibState[target].scale = 1;
+        calibState[target].dx = 0;
+        calibState[target].dy = 0;
+        calibState[target].dz = 0;
+        calibState[target].scale = 1;
         applyCalib(target);
         updateCalibInputs();
     };
 
-    document.getElementById("calibSave").onclick = async () => {
+    if (CALIB) document.getElementById("calibSave").onclick = async () => {
         const target = document.getElementById("calibTarget").value;
         const statusEl = document.getElementById("calibStatus");
         const s = calibState[target];
@@ -810,7 +1211,7 @@ var en = Model.Lang == "en";
         try {
             const resp = await fetch('/baerim/costumes-calibration', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Admin-Token': ADMIN_TOKEN },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     itemId: item.id,
                     characterId: charId,
@@ -876,13 +1277,13 @@ var en = Model.Lang == "en";
         if (!item) return null;
         const f = item.files ? item.files[charId] : item.file;
         if (!f) return null;
-        if (typeof f === 'string') return { path: f, pos: [0, 0, 0], scale: 1 };
-        return { path: f.file, pos: f.pos || [0, 0, 0], scale: f.scale ?? 1 };
+        if (typeof f === 'string') return {path: f, pos: [0, 0, 0], scale: 1};
+        return {path: f.file, pos: f.pos || [0, 0, 0], scale: f.scale ?? 1};
     }
 
     function chFileInfo(ch) {
         if (!ch || !ch.file) return null;
-        return { path: ch.file, pos: ch.pos || [0, 0, 0], scale: ch.scale ?? 1 };
+        return {path: ch.file, pos: ch.pos || [0, 0, 0], scale: ch.scale ?? 1};
     }
 
     function loadHair(url, pos, scale) {
@@ -929,7 +1330,9 @@ var en = Model.Lang == "en";
     // ---- lista z JSON ----
     let catalog = [];
 
-    function nameOf(o) { return (LANG === 'en' ? (o.name_en || o.name_pl) : (o.name_pl || o.name_en)) || o.file || '?'; }
+    function nameOf(o) {
+        return (LANG === 'en' ? (o.name_en || o.name_pl) : (o.name_pl || o.name_en)) || o.file || '?';
+    }
 
     function renderSlotSection(slot, containerId, filter = "") {
         const container = document.getElementById(containerId);
@@ -983,7 +1386,10 @@ var en = Model.Lang == "en";
             btn.type = "button";
             btn.className = "char-pill" + (g.id === currentGender ? " active" : "");
             btn.textContent = LANG === 'en' ? g.label_en : g.label_pl;
-            btn.onclick = () => { currentGender = g.id; onCharacterChanged(); };
+            btn.onclick = () => {
+                currentGender = g.id;
+                onCharacterChanged();
+            };
             box.appendChild(btn);
         }
     }
@@ -996,7 +1402,10 @@ var en = Model.Lang == "en";
             btn.type = "button";
             btn.className = "char-pill" + (j.id === currentJob ? " active" : "");
             btn.textContent = LANG === 'en' ? j.label_en : j.label_pl;
-            btn.onclick = () => { currentJob = j.id; onCharacterChanged(); };
+            btn.onclick = () => {
+                currentJob = j.id;
+                onCharacterChanged();
+            };
             box.appendChild(btn);
         }
     }
@@ -1017,7 +1426,7 @@ var en = Model.Lang == "en";
 
     async function loadCatalog() {
         try {
-            const r = await fetch(COSTUMES_URL, { cache: "no-cache" });
+            const r = await fetch(COSTUMES_URL, {cache: "no-cache"});
             if (!r.ok) throw new Error(r.status);
             const data = await r.json();
             catalog = data.categories || [];
@@ -1045,28 +1454,45 @@ var en = Model.Lang == "en";
 
     // ---- drag & drop ----
     const drop = document.getElementById("drop");
-    ["dragenter", "dragover"].forEach(ev => window.addEventListener(ev, e => { e.preventDefault(); drop.classList.add("show"); }));
-    window.addEventListener("dragleave", e => { if (e.relatedTarget === null) drop.classList.remove("show"); });
+    ["dragenter", "dragover"].forEach(ev => window.addEventListener(ev, e => {
+        e.preventDefault();
+        drop.classList.add("show");
+    }));
+    window.addEventListener("dragleave", e => {
+        if (e.relatedTarget === null) drop.classList.remove("show");
+    });
     window.addEventListener("drop", e => {
-        e.preventDefault(); drop.classList.remove("show");
-        const file = e.dataTransfer?.files?.[0]; if (!file) return;
+        e.preventDefault();
+        drop.classList.remove("show");
+        const file = e.dataTransfer?.files?.[0];
+        if (!file) return;
         loadBody(URL.createObjectURL(file), file.name.replace(/\.(glb|gltf)$/i, ""), T.loadedLocal);
     });
 
     // ---- przyciski ----
-    document.getElementById("rot").onclick = e => { autoRot = !autoRot; e.target.classList.toggle("on", autoRot); };
+    document.getElementById("rot").onclick = e => {
+        autoRot = !autoRot;
+        e.target.classList.toggle("on", autoRot);
+    };
     document.getElementById("reset").onclick = () => {
         if (!currentBody) return;
         hasFramed = false;
         frameObject(currentBody);
     };
 
-    setTimeout(() => { document.getElementById("hint").style.opacity = 0; }, 5000);
+    setTimeout(() => {
+        document.getElementById("hint").style.opacity = 0;
+    }, 5000);
 
     function resize() {
         const w = canvas.clientWidth, h = canvas.clientHeight;
-        if (canvas.width !== w || canvas.height !== h) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+        if (canvas.width !== w || canvas.height !== h) {
+            renderer.setSize(w, h, false);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+        }
     }
+
     function tick() {
         resize();
         if (autoRot) {

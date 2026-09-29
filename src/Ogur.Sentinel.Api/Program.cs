@@ -12,6 +12,8 @@ using Ogur.Sentinel.Abstractions;
 using Ogur.Sentinel.Core;
 using Ogur.Sentinel.Api.Http;
 using System.Text.Json.Nodes;
+using System.Security.Cryptography;
+using System.Text;
 using NLog.Extensions.Logging;
 using NLog;
 using NLog.Web;
@@ -49,13 +51,13 @@ try
         ? Path.Combine(builder.Environment.ContentRootPath, "appsettings", "users.json")
         : "/app/appsettings/users.json";
 
-        var costumesJsonPath = builder.Environment.IsDevelopment()
-                                        ? Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "files", "costumes", "costumes.json")
-                                                   : "/app/files/costumes/costumes.json";
-    
-            var costumesAdminTokenPath = builder.Environment.IsDevelopment()
-                                                  ? Path.Combine(builder.Environment.ContentRootPath, "appsettings", "costumes-admin-token.txt")
-                                                             : "/app/appsettings/costumes-admin-token.txt";
+    var costumesJsonPath = builder.Environment.IsDevelopment()
+        ? Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "files", "costumes", "costumes.json")
+        : "/app/files/costumes/costumes.json";
+
+    var costumesAdminTokenPath = builder.Environment.IsDevelopment()
+        ? Path.Combine(builder.Environment.ContentRootPath, "appsettings", "costumes-admin-token.txt")
+        : "/app/appsettings/costumes-admin-token.txt";
 
     logger.Info("👥 Users file path: {Path}", usersFilePath);
     logger.Info("👥 File exists before registration: {Exists}", File.Exists(usersFilePath));
@@ -156,6 +158,7 @@ try
             {
                 ctx.Context.Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{ctx.File.Name}\"");
             }
+
             if (ctx.File.Name.EndsWith(".js") || ctx.File.Name.EndsWith(".css"))
             {
                 ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store");
@@ -164,6 +167,43 @@ try
     });
 
     app.UseRouting();
+
+    var calibProtector = app.Services.GetRequiredService<IDataProtectionProvider>()
+        .CreateProtector("CostumesCalibration")
+        .ToTimeLimitedDataProtector();
+
+    app.Use(async (ctx, next) =>
+    {
+        if (ctx.Request.Path.StartsWithSegments("/baerim/costumes"))
+        {
+            var expected = CalibrationAuth.ReadToken(costumesAdminTokenPath);
+
+            if (ctx.Request.Query.TryGetValue("auth", out var candidate))
+            {
+                if (CalibrationAuth.TokenMatches(candidate.ToString(), expected))
+                {
+                    ctx.Response.Cookies.Append(
+                        CalibrationAuth.CookieName,
+                        calibProtector.Protect(CalibrationAuth.Fingerprint(expected), TimeSpan.FromHours(12)),
+                        new CookieOptions
+                        {
+                            HttpOnly = true,
+                            Secure = !app.Environment.IsDevelopment(),
+                            SameSite = SameSiteMode.Strict,
+                            Path = "/baerim",
+                            MaxAge = TimeSpan.FromHours(12)
+                        });
+                }
+
+                ctx.Response.Redirect(ctx.Request.Path.Value ?? "/baerim/costumes/");
+                return;
+            }
+
+            ctx.Items[CalibrationAuth.ItemKey] = CalibrationAuth.IsUnlocked(ctx, calibProtector, expected);
+        }
+
+        await next();
+    });
 
 // ✅ Auth middleware OSTATNIE przed MapRazorPages
     app.UseAuthMiddleware();
@@ -285,21 +325,17 @@ try
 
     app.MapGet("/baerim/upgrade-data", (UpgradeChanceService service) => Results.Ok(service.GetData()));
 
-        app.MapPost("/baerim/costumes-calibration", async (HttpContext context) =>
+    app.MapPost("/baerim/costumes-calibration", async (HttpContext context) =>
     {
-        var token = context.Request.Headers["X-Admin-Token"].ToString();
-        if (!File.Exists(costumesAdminTokenPath))
-        {
-            return Results.Problem("Admin token file missing on server.");
-        }
-        var expectedToken = (await File.ReadAllTextAsync(costumesAdminTokenPath)).Trim();
-        if (string.IsNullOrEmpty(token) || token != expectedToken)
+        var expectedToken = CalibrationAuth.ReadToken(costumesAdminTokenPath);
+        if (!CalibrationAuth.IsUnlocked(context, calibProtector, expectedToken))
         {
             return Results.Unauthorized();
         }
 
         var body = await context.Request.ReadFromJsonAsync<CalibrationRequest>();
-        if (body is null || string.IsNullOrEmpty(body.ItemId) || string.IsNullOrEmpty(body.CharacterId) || string.IsNullOrEmpty(body.Slot))
+        if (body is null || string.IsNullOrEmpty(body.ItemId) || string.IsNullOrEmpty(body.CharacterId) ||
+            string.IsNullOrEmpty(body.Slot))
         {
             return Results.BadRequest(new { error = "Invalid request body" });
         }
@@ -320,6 +356,7 @@ try
                     break;
                 }
             }
+
             if (targetItem != null) break;
         }
 
@@ -351,7 +388,8 @@ try
             ["scale"] = body.Scale
         };
 
-        await File.WriteAllTextAsync(costumesJsonPath, doc.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        await File.WriteAllTextAsync(costumesJsonPath,
+            doc.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
 
         logger.Info("💾 Costume calibration saved: {Slot}/{ItemId}/{Char} pos=[{X},{Y},{Z}] scale={Scale}",
             body.Slot, body.ItemId, body.CharacterId, body.Pos[0], body.Pos[1], body.Pos[2], body.Scale);
@@ -377,4 +415,39 @@ finally
 {
     LogManager.Shutdown();
 }
+
 record CalibrationRequest(string ItemId, string CharacterId, string Slot, double[] Pos, double Scale);
+
+static class CalibrationAuth
+{
+    public const string CookieName = "costumes_calib";
+    public const string ItemKey = "CalibUnlocked";
+
+    static byte[] Hash(string s) => SHA256.HashData(Encoding.UTF8.GetBytes(s));
+
+    public static string ReadToken(string path) =>
+        File.Exists(path) ? File.ReadAllText(path).Trim() : "";
+
+    public static string Fingerprint(string token) => Convert.ToHexString(Hash(token));
+
+    public static bool TokenMatches(string? candidate, string expected) =>
+        !string.IsNullOrEmpty(candidate) && expected.Length > 0 &&
+        CryptographicOperations.FixedTimeEquals(Hash(candidate), Hash(expected));
+
+    public static bool IsUnlocked(HttpContext ctx, ITimeLimitedDataProtector protector, string expected)
+    {
+        if (expected.Length == 0) return false;
+        if (!ctx.Request.Cookies.TryGetValue(CookieName, out var value) || string.IsNullOrEmpty(value)) return false;
+        try
+        {
+            var payload = protector.Unprotect(value);
+            return CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(payload),
+                Encoding.UTF8.GetBytes(Fingerprint(expected)));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}

@@ -103,7 +103,15 @@
           ],
           "files": {
             "warrior_f": "costumes/duzsakuradesert_warrior_f.glb",
-            "warrior_m": "costumes/duzsakuradesert_warrior_m.glb",
+            "warrior_m": {
+              "file": "costumes/duzsakuradesert_warrior_m.glb",
+              "pos": [
+                -0.081,
+                0.16,
+                0
+              ],
+              "scale": 1
+            },
             "ninja_m": "costumes/duzsakuradesert_assassin_f.glb",
             "ninja_f": "costumes/duzsakuradesert_assassin_m.glb",
             "shaman_m": "costumes/duzsakuradesert_shaman_f.glb",
