@@ -214,13 +214,9 @@
         .empty { display: none; text-align: center; color: #777; padding: 40px 0; }
         .empty.visible { display: block; }
 
-        .credits {
-            text-align: center;
-            color: #777;
-            font-size: 0.85rem;
-            padding: 20px 0 10px;
-        }
-        .credits strong { color: #43b581; }
+        .hero-credits { margin-top: 10px; font-size: 0.85rem; color: #777; }
+        .hero-credits a { color: #43b581; font-weight: 700; text-decoration: none; }
+        .hero-credits a:hover { text-decoration: underline; }
 
         .reader-bar {
             position: fixed;
@@ -344,6 +340,7 @@
 <div class="hero">
     <h1>@(en ? "💸 THE TRAP LIFE GUIDE" : "💸 PORADNIK TRAP LIFE")</h1>
     <p>@(en ? "How to become the king of chaos without having absolutely any plan" : "Jak zostać królem chaosu, nie mając absolutnie żadnego planu")</p>
+    <div class="hero-credits">@(en ? "Guide by" : "Poradnik by") <a href="https://open.spotify.com/artist/2L8XxYhAW6SN5Txo8gpe1G" target="_blank" rel="noopener">Pery</a> &amp; <a href="https://ogur.dev" target="_blank" rel="noopener">ogur</a></div>
 </div>
 
 <div class="layout">
@@ -764,8 +761,6 @@
         }
 
         <div class="empty" id="empty">@(en ? "No results." : "Brak wyników.")</div>
-
-        <div class="credits">@(en ? "Guide by" : "Poradnik by") <strong>Pery &amp; ogur</strong></div>
     </main>
 </div>
 
@@ -972,14 +967,13 @@
         const COLLAPSED_UNTIL_KEY = 'baerim_support_widget_collapsed_until';
         const USER_EXPANDED_KEY = 'baerim_support_widget_user_expanded';
         const HOURS = 24;
-        const isMobile = () => window.matchMedia('(max-width: 640px)').matches;
 
         function isCollapsed() {
             const until = parseInt(localStorage.getItem(COLLAPSED_UNTIL_KEY) || '0', 10);
             if (until > Date.now()) return true;
-            if (localStorage.getItem(USER_EXPANDED_KEY) === '1') return false;
-            return isMobile();
+            return localStorage.getItem(USER_EXPANDED_KEY) !== '1';
         }
+
         function setCollapsed(collapsed) {
             if (collapsed) {
                 localStorage.setItem(COLLAPSED_UNTIL_KEY, String(Date.now() + HOURS * 60 * 60 * 1000));
