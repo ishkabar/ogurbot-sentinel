@@ -1,9 +1,10 @@
 ﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 
+ARG LIBDAVE_VERSION=v1.2.1
 RUN apt-get update && \
-    apt-get install -y ffmpeg libopus0 libopus-dev libsodium23 curl unzip && \
-    curl -L -o /tmp/libdave.zip $(curl -s https://api.github.com/repos/discord/libdave/releases/latest | grep -o 'https://[^"]*libdave-Linux-X64-boringssl\.zip') && \
+    apt-get install -y --no-install-recommends ffmpeg libopus0 libopus-dev libsodium23 curl unzip ca-certificates && \
+    curl -fL -o /tmp/libdave.zip "https://github.com/discord/libdave/releases/download/${LIBDAVE_VERSION}%2Fcpp/libdave-Linux-X64-boringssl.zip" && \
     unzip /tmp/libdave.zip -d /tmp/libdave && \
     cp /tmp/libdave/lib/libdave.so /app/libdave.so && \
     rm -rf /tmp/libdave.zip /tmp/libdave && \
