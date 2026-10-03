@@ -1,0 +1,531 @@
+@page
+@model Ogur.Sentinel.Api.Pages.Baerim.Events.IndexModel
+@{
+    Layout = null;
+    var en = Model.Lang == "en";
+}
+<!DOCTYPE html>
+<html lang="@Model.Lang" data-bs-theme="dark">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(en ? "Baerim events" : "Baerim wydarzenia")</title>
+    <link rel="icon" type="image/png" href="/files/baerim-og.png" />
+    <meta property="og:site_name" content="Ogur.dev" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Baerim — @(en ? "Events" : "Wydarzenia")" />
+    <meta property="og:description" content="@(en ? "In-game event calendar." : "Kalendarz wydarzeń z gry.")" />
+    <meta property="og:image" content="https://respy.ogur.dev/files/baerim-og.png" />
+    <meta property="og:url" content="https://respy.ogur.dev/baerim/events" />
+    <meta name="theme-color" content="#43b581" />
+    <style>
+        html, body { margin: 0; padding: 0; background: #0d0d0f; color: #eee; font-family: system-ui, sans-serif; }
+        * { box-sizing: border-box; }
+
+        .topbar { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; gap: 16px; }
+        .topbar a { color: #aaa; text-decoration: none; font-size: 0.9rem; }
+        .topbar a:hover { color: #fff; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .status { font-size: 0.9rem; color: #ddd; }
+        .status a { margin-left: 12px; cursor: pointer; }
+        .status-badge { font-size: 0.85rem; color: #666; }
+        .login-link { color: #5865F2 !important; font-weight: 600; }
+        .login-link:hover { color: #4752c4 !important; }
+        .lang-switch { display: flex; gap: 4px; }
+        .lang-switch a { font-size: 0.75rem; font-weight: 600; padding: 3px 8px; border-radius: 6px; border: 1px solid #2a2a2e; color: #888; }
+        .lang-switch a.active { color: #eee; border-color: #43b581; }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr) 280px;
+            gap: 20px;
+            padding: 0 20px 20px;
+            align-items: start;
+        }
+
+        .side {
+            position: sticky;
+            top: 0;
+            height: calc(100vh - 20px);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            min-height: 0;
+        }
+        .side-logo { background: #1a1a1e; border: 1px solid #2a2a2e; border-radius: 14px; flex-shrink: 0; }
+        .side-logo img { width: 100%; height: auto; border-radius: 14px; display: block; }
+        .side-mid { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+
+        .panel { background: #1a1a1e; border: 1px solid #2a2a2e; border-radius: 14px; padding: 14px; }
+        .panel h3 { margin: 0 0 10px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #888; display: flex; justify-content: space-between; }
+        .panel h3 span { color: #666; text-transform: none; letter-spacing: 0; }
+        .empty { color: #666; font-size: 0.82rem; }
+
+        .ev-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #222; }
+        .ev-row:last-child { border-bottom: 0; }
+        .ev-row .txt { min-width: 0; flex: 1; }
+        .ev-name { font-size: 0.82rem; line-height: 1.25; }
+        .ev-time { font-size: 0.72rem; color: #888; margin-top: 2px; }
+
+        .ev-icon { width: 32px; height: 32px; object-fit: contain; flex-shrink: 0; display: block; }
+        .ev-ph { display: flex; align-items: center; justify-content: center; border: 1px dashed #3a3a3e; border-radius: 6px; color: #666; font-size: 0.8rem; background: #26262b; }
+
+        .support-widget-box { width: 100%; flex-shrink: 0; background: #1a1a1e; border: 1px solid #2a2a2e; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .support-widget-collapsed-view { display: flex; align-items: center; gap: 8px; padding: 12px 14px; }
+        .support-widget-collapsed-view p { margin: 0; font-size: 0.8rem; color: #ccc; line-height: 1.3; flex: 1; }
+        .support-widget-btn { background: #43b581; color: #0d0d0f; font-weight: 700; text-decoration: none; padding: 6px 12px; border-radius: 8px; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0; }
+        .support-widget-btn:hover { filter: brightness(1.1); }
+        .support-widget-toggle { background: none; border: none; color: #888; cursor: pointer; font-size: 0.9rem; padding: 2px 4px; flex-shrink: 0; }
+        .support-widget-toggle:hover { color: #eee; }
+        .support-widget-expanded-view { position: relative; }
+        .support-widget-toggle-inline { position: absolute; top: 6px; right: 6px; z-index: 1; background: rgba(13,13,15,0.7); border-radius: 6px; }
+        .support-widget-frame { width: 100%; height: 450px; border: 0; display: block; }
+        .support-widget-box.collapsed .support-widget-expanded-view { display: none; }
+        .support-widget-box:not(.collapsed) .support-widget-collapsed-view { display: none; }
+
+        .center h1 { margin: 6px 0 14px; font-size: 1.8rem; text-align: center; }
+        .cal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #1a1a1e; border: 1px solid #2a2a2e; border-radius: 12px; padding: 10px 14px; margin-bottom: 10px; }
+        .cal-title { font-size: 1.15rem; font-weight: 700; flex: 1; text-align: center; }
+        .nav-btn { background: #14141a; border: 1px solid #2a2a2e; color: #eee; width: 38px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 1rem; }
+        .nav-btn:hover:not(:disabled) { border-color: #43b581; }
+        .nav-btn:disabled { opacity: 0.3; cursor: default; }
+        .week-opt { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #aaa; white-space: nowrap; }
+
+        .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: auto; grid-auto-rows: 1fr; gap: 6px; }
+        .cal-dow { text-align: center; font-size: 0.78rem; color: #888; padding: 6px 0; font-weight: 600; }
+        .cal-dow.today-dow { color: rgb(222,156,47); }
+        .center { margin: 0 12%; min-width: 0; }
+        .cal-cell {
+            min-height: 72px;
+            background: #1a1a1e;
+            border: 1px solid #2a2a2e;
+            border-radius: 10px;
+            padding: 4px 5px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            position: relative;
+        }
+        .cal-cell.blank { background: transparent; border-color: transparent; cursor: default; }
+        .cal-cell:not(.blank):hover { border-color: #3a3a3e; }
+        .cal-cell.today { border-color: rgb(222,156,47); box-shadow: 0 0 0 1px rgb(222,156,47) inset; background: #211d14; }
+        .cal-cell.hit { border-color: #43b581; background: #162a1e; }
+        .cal-cell.hit.today { border-color: rgb(222,156,47); background: #1f2a1a; }
+        .cal-cell.selected { outline: 2px solid #8a8a92; outline-offset: -2px; }
+        .cal-num { font-size: 0.78rem; color: #999; font-weight: 600; }
+        .cal-cell.today .cal-num { color: rgb(222,156,47); }
+        .cal-icons { display: flex; flex-wrap: wrap; gap: 2px; }
+        .cal-ic { position: relative; }
+        .cal-ic .ev-icon { width: 44px; height: 44px; }
+        .cal-count { position: absolute; right: -3px; bottom: -3px; background: #0d0d0f; border: 1px solid #43b581; color: #43b581; font-size: 0.6rem; font-weight: 700; line-height: 1; padding: 2px 3px; border-radius: 6px; }
+        .cal-more { font-size: 0.7rem; color: #888; align-self: center; }
+
+        .detail { margin-top: 14px; }
+
+        .filter-actions { display: flex; gap: 6px; margin-bottom: 8px; }
+        .btn-sm { flex: 1; background: #14141a; border: 1px solid #2a2a2e; color: #ccc; border-radius: 8px; padding: 7px 8px; font-size: 0.75rem; cursor: pointer; }
+        .btn-sm:hover { border-color: #43b581; color: #fff; }
+        .filter-list { display: flex; flex-direction: column; gap: 4px; max-height: calc(100vh - 220px); overflow-y: auto; }
+        .filter-row { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: #14141a; border: 1px solid #2a2a2e; border-radius: 8px; padding: 5px 8px; color: #888; cursor: pointer; }
+        .filter-row .ev-icon { width: 26px; height: 26px; opacity: 0.4; filter: grayscale(1); }
+        .filter-row .nm { flex: 1; min-width: 0; font-size: 0.78rem; line-height: 1.2; }
+        .filter-row .ct { font-size: 0.75rem; font-weight: 700; color: #666; }
+        .filter-row.active { border-color: #43b581; color: #eee; background: #162019; }
+        .filter-row.active .ev-icon { opacity: 1; filter: none; }
+        .filter-row.active .ct { color: #43b581; }
+        .filter-row.zero { opacity: 0.55; }
+
+        @@media (max-width: 1100px) {
+            .layout { grid-template-columns: minmax(0, 1fr); }
+            .center { margin: 0; }
+            .side { position: static; height: auto; }
+            .side-mid { overflow: visible; }
+            .filter-list { max-height: none; }
+            .cal-cell { min-height: 60px; }
+            .cal-ic .ev-icon { width: 30px; height: 30px; }
+        }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <a href="/baerim/">← Baerim</a>
+    <div class="topbar-right">
+        <div class="lang-switch">
+            <a href="?lang=pl" class="@(en ? "" : "active")">PL</a>
+            <a href="?lang=en" class="@(en ? "active" : "")">EN</a>
+        </div>
+        @if (Model.IsLoggedIn)
+        {
+            <div class="status">
+                <span>@Model.DiscordUsername</span>
+                <a href="/auth/discord/logout">@(en ? "Log out" : "Wyloguj")</a>
+            </div>
+        }
+        else
+        {
+            <div class="status">
+                <span class="status-badge">@(en ? "Not logged in" : "Niezalogowany")</span>
+                <a class="login-link" href="/auth/discord/login?returnTo=/baerim/events">@(en ? "Log in with Discord" : "Zaloguj przez Discord")</a>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="layout">
+    <aside class="side">
+        <div class="side-logo"><img src="/files/baerim-og.png" alt="Baerim" /></div>
+
+        <div class="side-mid">
+            <div class="panel">
+                <h3>@(en ? "Today" : "Dzisiaj") <span id="todayLabel"></span></h3>
+                <div id="todayList"></div>
+            </div>
+            <div class="panel">
+                <h3>@(en ? "Tomorrow" : "Jutro") <span id="tomorrowLabel"></span></h3>
+                <div id="tomorrowList"></div>
+            </div>
+        </div>
+
+        <div class="support-widget-box" id="supportWidgetEvents">
+            <div class="support-widget-collapsed-view">
+                <p>@(en ? "Enjoying the site? Support the server." : "Podoba Ci się strona? Wesprzyj serwer.")</p>
+                <a class="support-widget-btn" href="https://zrzutka.pl/fhyeca" target="_blank" rel="noopener">@(en ? "Support" : "Wesprzyj")</a>
+                <button class="support-widget-toggle" type="button" data-action="expand" aria-label="@(en ? "Expand" : "Rozwiń")">▸</button>
+            </div>
+            <div class="support-widget-expanded-view">
+                <button class="support-widget-toggle support-widget-toggle-inline" type="button" data-action="collapse" aria-label="@(en ? "Collapse" : "Zwiń")">▾</button>
+                <iframe class="support-widget-frame" src="https://zrzutka.pl/fhyeca/widget/23" frameborder="0" scrolling="no"></iframe>
+            </div>
+        </div>
+    </aside>
+
+    <main class="center">
+        <h1>@(en ? "Events" : "Wydarzenia")</h1>
+        <div class="cal-head">
+            <button class="nav-btn" id="prevBtn" type="button" aria-label="@(en ? "Previous month" : "Poprzedni miesiąc")">«</button>
+            <div class="cal-title" id="calTitle"></div>
+            <button class="nav-btn" id="nextBtn" type="button" aria-label="@(en ? "Next month" : "Następny miesiąc")">»</button>
+            <label class="week-opt"><input type="checkbox" id="sundayFirst" /> @(en ? "Week starts on Sunday" : "Tydzień od niedzieli")</label>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="panel detail" id="dayDetail" style="display:none;"></div>
+    </main>
+
+    <aside class="side" style="height:auto;">
+        <div class="panel">
+            <h3>@(en ? "Filters" : "Filtry") <span id="filterSummary"></span></h3>
+            <div class="filter-actions">
+                <button class="btn-sm" id="selAll" type="button">@(en ? "Select all" : "Zaznacz wszystkie")</button>
+                <button class="btn-sm" id="selNone" type="button">@(en ? "Clear all" : "Odznacz wszystkie")</button>
+            </div>
+            <div class="filter-actions">
+                <button class="btn-sm" id="sortBtn" type="button"></button>
+            </div>
+            <div class="filter-list" id="filterList"></div>
+        </div>
+    </aside>
+</div>
+
+<script>
+    (function() {
+        const COLLAPSED_UNTIL_KEY = 'baerim_support_widget_collapsed_until';
+        const USER_EXPANDED_KEY = 'baerim_support_widget_user_expanded';
+        const HOURS = 24;
+        const isMobile = () => window.matchMedia('(max-width: 640px)').matches;
+
+        function isCollapsed() {
+            const until = parseInt(localStorage.getItem(COLLAPSED_UNTIL_KEY) || '0', 10);
+            if (until > Date.now()) return true;
+            if (localStorage.getItem(USER_EXPANDED_KEY) === '1') return false;
+            return isMobile();
+        }
+        function setCollapsed(collapsed) {
+            if (collapsed) {
+                localStorage.setItem(COLLAPSED_UNTIL_KEY, String(Date.now() + HOURS * 60 * 60 * 1000));
+                localStorage.removeItem(USER_EXPANDED_KEY);
+            } else {
+                localStorage.removeItem(COLLAPSED_UNTIL_KEY);
+                localStorage.setItem(USER_EXPANDED_KEY, '1');
+            }
+        }
+        const box = document.getElementById('supportWidgetEvents');
+        if (!box) return;
+        if (isCollapsed()) box.classList.add('collapsed');
+        box.querySelectorAll('[data-action="collapse"]').forEach(btn =>
+            btn.addEventListener('click', () => { box.classList.add('collapsed'); setCollapsed(true); })
+        );
+        box.querySelectorAll('[data-action="expand"]').forEach(btn =>
+            btn.addEventListener('click', () => { box.classList.remove('collapsed'); setCollapsed(false); })
+        );
+    })();
+</script>
+
+<script>
+    const IS_EN = @Html.Raw(en ? "true" : "false");
+    const SUNDAY_KEY = 'baerim_events_sunday_first';
+    const MAX_ICONS = 6;
+
+    const TYPES = {
+        1:  { pl: 'Wydarzenie bonusowe', en: 'Bonus event' },
+        2:  { pl: 'Podwójny łup z bossa', en: 'Double boss loot' },
+        4:  { pl: 'Łup z księgi podwójnej misji', en: 'Double mission book loot' },
+        5:  { pl: 'Czas odnowienia dungeonu', en: 'Dungeon cooldown reduction' },
+        10: { pl: 'Upuść na kamień', en: 'Drop on stone' },
+        11: { pl: 'Podwójne wydobycie', en: 'Double mining' },
+        12: { pl: 'Podwójne łowienie', en: 'Double fishing' },
+        13: { pl: 'Zdarzenie spadku Exp', en: 'Exp drop event' },
+        19: { pl: 'Kontrola Strefy', en: 'Zone Control' },
+        20: { pl: 'Black Jack: Tokeny z Metin', en: 'Black Jack: Metin tokens' },
+        23: { pl: 'Drop w Dungeonie', en: 'Dungeon drop' },
+        28: { pl: 'Ceremonia Karuaka', en: 'Karuak Ceremony' },
+        29: { pl: 'Otchłań Wieczności', en: 'Abyss of Eternity' },
+        30: { pl: 'Próba Torgny', en: 'Torgny Trial' },
+        32: { pl: 'Wojna Dominacji Gildii', en: 'Guild Domination War' },
+        33: { pl: 'World Boss', en: 'World Boss' },
+        34: { pl: 'Rzadkie i Legendarne Metiny', en: 'Rare and Legendary Metins' },
+        39: { pl: 'Wydarzenie dla Początkujących', en: 'Beginner event' }
+    };
+
+    const MONTHS = IS_EN
+        ? ['January','February','March','April','May','June','July','August','September','October','November','December']
+        : ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+    const DOW_MON = IS_EN
+        ? ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
+        : ['Poniedziałek','Wtorek','Środa','Czwartek','Piątek','Sobota','Niedziela'];
+
+    const pad = n => String(n).padStart(2, '0');
+    const dateStr = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+    const monthKey = (y, m) => `${y}-${pad(m + 1)}`;
+    const daysInMonth = (y, m) => new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function addDays(ds, n) {
+        const [y, m, d] = ds.split('-').map(Number);
+        const t = new Date(Date.UTC(y, m - 1, d + n));
+        return dateStr(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate());
+    }
+
+    const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Warsaw' }).format(new Date());
+    const tomorrowStr = addDays(todayStr, 1);
+    const baseY = parseInt(todayStr.slice(0, 4), 10);
+    const baseM = parseInt(todayStr.slice(5, 7), 10) - 1;
+
+    let viewOffset = 0;
+    let sundayFirst = false;
+    try { sundayFirst = localStorage.getItem(SUNDAY_KEY) === '1'; } catch {}
+    let sortDesc = true;
+    let selectedDate = todayStr;
+    const selectedTypes = new Set(Object.keys(TYPES).map(Number));
+
+    const byDate = new Map();
+    const typeSample = new Map();
+    const loadedMonths = new Map();
+
+    function viewYM() {
+        const t = new Date(Date.UTC(baseY, baseM + viewOffset, 1));
+        return [t.getUTCFullYear(), t.getUTCMonth()];
+    }
+
+    function nameOf(ev) { return IS_EN ? (ev.nameEn || ev.namePl) : (ev.namePl || ev.nameEn); }
+
+    function typeLabel(t) {
+        const k = TYPES[t];
+        if (k) return IS_EN ? k.en : k.pl;
+        const s = typeSample.get(t);
+        return s ? nameOf(s) : (IS_EN ? `Type ${t}` : `Typ ${t}`);
+    }
+
+    function iconHtml(type, icon, cls) {
+        const file = icon || (TYPES[type] ? `type_${type}.png` : null);
+        const ph = `<span class="ev-icon ev-ph ${cls || ''}">?</span>`;
+        if (!file) return ph;
+        const phAttr = ph.replace(/"/g, '&quot;');
+        return `<img class="ev-icon ${cls || ''}" src="/files/events/icons/${encodeURIComponent(file)}" alt="" loading="lazy" onerror="this.outerHTML='${phAttr}'" />`;
+    }
+
+    function addMonthData(data) {
+        for (const ev of (data.events || [])) {
+            if (!typeSample.has(ev.type)) typeSample.set(ev.type, ev);
+            if (!(ev.type in TYPES) && !selectedTypes.has(ev.type)) selectedTypes.add(ev.type);
+            const s = (ev.startLocal || '').slice(0, 10);
+            const e = (ev.endLocal || ev.startLocal || '').slice(0, 10);
+            if (!s) continue;
+            let d = s, guard = 0;
+            while (d <= e && guard++ < 120) {
+                if (!byDate.has(d)) byDate.set(d, new Map());
+                byDate.get(d).set(ev.id, ev);
+                d = addDays(d, 1);
+            }
+        }
+    }
+
+    async function ensureMonth(y, m) {
+        const key = monthKey(y, m);
+        if (loadedMonths.has(key)) return;
+        loadedMonths.set(key, true);
+        try {
+            const resp = await fetch(`/files/events/events_${key}.json`, { cache: 'no-cache' });
+            if (resp.ok) addMonthData(await resp.json());
+        } catch (e) {
+            console.warn('Failed to load events', key, e);
+        }
+    }
+
+    function eventsOn(ds) {
+        const m = byDate.get(ds);
+        return m ? [...m.values()].sort((a, b) => (a.startLocal || '').localeCompare(b.startLocal || '') || a.type - b.type) : [];
+    }
+
+    function monthEvents(y, m) {
+        const all = new Map();
+        for (let d = 1; d <= daysInMonth(y, m); d++)
+            for (const [id, ev] of (byDate.get(dateStr(y, m, d)) || [])) all.set(id, ev);
+        return [...all.values()];
+    }
+
+    function timeText(ev) {
+        if (ev.allDay) return IS_EN ? 'All day' : 'Cały dzień';
+        return `${(ev.startLocal || '').slice(11, 16)} – ${(ev.endLocal || '').slice(11, 16)}`;
+    }
+
+    function eventRow(ev) {
+        return `<div class="ev-row">${iconHtml(ev.type, ev.icon)}<div class="txt"><div class="ev-name">${esc(nameOf(ev))}</div><div class="ev-time">${esc(timeText(ev))}</div></div></div>`;
+    }
+
+    function renderSideLists() {
+        const fill = (id, labelId, ds) => {
+            const list = eventsOn(ds);
+            document.getElementById(labelId).textContent = ds.slice(8, 10) + '.' + ds.slice(5, 7);
+            document.getElementById(id).innerHTML = list.length
+                ? list.map(eventRow).join('')
+                : `<div class="empty">${IS_EN ? 'No events' : 'Brak wydarzeń'}</div>`;
+        };
+        fill('todayList', 'todayLabel', todayStr);
+        fill('tomorrowList', 'tomorrowLabel', tomorrowStr);
+    }
+
+    function renderCalendar() {
+        const [y, m] = viewYM();
+        document.getElementById('calTitle').textContent = `${MONTHS[m]} ${y}`;
+        document.getElementById('prevBtn').disabled = viewOffset <= -1;
+        document.getElementById('nextBtn').disabled = viewOffset >= 1;
+
+        const order = sundayFirst ? [6, 0, 1, 2, 3, 4, 5] : [0, 1, 2, 3, 4, 5, 6];
+        const todayDow = (new Date(Date.UTC(+todayStr.slice(0, 4), +todayStr.slice(5, 7) - 1, +todayStr.slice(8, 10))).getUTCDay() + 6) % 7;
+        const showTodayDow = todayStr.slice(0, 7) === monthKey(y, m);
+
+        let html = order.map(i => `<div class="cal-dow${showTodayDow && i === todayDow ? ' today-dow' : ''}">${DOW_MON[i]}</div>`).join('');
+
+        const firstDow = new Date(Date.UTC(y, m, 1)).getUTCDay();
+        const lead = sundayFirst ? firstDow : (firstDow + 6) % 7;
+        for (let i = 0; i < lead; i++) html += '<div class="cal-cell blank"></div>';
+
+        for (let d = 1; d <= daysInMonth(y, m); d++) {
+            const ds = dateStr(y, m, d);
+            const evs = eventsOn(ds);
+            const groups = new Map();
+            for (const ev of evs) {
+                if (!groups.has(ev.type)) groups.set(ev.type, []);
+                groups.get(ev.type).push(ev);
+            }
+            const entries = [...groups.entries()];
+            const shown = entries.slice(0, MAX_ICONS).map(([t, list]) => {
+                const cnt = list.length > 1 ? `<span class="cal-count">${list.length}</span>` : '';
+                const title = esc(list.map(nameOf).join('\n'));
+                return `<span class="cal-ic" title="${title}">${iconHtml(t, list[0].icon)}${cnt}</span>`;
+            }).join('');
+            const more = entries.length > MAX_ICONS ? `<span class="cal-more">+${entries.length - MAX_ICONS}</span>` : '';
+            const hit = entries.some(([t]) => selectedTypes.has(t));
+            const cls = 'cal-cell' + (hit ? ' hit' : '') + (ds === todayStr ? ' today' : '') + (ds === selectedDate ? ' selected' : '');
+            html += `<div class="${cls}" data-date="${ds}"><span class="cal-num">${d}</span><div class="cal-icons">${shown}${more}</div></div>`;
+        }
+        document.getElementById('calGrid').innerHTML = html;
+    }
+
+    function renderDetail() {
+        const box = document.getElementById('dayDetail');
+        const [y, m] = viewYM();
+        if (!selectedDate || selectedDate.slice(0, 7) !== monthKey(y, m)) { box.style.display = 'none'; return; }
+        const list = eventsOn(selectedDate);
+        const d = parseInt(selectedDate.slice(8, 10), 10);
+        box.style.display = '';
+        box.innerHTML = `<h3>${d} ${MONTHS[m]} ${y}</h3>` +
+            (list.length ? list.map(eventRow).join('') : `<div class="empty">${IS_EN ? 'No events' : 'Brak wydarzeń'}</div>`);
+    }
+
+    function renderFilters() {
+        const [y, m] = viewYM();
+        const counts = new Map();
+        for (const t of Object.keys(TYPES)) counts.set(Number(t), 0);
+        for (const ev of monthEvents(y, m)) counts.set(ev.type, (counts.get(ev.type) || 0) + 1);
+
+        const rows = [...counts.entries()].sort((a, b) => (sortDesc ? b[1] - a[1] : a[1] - b[1]) || a[0] - b[0]);
+        document.getElementById('sortBtn').textContent = (IS_EN ? 'Sort by count: ' : 'Sortuj po ilości: ') + (sortDesc ? (IS_EN ? 'descending ↓' : 'malejąco ↓') : (IS_EN ? 'ascending ↑' : 'rosnąco ↑'));
+        document.getElementById('filterSummary').textContent = `${selectedTypes.size}/${rows.length}`;
+
+        document.getElementById('filterList').innerHTML = rows.map(([t, c]) => {
+            const cls = 'filter-row' + (selectedTypes.has(t) ? ' active' : '') + (c === 0 ? ' zero' : '');
+            const sample = typeSample.get(t);
+            return `<button type="button" class="${cls}" data-type="${t}">${iconHtml(t, sample ? sample.icon : null)}<span class="nm">${esc(typeLabel(t))}</span><span class="ct">${c}</span></button>`;
+        }).join('');
+    }
+
+    function renderAll() {
+        renderSideLists();
+        renderCalendar();
+        renderDetail();
+        renderFilters();
+    }
+
+    async function loadView() {
+        const [y, m] = viewYM();
+        await ensureMonth(y, m);
+        renderAll();
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => { if (viewOffset > -1) { viewOffset--; selectedDate = null; renderAll(); loadView(); } });
+    document.getElementById('nextBtn').addEventListener('click', () => { if (viewOffset < 1) { viewOffset++; selectedDate = null; renderAll(); loadView(); } });
+
+    const sundayBox = document.getElementById('sundayFirst');
+    sundayBox.checked = sundayFirst;
+    sundayBox.addEventListener('change', () => {
+        sundayFirst = sundayBox.checked;
+        try { localStorage.setItem(SUNDAY_KEY, sundayFirst ? '1' : '0'); } catch {}
+        renderCalendar();
+    });
+
+    document.getElementById('calGrid').addEventListener('click', e => {
+        const cell = e.target.closest('.cal-cell[data-date]');
+        if (!cell) return;
+        selectedDate = selectedDate === cell.dataset.date ? null : cell.dataset.date;
+        renderCalendar();
+        renderDetail();
+    });
+
+    document.getElementById('filterList').addEventListener('click', e => {
+        const row = e.target.closest('.filter-row');
+        if (!row) return;
+        const t = Number(row.dataset.type);
+        if (selectedTypes.has(t)) selectedTypes.delete(t); else selectedTypes.add(t);
+        renderCalendar();
+        renderFilters();
+    });
+
+    function allVisibleTypes() {
+        return [...document.querySelectorAll('#filterList .filter-row')].map(r => Number(r.dataset.type));
+    }
+    document.getElementById('selAll').addEventListener('click', () => { allVisibleTypes().forEach(t => selectedTypes.add(t)); renderCalendar(); renderFilters(); });
+    document.getElementById('selNone').addEventListener('click', () => { selectedTypes.clear(); renderCalendar(); renderFilters(); });
+    document.getElementById('sortBtn').addEventListener('click', () => { sortDesc = !sortDesc; renderFilters(); });
+
+    (async function init() {
+        renderAll();
+        const [y, m] = viewYM();
+        const ty = parseInt(tomorrowStr.slice(0, 4), 10), tm = parseInt(tomorrowStr.slice(5, 7), 10) - 1;
+        await Promise.all([ensureMonth(y, m), ensureMonth(ty, tm)]);
+        renderAll();
+    })();
+</script>
+</body>
+</html>
