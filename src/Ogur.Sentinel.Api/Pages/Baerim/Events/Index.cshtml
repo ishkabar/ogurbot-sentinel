@@ -123,6 +123,8 @@
 
         .detail { margin-top: 14px; }
 
+        .disclaimer { margin-top: 18px; text-align: center; font-size: 0.78rem; color: #777; line-height: 1.5; }
+        .disclaimer b { color: #aaa; font-weight: 600; }
         .filter-actions { display: flex; gap: 6px; margin-bottom: 8px; }
         .btn-sm { flex: 1; background: #14141a; border: 1px solid #2a2a2e; color: #ccc; border-radius: 8px; padding: 7px 8px; font-size: 0.75rem; cursor: pointer; }
         .btn-sm:hover { border-color: #43b581; color: #fff; }
@@ -210,6 +212,7 @@
         </div>
         <div class="cal-grid" id="calGrid"></div>
         <div class="panel detail" id="dayDetail" style="display:none;"></div>
+        <div class="disclaimer" id="disclaimer"></div>
     </main>
 
     <aside class="side" style="height:auto;">
@@ -321,6 +324,7 @@
     const byDate = new Map();
     const typeSample = new Map();
     const loadedMonths = new Map();
+    const generatedByMonth = new Map();
 
     function viewYM() {
         const t = new Date(Date.UTC(baseY, baseM + viewOffset, 1));
@@ -366,7 +370,11 @@
         loadedMonths.set(key, true);
         try {
             const resp = await fetch(`/files/events/events_${key}.json`, { cache: 'no-cache' });
-            if (resp.ok) addMonthData(await resp.json());
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.generatedUtc) generatedByMonth.set(key, data.generatedUtc);
+                addMonthData(data);
+                }
         } catch (e) {
             console.warn('Failed to load events', key, e);
         }
@@ -454,6 +462,21 @@
             (list.length ? list.map(eventRow).join('') : `<div class="empty">${IS_EN ? 'No events' : 'Brak wydarzeń'}</div>`);
     }
 
+    function renderDisclaimer() {
+        const [y, m] = viewYM();
+        const iso = generatedByMonth.get(monthKey(y, m));
+        const fmt = iso
+            ? new Intl.DateTimeFormat(IS_EN ? 'en-GB' : 'pl-PL', {
+                timeZone: 'Europe/Warsaw', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+            }).format(new Date(iso))
+            : null;
+        const main = IS_EN
+            ? 'The calendar may be out of date if the server administration makes changes. I cannot update it in real time, but I do my best.'
+            : 'Kalendarz może nie być aktualny w przypadku zmian wprowadzonych przez administrację serwera. Nie jestem w stanie aktualizować go na bieżąco, ale staram się.';
+        const asOf = fmt ? `<br><b>${IS_EN ? 'Calendar as of' : 'Kalendarz aktualny na dzień'}: ${esc(fmt)}</b>` : '';
+        document.getElementById('disclaimer').innerHTML = esc(main) + asOf;
+    }
+
     function renderFilters() {
         const [y, m] = viewYM();
         const counts = new Map();
@@ -476,6 +499,7 @@
         renderCalendar();
         renderDetail();
         renderFilters();
+        renderDisclaimer();
     }
 
     async function loadView() {
