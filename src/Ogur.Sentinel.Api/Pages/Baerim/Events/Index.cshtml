@@ -331,11 +331,18 @@
         return [t.getUTCFullYear(), t.getUTCMonth()];
     }
 
-    function nameOf(ev) { return IS_EN ? (ev.nameEn || ev.namePl) : (ev.namePl || ev.nameEn); }
+    function nameOf(ev) {
+        const sample = typeSample.get(ev.type);
+        if (IS_EN) {
+            return TYPES[ev.type]?.en || ev.nameEn || ev.namePl || sample?.nameEn || sample?.namePl || `Type ${ev.type}`;
+        }
+        return TYPES[ev.type]?.pl || ev.namePl || ev.nameEn || sample?.namePl || sample?.nameEn || `Typ ${ev.type}`;
+    }
 
     function typeLabel(t) {
         const k = TYPES[t];
         if (k) return IS_EN ? k.en : k.pl;
+
         const s = typeSample.get(t);
         return s ? nameOf(s) : (IS_EN ? `Type ${t}` : `Typ ${t}`);
     }
