@@ -9,7 +9,6 @@ namespace Ogur.Sentinel.Worker.Services;
 public sealed class OreDiscordPostService
 {
     private const ulong ChannelId = 1545629318322061322;
-    private const string ChunjoUrl = "https://respy.ogur.dev/baerim/ore/chunjo";
 
     private readonly GatewayClient _client;
     private readonly OreState _state;

@@ -33,7 +33,6 @@ var isAuthenticated = !string.IsNullOrEmpty(username);
 <body>
 <header>
     <nav class="navbar navbar-expand-sm navbar-dark glass-nav mb-3">
-        <!-- DEBUG role='@role' username='@username' -->
         <div class="container">
             <a href="https://ogur.dev" class="btn btn-sm btn-outline-light me-3" style="font-size: 0.85rem;">
                 ← ogur.dev
@@ -51,15 +50,9 @@ var isAuthenticated = !string.IsNullOrEmpty(username);
                     <li class="nav-item">
                         <a class="nav-link" asp-area="" asp-page="/Respawn">Respawn</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/baerim/">Baerim</a>
+                    <li class="nav-item d-none" id="adminRoleNavItem">
+                        <a class="nav-link" asp-area="" asp-page="/AdminRole">Admin Role</a>
                     </li>
-                    @if (role == "Admin")
-                    {
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-page="/AdminRole">Admin Role</a>
-                        </li>
-                    }
                     <li class="nav-item">
                         <a class="nav-link" asp-area="" asp-page="/Download">Download</a>
                     </li>
@@ -123,10 +116,10 @@ var isAuthenticated = !string.IsNullOrEmpty(username);
             document.getElementById('username-display').textContent = username;
             document.getElementById('user-info').style.display = 'block';
 
-            // Pokaż badge dla wszystkich ról
             const roleBadge = document.getElementById('role-badge');
             if (role === 'Admin') {
                 roleBadge.innerHTML = '<span class="badge bg-danger">Admin</span>';
+                document.getElementById('adminRoleNavItem').classList.remove('d-none');
             } else if (role === 'Operator') {
                 roleBadge.innerHTML = '<span class="badge bg-info">Operator</span>';
             } else if (role === 'Timer') {

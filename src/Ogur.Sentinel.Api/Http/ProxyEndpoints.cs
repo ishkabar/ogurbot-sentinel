@@ -2,14 +2,11 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Ogur.Sentinel.Core.Auth;
-using Ogur.Sentinel.Api.Services;
-using Microsoft.AspNetCore.DataProtection;
 
 namespace Ogur.Sentinel.Api.Http;
 
 public static class ProxyEndpoints
 {
-    private const string OreAdminDiscordId = "822151223116824588";
     // ========== API endpoints (WPF token) ==========
 
     public static void MapProxyEndpoints(this WebApplication app)
@@ -349,142 +346,6 @@ public static class ProxyEndpoints
             }
         });
 
-        app.MapGet("/ore/state", async (IHttpClientFactory cf) =>
-        {
-            try
-            {
-                var http = cf.CreateClient("worker");
-                var response = await http.GetAsync("/ore/state");
-                response.EnsureSuccessStatusCode();
-                var res = await response.Content.ReadFromJsonAsync<JsonElement>();
-                return Results.Ok(res);
-            }
-            catch (HttpRequestException ex)
-            {
-                return Results.Json(new { error = $"Worker error: {ex.Message}" }, statusCode: 503);
-            }
-        });
-
-        app.MapPost("/ore/mark", async (HttpContext ctx, IHttpClientFactory cf, IDataProtectionProvider dp, OreMarkLogger markLogger) =>
-        {
-            var cookie = ctx.Request.Cookies["ore_discord_identity"];
-            if (string.IsNullOrEmpty(cookie))
-                return Results.Json(new { error = "Not logged in" }, statusCode: 401);
-
-            string discordId, username;
-            try
-            {
-                var protector = dp.CreateProtector("OreDiscordIdentity");
-                var json = protector.Unprotect(cookie);
-                var doc = JsonDocument.Parse(json);
-                discordId = doc.RootElement.GetProperty("id").GetString()!;
-                username = doc.RootElement.GetProperty("username").GetString()!;
-            }
-            catch
-            {
-                return Results.Json(new { error = "Invalid session" }, statusCode: 401);
-            }
-
-            JsonElement body;
-            try
-            {
-                body = await ctx.Request.ReadFromJsonAsync<JsonElement>();
-            }
-            catch
-            {
-                return Results.BadRequest(new { error = "Invalid body" });
-            }
-
-            if (!body.TryGetProperty("x", out var xEl) || !body.TryGetProperty("y", out var yEl))
-                return Results.BadRequest(new { error = "x, y are required" });
-
-            var x = xEl.GetDouble();
-            var y = yEl.GetDouble();
-
-            var payload = new { x, y, user_id = discordId, username };
-
-            var http = cf.CreateClient("worker");
-            var response = await http.PostAsJsonAsync("/ore/mark", payload);
-            var result = await response.Content.ReadFromJsonAsync<JsonElement>();
-
-            if (response.IsSuccessStatusCode)
-            {
-                var ip = GetClientIp(ctx);
-                _ = markLogger.LogMarkAsync(x, y, username, discordId, ip);
-                return Results.Ok(result);
-            }
-
-            return Results.Json(result, statusCode: (int)response.StatusCode);
-        });
-
-        app.MapPost("/ore/reset", async (IHttpClientFactory cf) =>
-        {
-            var http = cf.CreateClient("worker");
-            var res = await http.PostAsync("/ore/reset", null);
-            res.EnsureSuccessStatusCode();
-            var result = await res.Content.ReadFromJsonAsync<JsonElement>();
-            return Results.Ok(result);
-        });
-
-        app.MapGet("/ore/stream", async (HttpContext ctx, IHttpClientFactory cf, CancellationToken ct) =>
-        {
-            ctx.Response.Headers.Append("Content-Type", "text/event-stream");
-            ctx.Response.Headers.Append("Cache-Control", "no-cache");
-
-            var http = cf.CreateClient("worker");
-            using var request = new HttpRequestMessage(HttpMethod.Get, "/ore/stream");
-            using var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
-            await using var stream = await response.Content.ReadAsStreamAsync(ct);
-
-            await stream.CopyToAsync(ctx.Response.Body, ct);
-        });
-
-        app.MapGet("/ore/marks/recent", async (OreMarkLogger markLogger) =>
-        {
-            var marks = await markLogger.GetRecentAsync(6);
-            var result = marks.Select(m => new
-            {
-                time = m.Time,
-                username = m.Username,
-                user_id = m.UserId,
-                x = m.X,
-                y = m.Y
-            });
-            return Results.Ok(new { marks = result });
-        });
-
-        app.MapGet("/ore/visits/recent", async (OreVisitLogger visitLogger) =>
-        {
-            var visits = await visitLogger.GetRecentAsync(TimeSpan.FromHours(6));
-            var result = visits.Select(v => new
-            {
-                time = v.Time,
-                username = v.Username,
-                ip = v.Ip
-            });
-            return Results.Ok(new { visits = result });
-        });
-
-        app.MapGet("/ore/whoami", (HttpContext ctx, IDataProtectionProvider dp) =>
-        {
-            var cookie = ctx.Request.Cookies["ore_discord_identity"];
-            if (string.IsNullOrEmpty(cookie))
-                return Results.Ok(new { logged_in = false, is_ore_admin = false });
-
-            try
-            {
-                var protector = dp.CreateProtector("OreDiscordIdentity");
-                var json = protector.Unprotect(cookie);
-                var doc = JsonDocument.Parse(json);
-                var discordId = doc.RootElement.GetProperty("id").GetString();
-                return Results.Ok(new { logged_in = true, is_ore_admin = discordId == OreAdminDiscordId });
-            }
-            catch
-            {
-                return Results.Ok(new { logged_in = false, is_ore_admin = false });
-            }
-        });
-
         app.MapPost("/respawn/test-sound", async (IHttpClientFactory cf, HttpContext ctx) =>
         {
             var http = cf.CreateClient("worker");
@@ -520,17 +381,5 @@ public static class ProxyEndpoints
                 return Results.Json(new { version = "disconnected", build_time = "-" });
             }
         });
-    }
-
-    private static string GetClientIp(HttpContext ctx)
-    {
-        var forwarded = ctx.Request.Headers["X-Forwarded-For"].ToString();
-        if (!string.IsNullOrWhiteSpace(forwarded))
-        {
-            // X-Forwarded-For może zawierać listę IP oddzielonych przecinkami; pierwszy to prawdziwy klient
-            return forwarded.Split(',')[0].Trim();
-        }
-
-        return ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
     }
 }

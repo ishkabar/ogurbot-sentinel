@@ -1,31 +1,13 @@
-using System.Net.Http.Json;
-using System.Text.Json;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.AspNetCore.DataProtection;
 using Ogur.Sentinel.Abstractions;
 using Ogur.Sentinel.Core;
 using Ogur.Sentinel.Api.Http;
-using System.Text.Json.Nodes;
-using System.Security.Cryptography;
-using System.Text;
 using NLog.Extensions.Logging;
 using NLog;
-using NLog.Web;
-using Ogur.Sentinel.Abstractions.Options;
-using Ogur.Sentinel.Core.Respawn;
 using Ogur.Sentinel.Abstractions.Auth;
 using Ogur.Sentinel.Core.Auth;
-using Microsoft.AspNetCore.Http;
 using Ogur.Sentinel.Api.Middleware;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.StaticFiles;
-using Ogur.Sentinel.Api.Services;
 
 
 // ✅ Load NLog config from appsettings directory
@@ -51,13 +33,6 @@ try
         ? Path.Combine(builder.Environment.ContentRootPath, "appsettings", "users.json")
         : "/app/appsettings/users.json";
 
-    var costumesJsonPath = builder.Environment.IsDevelopment()
-        ? Path.Combine(builder.Environment.ContentRootPath, "wwwroot", "files", "costumes", "costumes.json")
-        : "/app/files/costumes/costumes.json";
-
-    var costumesAdminTokenPath = builder.Environment.IsDevelopment()
-        ? Path.Combine(builder.Environment.ContentRootPath, "appsettings", "costumes-admin-token.txt")
-        : "/app/appsettings/costumes-admin-token.txt";
 
     logger.Info("👥 Users file path: {Path}", usersFilePath);
     logger.Info("👥 File exists before registration: {Exists}", File.Exists(usersFilePath));
@@ -112,9 +87,7 @@ try
         var cfg = sp.GetRequiredService<IConfiguration>();
         http.BaseAddress = new Uri(cfg["Worker:BaseUrl"] ?? "http://localhost:9090");
     });
-    builder.Services.AddSingleton<OreMarkLogger>();
-    builder.Services.AddSingleton<OreVisitLogger>();
-    builder.Services.AddSingleton<UpgradeChanceService>();
+
     builder.Services.AddHttpClient("zrzutka");
 
     var app = builder.Build();
@@ -143,8 +116,6 @@ try
     });
 
     var contentTypeProvider = new FileExtensionContentTypeProvider();
-    contentTypeProvider.Mappings[".glb"] = "model/gltf-binary";
-    contentTypeProvider.Mappings[".gltf"] = "model/gltf+json";
 
     app.UseStaticFiles();
 
@@ -168,42 +139,6 @@ try
 
     app.UseRouting();
 
-    var calibProtector = app.Services.GetRequiredService<IDataProtectionProvider>()
-        .CreateProtector("CostumesCalibration")
-        .ToTimeLimitedDataProtector();
-
-    app.Use(async (ctx, next) =>
-    {
-        if (ctx.Request.Path.StartsWithSegments("/baerim/costumes"))
-        {
-            var expected = CalibrationAuth.ReadToken(costumesAdminTokenPath);
-
-            if (ctx.Request.Query.TryGetValue("auth", out var candidate))
-            {
-                if (CalibrationAuth.TokenMatches(candidate.ToString(), expected))
-                {
-                    ctx.Response.Cookies.Append(
-                        CalibrationAuth.CookieName,
-                        calibProtector.Protect(CalibrationAuth.Fingerprint(expected), TimeSpan.FromHours(12)),
-                        new CookieOptions
-                        {
-                            HttpOnly = true,
-                            Secure = !app.Environment.IsDevelopment(),
-                            SameSite = SameSiteMode.Strict,
-                            Path = "/baerim",
-                            MaxAge = TimeSpan.FromHours(12)
-                        });
-                }
-
-                ctx.Response.Redirect(ctx.Request.Path.Value ?? "/baerim/costumes/");
-                return;
-            }
-
-            ctx.Items[CalibrationAuth.ItemKey] = CalibrationAuth.IsUnlocked(ctx, calibProtector, expected);
-        }
-
-        await next();
-    });
 
 // ✅ Auth middleware OSTATNIE przed MapRazorPages
     app.UseAuthMiddleware();
@@ -323,83 +258,9 @@ try
         return Results.Ok(new { message = "Users reloaded" });
     });
 
-    app.MapGet("/baerim/upgrade-data", (UpgradeChanceService service) => Results.Ok(service.GetData()));
-
-    app.MapPost("/baerim/costumes-calibration", async (HttpContext context) =>
-    {
-        var expectedToken = CalibrationAuth.ReadToken(costumesAdminTokenPath);
-        if (!CalibrationAuth.IsUnlocked(context, calibProtector, expectedToken))
-        {
-            return Results.Unauthorized();
-        }
-
-        var body = await context.Request.ReadFromJsonAsync<CalibrationRequest>();
-        if (body is null || string.IsNullOrEmpty(body.ItemId) || string.IsNullOrEmpty(body.CharacterId) ||
-            string.IsNullOrEmpty(body.Slot))
-        {
-            return Results.BadRequest(new { error = "Invalid request body" });
-        }
-
-        var json = await File.ReadAllTextAsync(costumesJsonPath);
-        var doc = JsonNode.Parse(json)!.AsObject();
-        var categories = doc["categories"]!.AsArray();
-
-        JsonObject? targetItem = null;
-        foreach (var category in categories)
-        {
-            if (category!["slot"]!.ToString() != body.Slot) continue;
-            foreach (var item in category["items"]!.AsArray())
-            {
-                if (item!["id"]?.ToString() == body.ItemId)
-                {
-                    targetItem = item.AsObject();
-                    break;
-                }
-            }
-
-            if (targetItem != null) break;
-        }
-
-        if (targetItem is null)
-        {
-            return Results.NotFound(new { error = $"Item '{body.ItemId}' not found in slot '{body.Slot}'" });
-        }
-
-        var filesNode = targetItem["files"]?.AsObject();
-        if (filesNode is null)
-        {
-            return Results.BadRequest(new { error = "Item has no 'files' map" });
-        }
-
-        var currentFileNode = filesNode[body.CharacterId];
-        if (currentFileNode is null)
-        {
-            return Results.BadRequest(new { error = $"No file entry for character '{body.CharacterId}'" });
-        }
-
-        var existingFilePath = currentFileNode is JsonObject existingObj
-            ? existingObj["file"]!.ToString()
-            : currentFileNode.ToString();
-
-        filesNode[body.CharacterId] = new JsonObject
-        {
-            ["file"] = existingFilePath,
-            ["pos"] = new JsonArray(body.Pos.Select(p => (JsonNode)JsonValue.Create(p)).ToArray()),
-            ["scale"] = body.Scale
-        };
-
-        await File.WriteAllTextAsync(costumesJsonPath,
-            doc.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-
-        logger.Info("💾 Costume calibration saved: {Slot}/{ItemId}/{Char} pos=[{X},{Y},{Z}] scale={Scale}",
-            body.Slot, body.ItemId, body.CharacterId, body.Pos[0], body.Pos[1], body.Pos[2], body.Scale);
-
-        return Results.Ok(new { message = "Saved" });
-    });
 
     // === Proxy Endpoints to Worker ===
     app.MapProxyEndpoints();
-    app.MapDiscordAuthEndpoints();
 
 
     logger.Info("✅ API application configured successfully");
@@ -416,38 +277,3 @@ finally
     LogManager.Shutdown();
 }
 
-record CalibrationRequest(string ItemId, string CharacterId, string Slot, double[] Pos, double Scale);
-
-static class CalibrationAuth
-{
-    public const string CookieName = "costumes_calib";
-    public const string ItemKey = "CalibUnlocked";
-
-    static byte[] Hash(string s) => SHA256.HashData(Encoding.UTF8.GetBytes(s));
-
-    public static string ReadToken(string path) =>
-        File.Exists(path) ? File.ReadAllText(path).Trim() : "";
-
-    public static string Fingerprint(string token) => Convert.ToHexString(Hash(token));
-
-    public static bool TokenMatches(string? candidate, string expected) =>
-        !string.IsNullOrEmpty(candidate) && expected.Length > 0 &&
-        CryptographicOperations.FixedTimeEquals(Hash(candidate), Hash(expected));
-
-    public static bool IsUnlocked(HttpContext ctx, ITimeLimitedDataProtector protector, string expected)
-    {
-        if (expected.Length == 0) return false;
-        if (!ctx.Request.Cookies.TryGetValue(CookieName, out var value) || string.IsNullOrEmpty(value)) return false;
-        try
-        {
-            var payload = protector.Unprotect(value);
-            return CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(payload),
-                Encoding.UTF8.GetBytes(Fingerprint(expected)));
-        }
-        catch
-        {
-            return false;
-        }
-    }
-}
